@@ -1,0 +1,99 @@
+// styles - Style Manager for the ChoPro plugin in Obsidian
+
+export class ChoproStyleManager {
+    private static readonly STYLE_ID = 'chopro-plugin-styles';
+
+    static removeStyles(): void {
+        const existingStyle = document.getElementById(this.STYLE_ID);
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+    }
+
+    static applyStyles(chordColor: string): void {
+        this.removeStyles();
+
+        const style = document.createElement('style');
+        style.id = this.STYLE_ID;
+        style.textContent = `
+            .chopro-container {
+                line-height: 1.8;
+                white-space: pre-wrap;
+                tab-size: 4;
+                padding: 1rem;
+                background: var(--background-primary);
+                border-radius: 6px;
+            }
+            
+            .chopro-preview {
+                line-height: 1.8;
+                padding: 1rem;
+                background: var(--background-secondary);
+                border-radius: 6px;
+            }
+            
+            .chopro-directive {
+                margin-bottom: 0.75rem;
+                padding: 0.5rem;
+                background: var(--background-secondary);
+                border-radius: 4px;
+            }
+            
+            .chopro-directive-name {
+                font-weight: bold;
+                font-size: 0.9em;
+                text-transform: uppercase;
+            }
+            
+            .chopro-directive-value {
+                color: var(--text-muted);
+                font-size: 0.9em;
+            }
+           
+            .chopro-line {
+                margin-bottom: 0.5rem;
+                position: relative;
+                min-height: 2.5em;
+                padding-top: 1.5em;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+            }
+            
+            .chopro-pair {
+                position: relative;
+                display: inline-block;
+                vertical-align: baseline;
+                flex-shrink: 0;
+            }
+            
+            .chopro-chord {
+                position: absolute;
+                top: -1.5em;
+                left: 0;
+                color: ${chordColor};
+                font-weight: bold;
+                font-size: 0.85em;
+                white-space: nowrap;
+                z-index: 1;
+                font-family: var(--font-monospace);
+                max-width: calc(100vw - 2rem);
+                overflow: visible;
+            }
+            
+            .chopro-lyrics {
+                white-space: pre;
+                display: inline-block;
+                min-width: 0;
+            }
+            
+            /* Ensure proper spacing for chord-only sections */
+            .chopro-pair .chopro-lyrics:empty::after {
+                content: '\\00A0';
+                min-width: 1ch;
+            }
+        `;
+        
+        document.head.appendChild(style);
+    }
+}
