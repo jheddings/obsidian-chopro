@@ -2,6 +2,12 @@
 
 An Obsidian plugin that renders ChoPro format chord sheets with accurate chord positioning above lyrics.
 
+![ChoPro Source](docs/chopro-source.png)
+
+... becomes ...
+
+![ChoPro Rendered](docs/chopro-render.png)
+
 ## Features
 
 - **Accurate Chord Positioning**: Improved algorithm for precise chord-to-lyric alignment
@@ -65,7 +71,7 @@ You can customize the chord color in the plugin settings:
    - `main.js`
    - `manifest.json`
 
-2. Create a folder named `chopro-plugin` in your vault's `.obsidian/plugins/` directory
+2. Create a folder named `obsidian-chopro` in your vault's `.obsidian/plugins/` directory
 
 3. Copy the downloaded files into this folder
 
