@@ -102,6 +102,7 @@ export class ChoproProcessor {
 
         } else {
             const segments = this.parseChordLine(line);
+            
             this.renderSegments(segments, lineDiv);
         }
     }
@@ -165,6 +166,8 @@ export class ChoproProcessor {
                 const decoratedChord = this.decorateChord(normalizedChord);
                 const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
                 chordSpan.innerHTML = decoratedChord;
+
+                pairSpan.style.setProperty('--chord-min-width', `${decoratedChord.length}ch`);
 
                 // Check if there's text immediately following this chord
                 let textContent = '';
@@ -234,5 +237,14 @@ export class ChoproProcessor {
         }
 
         return chord;
+    }
+
+    /**
+     * Calculate the minimum width needed for a chord to prevent collisions.
+     */
+    private calculateChordWidth(chord: string): number {
+        const baseWidth = chord.length;
+        const safetyMargin = 0.5;
+        return baseWidth + safetyMargin;
     }
 }

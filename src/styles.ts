@@ -89,6 +89,8 @@ export class ChoproStyleManager {
                 display: inline-block;
                 vertical-align: baseline;
                 flex-shrink: 0;
+                min-width: var(--chord-min-width, 1ch);
+                margin-right: 0.1em;
             }
             
             .chopro-chord {
@@ -101,7 +103,7 @@ export class ChoproStyleManager {
                 white-space: nowrap;
                 z-index: 1;
                 font-family: var(--font-monospace);
-                overflow: visible;
+                text-overflow: ellipsis;
             }
             
             .chopro-chord-modifier {
