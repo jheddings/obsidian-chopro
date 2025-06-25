@@ -10,6 +10,7 @@ export interface ChoproPluginSettings {
     showDirectives: boolean;
     superscriptChordMods: boolean;
     chordDecorations: string;
+    italicAnnotations: boolean;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
@@ -17,7 +18,8 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordSize: '1em',
     showDirectives: true,
     superscriptChordMods: false,
-    chordDecorations: 'none'
+    chordDecorations: 'none',
+    italicAnnotations: true
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -138,6 +140,16 @@ class ChoproSettingTab extends PluginSettingTab {
                     updatePreview();
                 }));
 
+        new Setting(containerEl)
+            .setName('Italic Annotations')
+            .setDesc('Display annotations (text starting with asterisk) in italics')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.italicAnnotations)
+                .onChange(async (value) => {
+                    this.plugin.settings.italicAnnotations = value;
+                    updatePreview();
+                }));
+
         const previewDiv = containerEl.createDiv({ cls: 'setting-item' });
         previewDiv.createDiv({ cls: 'setting-item-info' })
             .createDiv({ cls: 'setting-item-name', text: 'Preview' });
@@ -147,7 +159,7 @@ class ChoproSettingTab extends PluginSettingTab {
         
         const choproPreview = `
             [C]Amazing [C7]grace, how [F]sweet the [C]sound, that [Am]saved a [C]wretch like [G]me
-            I [C]once was [C7]lost but [F]now I'm [C]found, was [Am]blind but [G]now I [C]see
+            I [C]once was [C7]lost but [F]now I'm [C]found, was [Am]blind but [G]now I [C]see [*Rit.]
         `;
         
         // Update preview content based on current settings

@@ -3,7 +3,7 @@
 import { ChoproPluginSettings } from './main';
 
 export interface ChordSegment {
-    type: 'chord' | 'text';
+    type: 'chord' | 'annotation' | 'text';
     content: string;
     position: number;
 }
@@ -126,12 +126,23 @@ export class ChoproProcessor {
                 });
             }
 
-            // Add the chord
-            segments.push({
-                type: 'chord',
-                content: match[1],
-                position: match.index
-            });
+            // Check if this is an annotation (starts with asterisk)
+            const content = match[1];
+            if (content.startsWith('*')) {
+                // Add the annotation (remove the asterisk)
+                segments.push({
+                    type: 'annotation',
+                    content: content.substring(1),
+                    position: match.index
+                });
+            } else {
+                // Add the chord
+                segments.push({
+                    type: 'chord',
+                    content: content,
+                    position: match.index
+                });
+            }
 
             lastIndex = match.index + match[0].length;
         }
@@ -180,6 +191,31 @@ export class ChoproProcessor {
                 });
 
                 // If the text is only whitespace, ensure minimum width for chord positioning
+                if (!textContent || textContent.trim() === '') {
+                    textSpan.style.minWidth = '1ch';
+                }
+
+            } else if (segment.type === 'annotation') {
+                const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
+
+                // Create annotation span (similar to chord but with different class)
+                const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
+                annotationSpan.textContent = segment.content;
+
+                // Check if there's text immediately following this annotation
+                let textContent = '';
+                if (i + 1 < segments.length && segments[i + 1].type === 'text') {
+                    textContent = segments[i + 1].content;
+                    i++; // Skip the text segment as we've consumed it
+                }
+
+                // Create the text span (may be empty for annotation-only positions)
+                const textSpan = pairSpan.createSpan({
+                    text: textContent || '\u00A0',
+                    cls: 'chopro-lyrics'
+                });
+
+                // If the text is only whitespace, ensure minimum width for annotation positioning
                 if (!textContent || textContent.trim() === '') {
                     textSpan.style.minWidth = '1ch';
                 }
