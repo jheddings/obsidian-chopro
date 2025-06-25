@@ -99,7 +99,6 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.chordColor)
                 .onChange(async (value) => {
                     this.plugin.settings.chordColor = value || DEFAULT_SETTINGS.chordColor;
-                    await this.plugin.saveSettings();
                     updatePreview();
                 }));
 
@@ -111,7 +110,6 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.chordSize)
                 .onChange(async (value) => {
                     this.plugin.settings.chordSize = value || DEFAULT_SETTINGS.chordSize;
-                    await this.plugin.saveSettings();
                     updatePreview();
                 }));
 
@@ -122,12 +120,11 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.superscriptChordMods)
                 .onChange(async (value) => {
                     this.plugin.settings.superscriptChordMods = value;
-                    await this.plugin.saveSettings();
                     updatePreview();
                 }));
 
         new Setting(containerEl)
-            .setName('Chord Decorations')
+            .setName('Chord Decoration')
             .setDesc('Wrap chords with bracket pairs for emphasis')
             .addDropdown(dropdown => dropdown
                 .addOption('none', 'None')
@@ -138,7 +135,6 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.chordDecorations)
                 .onChange(async (value) => {
                     this.plugin.settings.chordDecorations = value;
-                    await this.plugin.saveSettings();
                     updatePreview();
                 }));
 
@@ -149,73 +145,17 @@ class ChoproSettingTab extends PluginSettingTab {
         const previewContent = previewDiv.createDiv({ cls: 'setting-item-control' });
         const preview = previewContent.createDiv();
         
+        const choproPreview = `
+            [C]Amazing grace, how [F]sweet the [1]sound
+            That [Am]saved a [C]wretch like [G]me
+        `;
+        
         // Update preview content based on current settings
         const updatePreview = () => {
-            // Get decoration brackets based on current setting
-            let decorationOpen = '';
-            let decorationClose = '';
-            switch (this.plugin.settings.chordDecorations) {
-                case 'square':
-                    decorationOpen = '[';
-                    decorationClose = ']';
-                    break;
-                case 'round':
-                    decorationOpen = '(';
-                    decorationClose = ')';
-                    break;
-                case 'curly':
-                    decorationOpen = '{';
-                    decorationClose = '}';
-                    break;
-                case 'angle':
-                    decorationOpen = '&lt;';
-                    decorationClose = '&gt;';
-                    break;
-                case 'none':
-                default:
-                    decorationOpen = '';
-                    decorationClose = '';
-                    break;
-            }
+            this.plugin.saveSettings();
 
-            preview.innerHTML = `
-                <div class="chopro-preview">
-                    ${this.plugin.settings.showDirectives ? `
-                    <div class="chopro-directive">
-                        <span class="chopro-directive-name">title</span>
-                        <span class="chopro-directive-value">: Amazing Grace</span>
-                    </div>
-                    ` : ''}
-                    <div class="chopro-line">
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}C${decorationClose}</span>
-                            <span class="chopro-lyrics">Amazing </span>
-                        </span>
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}F${decorationClose}</span>
-                            <span class="chopro-lyrics">grace how </span>
-                        </span>
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}G<span class="chopro-chord-modifier">7</span>${decorationClose}</span>
-                            <span class="chopro-lyrics">sweet the sound</span>
-                        </span>
-                    </div>
-                    <div class="chopro-line">
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}A<span class="chopro-chord-modifier">m</span>${decorationClose}</span>
-                            <span class="chopro-lyrics">That saved a </span>
-                        </span>
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}G${decorationClose}</span>
-                            <span class="chopro-lyrics">wretch like </span>
-                        </span>
-                        <span class="chopro-pair">
-                            <span class="chopro-chord">${decorationOpen}C${decorationClose}</span>
-                            <span class="chopro-lyrics">me</span>
-                        </span>
-                    </div>
-                </div>
-            `;
+            const trimmedChopro = choproPreview.replace(/^[ \t]+|[ \t]+$/gm, '');
+            this.plugin.processor.processBlock(trimmedChopro, preview);
         };
         
         // Initial preview render
