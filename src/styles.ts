@@ -91,6 +91,7 @@ export class ChoproStyleManager {
             }
             
             .chopro-chord-modifier {
+                padding-left: 0.1em;
                 ${Object.entries(modPlacementStyle).map(([key, value]) => `${key}: ${value};`).join('\n')}
             }
             
