@@ -28,6 +28,9 @@ export class ChoproProcessor {
                     this.processDirective(trimmedLine, container);
                 }
 
+            } else if (this.isInstructionLine(trimmedLine)) {
+                this.processInstructionLine(trimmedLine, container);
+
             } else if (this.isChordLine(trimmedLine)) {
                 this.processLine(trimmedLine, container);
 
@@ -35,6 +38,23 @@ export class ChoproProcessor {
                 this.processLine(trimmedLine, container);
             }
         }
+    }
+
+    /**
+     * Check if a line is an instruction line (wrapped in parentheses).
+     */
+    private isInstructionLine(line: string): boolean {
+        return /^\([^)]*\)$/.test(line.trim());
+    }
+
+    /**
+     * Process an instruction line.
+     */
+    private processInstructionLine(line: string, container: HTMLElement): void {
+        const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
+        // Remove the parentheses for display
+        const instructionText = line.trim().slice(1, -1);
+        instructionDiv.createSpan({ text: instructionText });
     }
 
     /**

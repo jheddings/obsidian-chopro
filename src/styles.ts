@@ -60,6 +60,18 @@ export class ChoproStyleManager {
                 color: var(--text-muted);
                 font-size: 0.9em;
             }
+            
+            .chopro-instruction {
+                margin-bottom: 0.75rem;
+                padding: 0.5rem;
+                background: var(--background-modifier-border);
+                border-radius: 4px;
+                font-style: italic;
+                color: var(--text-muted);
+                font-size: 0.95em;
+                text-align: center;
+                border: 1px solid var(--background-modifier-border);
+            }
            
             .chopro-line {
                 margin-bottom: 0.5rem;
