@@ -1,9 +1,10 @@
 # ChoPro Plugin Test Cases
 
-Test various ChoPro formatting scenarios to validate the plugin improvements.
+Comprehensive test cases to validate all features of the ChoPro Obsidian plugin.
 
-## Basic Chord-Lyric Pairs
+## Basic Functionality
 
+### Simple Chord-Lyric Pairs
 ```chopro
 {title: Amazing Grace}
 {artist: Traditional}
@@ -14,32 +15,89 @@ That [C]saved a [Am]wretch like [F]me[G]
 Was [C]blind but [Am]now I [F]see[C]
 ```
 
-## Complex Chord Positioning
-
+### Text Without Chords
 ```chopro
-{title: Chord Positioning Test}
+{title: Plain Text Test}
 
-[C]Word [F]after [G]word [Am]after [F]word
-[C]Multiple[F]consecutive[G]chords[Am]test
-[C]    Chord with spaces    [F]another
-End[C]ing [F]with [G]chords[Am]
+This line has no chords at all
+Another plain text line
+Mixed with [C]chord [F]lines
+Back to plain text
 ```
 
-## Edge Cases
+## Chord Processing Features
 
+### Complex Chord Names & Modifiers
 ```chopro
-{title: Edge Cases}
+{title: Chord Modifiers Test}
 
-[C][F][G] Multiple chords at start
-Text without chords at all
-[C] Chord at beginning only
-Ending with chord [C]
-[C]Single[F]
-[Am7]Complex [Bmaj7]chord [C#dim]names [F/A]with [G/B]modifiers
+[Am7]Seven [Bmaj7]major seven [C#dim]diminished
+[F/A]Slash [G/B]chords [Dm/F#]with bass notes
+[Csus4]Suspended [Dadd9]added tones [Em11]extensions
+[F#m7b5]Half [G7alt]altered [Am9]nine chords
 ```
 
-## Directives Test
+### Chord-Only Lines (Instrumental)
+```chopro
+{title: Instrumental Section}
 
+Verse:
+[C]Amazing [F]grace
+
+Instrumental:
+[C] [F] [G] [Am]
+[F] [C/E] [Dm] [G]
+
+Bridge:
+[Am]That saved [F]a wretch
+```
+
+### Chord Positioning Edge Cases
+```chopro
+{title: Chord Positioning}
+
+[C]Start of line
+End of line [G]
+[C][F][G] Multiple consecutive chords
+[C]No[F]spaces[G]between[Am]words
+[C]    Wide spacing    [F]test
+```
+
+## Nashville Number System
+
+### Basic Nashville Numbers
+```chopro
+{title: Nashville Numbers}
+{key: C}
+
+[1]Amazing [4]grace how [5]sweet the sound
+That [1]saved a [6m]wretch like [4]me[5]
+[1]I once was [4]lost but [5]now am found
+Was [1]blind but [6m]now I [4]see[1]
+```
+
+### Nashville with Extensions & Slash Chords
+```chopro
+{title: Advanced Nashville}
+{key: G}
+
+[1maj7]Major seven [2m7]minor seven [17]dominant
+[4]Sub [4/6]slash [1/3]inversions [5/7]bass notes
+[2m7b5]Half dim [5alt]altered [6m9]extensions
+```
+
+### Mixed Nashville & Traditional Notation
+```chopro
+{title: Mixed Notation}
+{key: A}
+
+Nashville: [1]When I [4]find my[5]self
+Traditional: [A]Speaking [D]words of [E]wisdom
+```
+
+## Directive Processing
+
+### Standard Directives
 ```chopro
 {title: Song Title Here}
 {artist: Artist Name}
@@ -51,83 +109,51 @@ Ending with chord [C]
 [C]Test song with various directives
 ```
 
-## Escape Sequences
-
+### Directives Without Values
 ```chopro
-{title: Escape Test}
+{verse}
+{chorus}
+{bridge}
 
-This has \[brackets\] in the text
-And \{braces\} too
-Line with \\n newline escape
-Tab\\t escape sequence
+[C]Section markers without values
 ```
 
-## Mixed Content
-
+### Custom Directives
 ```chopro
-{title: Mixed Content}
+{custom_field: Custom Value}
+{another-directive: Another Value}
+{no_value_directive}
 
-Verse:
-[C]This is a [F]normal verse
-[G]With chords [C]above
-
-Chorus:
-[F]This is the [C]chorus
-[G]With different [C]chords
-
-Bridge:
-[Am]Instrumental [F]section
-[G] [C] [F] [G]
+[C]Testing custom directive support
 ```
 
-## Nashville Numbers
+## Settings Validation Tests
 
+### Chord Color & Size Variations
 ```chopro
-{title: Nashville Numbers Test}
+{title: Style Test}
+
+[C]These [F]chords [G]should
+[Am]reflect [F]current [C]settings
+For [Dm]color [G]and [C]size
+```
+
+### Superscript Modifier Test
+```chopro
+{title: Modifier Display Test}
+
+[Cmaj7]Major [Dm7]minor [G7]dominant
+[Am7b5]Half [F#dim7]diminished [Bb13]thirteenth
+[Esus4]Suspended [Aadd9]added [Bm11]eleventh
+```
+
+### Directive Visibility Test
+```chopro
+{title: Directive Toggle Test}
+{artist: Test Artist}
 {key: C}
 
-[1]Amazing [4]grace how [5]sweet the sound
-That [1]saved a [6m]wretch like [4]me[5]
-[1]I once was [4]lost but [5]now am found
-Was [1]blind but [6m]now I [4]see[1]
-```
-
-## Nashville Numbers with Extensions
-
-```chopro
-{title: Nashville Extensions}
-{key: G}
-
-[1]Basic [1maj7]major seven [17]dominant seven
-[2m]Minor [2m7]minor seven [2m7b5]half diminished
-[4]Subdominant [4maj7]four major seven
-[5]Dominant [5sus4]five suspended [5add9]five add nine
-[6m]Relative [6m7]minor seven [6m9]minor nine
-```
-
-## Mixed Nashville and Traditional Chords
-
-```chopro
-{title: Mixed Notation}
-{key: A}
-
-Verse (Nashville):
-[1]When I [4]find my[5]self in [1]trouble
-[6m]Mother [4]Mary [1/3]comes to [5]me
-
-Chorus (Traditional):
-[A]Speaking [D]words of [E]wisdom, [A]let it be
-[F#m]Let it [D]be, [A/C#]let it [E]be
-```
-
-## Nashville Numbers Complex Progressions
-
-```chopro
-{title: Complex Nashville}
-{key: F}
-
-[1] [5/7] [6m] [6m/b3]
-[4] [4/6] [1/3] [5]
-[1]Circle of [5/2]fifths with [6m]slash [4/6]chords
-[2m7b5]Complex [5alt]altered [1maj9]extensions
+[C]This tests whether directives
+[F]are shown or hidden based
+[G]on the showDirectives [C]setting
 ```
