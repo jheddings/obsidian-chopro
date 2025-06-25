@@ -35,40 +35,50 @@ Was [C]blind but [Am]now I [F]see[C]
 
 Access settings via Settings → Community Plugins → ChordPro Viewer:
 
-- **Chord Color**: Set the color for chord text (CSS color value)
-- **Show Directives**: Toggle display of ChordPro metadata directives
+- **Show Directives**: Toggle display of ChordPro metadata directives like `{title}`, `{artist}`, etc.
+- **Chord Color**: Set the color for chord text (CSS color value, default: `#2563eb`)
+- **Chord Size**: Font size for chord text (CSS size value, default: `1em`)
+- **Superscript Chord Modifiers**: Display chord modifiers (7, maj7, sus4, etc.) as superscript
+- **Chord Decoration**: Wrap chords with bracket pairs for emphasis (None, [ ], ( ), { }, < >)
+- **Italic Annotations**: Display annotations (text starting with asterisk) in italics
+
+The settings panel includes a live preview that updates as you change configuration options.
 
 ## Supported ChordPro Features
 
 ### Chords
-- Basic chords: `[C]`, `[F]`, `[G]`, etc.
-- Complex chords: `[Am7]`, `[Bmaj7]`, `[C#dim]`, `[F/A]`
-- Nashville numbers: `[1]`, `[4]`, `[5]`, `[6m]`, `[1maj7]`, `[5/7]`, etc.
-- Multiple consecutive chords: `[C][F][G]` or `[1][4][5]`
-- Chords at any position in the line
+- **Basic chords**: `[C]`, `[F]`, `[G]`, `[Am]`, etc.
+- **Complex chords**: `[Am7]`, `[Bmaj7]`, `[C#dim]`, `[F/A]`, `[Gsus4]`
+- **Nashville numbers**: `[1]`, `[4]`, `[5]`, `[6m]`, `[1maj7]`, `[5/7]`, etc.
+- **Multiple consecutive chords**: `[C][F][G]` or `[1][4][5]`
+- **Chords at any position**: Beginning, middle, or end of lines
+- **Chord modifiers**: Support for superscript display of extensions (7, maj7, sus4, etc.)
 
 ### Directives
-- `{title: Song Title}`
-- `{artist: Artist Name}`
-- `{album: Album Name}`
-- `{key: C}`
-- `{tempo: 120}`
-- `{capo: 2}`
-- And other standard ChordPro directives
+- **Song metadata**: `{title: Song Title}`, `{artist: Artist Name}`, `{album: Album Name}`
+- **Musical information**: `{key: C}`, `{tempo: 120}`, `{capo: 2}`
+- **Structural markers**: `{verse}`, `{chorus}`, `{bridge}`
+- **Custom directives**: `{custom_field: Custom Value}`, `{any-directive: Value}`
+- **Value-less directives**: `{instrumental}`, `{repeat}`
+
+### Annotations
+- **Performance markings**: `[*Rit.]`, `[*Forte]`, `[*Andante]`
+- **Dynamic markings**: `[*pp]`, `[*ff]`, `[*Crescendo]`
+- **Structural annotations**: `[*Fine]`, `[*D.C. al Fine]`, `[*Begin softly]`
+- **Configurable styling**: Toggle italic display for all annotations
+
+### Instructions
+- **Section markers**: `(Verse 1)`, `(Chorus)`, `(Bridge - Slow and reverent)`
+- **Performance instructions**: `(Intro)`, `(Outro)`, `(Instrumental break)`
+- **Descriptive notes**: Any text wrapped in parentheses for organization
 
 ## Installation
 
 ### Manual Installation
 
-1. Download the latest release files:
-   - `main.js`
-   - `manifest.json`
-
-2. Create a folder named `obsidian-chopro` in your vault's `.obsidian/plugins/` directory
-
-3. Copy the downloaded files into this folder
-
-4. Enable the plugin in Settings → Community Plugins
+1. Download the latest release files from the GitHub repo.
+2. Unzip the release file in your vault's `.obsidian/plugins/` directory
+3. Enable the plugin in Settings → Community Plugins
 
 ### Development Installation
 
