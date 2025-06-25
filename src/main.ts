@@ -9,13 +9,15 @@ export interface ChoproPluginSettings {
     chordSize: string;
     showDirectives: boolean;
     superscriptChordMods: boolean;
+    chordDecorations: string;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
     chordSize: '1em',
     showDirectives: true,
-    superscriptChordMods: false
+    superscriptChordMods: false,
+    chordDecorations: 'none'
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -45,7 +47,7 @@ export default class ChoproPlugin extends Plugin {
         await this.saveData(this.settings);
 
         // Update the processor with new settings
-        this.processor.updateSettings(this.settings);
+        this.processor = new ChoproProcessor(this.settings);
 
         // reapply the current styles
         ChoproStyleManager.applyStyles(this.settings);
@@ -124,6 +126,22 @@ class ChoproSettingTab extends PluginSettingTab {
                     updatePreview();
                 }));
 
+        new Setting(containerEl)
+            .setName('Chord Decorations')
+            .setDesc('Wrap chords with bracket pairs for emphasis')
+            .addDropdown(dropdown => dropdown
+                .addOption('none', 'None')
+                .addOption('square', '[ ]')
+                .addOption('round', '( )')
+                .addOption('curly', '{ }')
+                .addOption('angle', '< >')
+                .setValue(this.plugin.settings.chordDecorations)
+                .onChange(async (value) => {
+                    this.plugin.settings.chordDecorations = value;
+                    await this.plugin.saveSettings();
+                    updatePreview();
+                }));
+
         const previewDiv = containerEl.createDiv({ cls: 'setting-item' });
         previewDiv.createDiv({ cls: 'setting-item-info' })
             .createDiv({ cls: 'setting-item-name', text: 'Preview' });
@@ -133,6 +151,33 @@ class ChoproSettingTab extends PluginSettingTab {
         
         // Update preview content based on current settings
         const updatePreview = () => {
+            // Get decoration brackets based on current setting
+            let decorationOpen = '';
+            let decorationClose = '';
+            switch (this.plugin.settings.chordDecorations) {
+                case 'square':
+                    decorationOpen = '[';
+                    decorationClose = ']';
+                    break;
+                case 'round':
+                    decorationOpen = '(';
+                    decorationClose = ')';
+                    break;
+                case 'curly':
+                    decorationOpen = '{';
+                    decorationClose = '}';
+                    break;
+                case 'angle':
+                    decorationOpen = '&lt;';
+                    decorationClose = '&gt;';
+                    break;
+                case 'none':
+                default:
+                    decorationOpen = '';
+                    decorationClose = '';
+                    break;
+            }
+
             preview.innerHTML = `
                 <div class="chopro-preview">
                     ${this.plugin.settings.showDirectives ? `
@@ -143,29 +188,29 @@ class ChoproSettingTab extends PluginSettingTab {
                     ` : ''}
                     <div class="chopro-line">
                         <span class="chopro-pair">
-                            <span class="chopro-chord">C</span>
+                            <span class="chopro-chord">${decorationOpen}C${decorationClose}</span>
                             <span class="chopro-lyrics">Amazing </span>
                         </span>
                         <span class="chopro-pair">
-                            <span class="chopro-chord">F</span>
+                            <span class="chopro-chord">${decorationOpen}F${decorationClose}</span>
                             <span class="chopro-lyrics">grace how </span>
                         </span>
                         <span class="chopro-pair">
-                            <span class="chopro-chord">G<span class="chopro-chord-modifier">7</span></span>
+                            <span class="chopro-chord">${decorationOpen}G<span class="chopro-chord-modifier">7</span>${decorationClose}</span>
                             <span class="chopro-lyrics">sweet the sound</span>
                         </span>
                     </div>
                     <div class="chopro-line">
                         <span class="chopro-pair">
-                            <span class="chopro-chord">A<span class="chopro-chord-modifier">m</span></span>
+                            <span class="chopro-chord">${decorationOpen}A<span class="chopro-chord-modifier">m</span>${decorationClose}</span>
                             <span class="chopro-lyrics">That saved a </span>
                         </span>
                         <span class="chopro-pair">
-                            <span class="chopro-chord">G</span>
+                            <span class="chopro-chord">${decorationOpen}G${decorationClose}</span>
                             <span class="chopro-lyrics">wretch like </span>
                         </span>
                         <span class="chopro-pair">
-                            <span class="chopro-chord">C</span>
+                            <span class="chopro-chord">${decorationOpen}C${decorationClose}</span>
                             <span class="chopro-lyrics">me</span>
                         </span>
                     </div>

@@ -142,8 +142,9 @@ export class ChoproProcessor {
                 const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
 
                 const normalizedChord = this.normalizeChord(segment.content);
+                const decoratedChord = this.decorateChord(normalizedChord);
                 const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
-                chordSpan.innerHTML = normalizedChord;
+                chordSpan.innerHTML = decoratedChord;
 
                 // Check if there's text immediately following this chord
                 let textContent = '';
@@ -198,22 +199,20 @@ export class ChoproProcessor {
     }
 
     /**
-     * Handles special ChoPro escape sequences
+     * Decorate the chord according to user settings.
      */
-    private processEscapeSequences(text: string): string {
-        return text
-            .replace(/\\n/g, '\n')
-            .replace(/\\t/g, '\t')
-            .replace(/\\\[/g, '[')
-            .replace(/\\\]/g, ']')
-            .replace(/\\\{/g, '{')
-            .replace(/\\\}/g, '}');
-    }
+    private decorateChord(chord: string): string {
+        switch (this.settings.chordDecorations) {
+            case 'square':
+                return '[' + chord + ']';
+            case 'round':
+                return '(' + chord + ')';
+            case 'curly':
+                return '{' + chord + '}';
+            case 'angle':
+                return '&lt;' + chord + '&gt;';
+        }
 
-    /**
-     * Update the processor settings
-     */
-    updateSettings(settings: ChoproPluginSettings): void {
-        this.settings = settings;
+        return chord;
     }
 }
