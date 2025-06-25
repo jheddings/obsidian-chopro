@@ -82,6 +82,17 @@ class ChoproSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'ChoPro Settings' });
 
         new Setting(containerEl)
+            .setName('Show Directives')
+            .setDesc('Display ChoPro directives like {title}, {artist}, etc.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showDirectives)
+                .onChange(async (value) => {
+                    this.plugin.settings.showDirectives = value;
+                    await this.plugin.saveSettings();
+                    updatePreview();
+                }));
+
+        new Setting(containerEl)
             .setName('Chord Color')
             .setDesc('Color for chord text (CSS color value)')
             .addText(text => text
@@ -89,17 +100,6 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.chordColor)
                 .onChange(async (value) => {
                     this.plugin.settings.chordColor = value || DEFAULT_SETTINGS.chordColor;
-                    await this.plugin.saveSettings();
-                    updatePreview();
-                }));
-
-        new Setting(containerEl)
-            .setName('Show Directives')
-            .setDesc('Display ChoPro directives like {title}, {artist}, etc.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showDirectives)
-                .onChange(async (value) => {
-                    this.plugin.settings.showDirectives = value;
                     await this.plugin.saveSettings();
                     updatePreview();
                 }));
