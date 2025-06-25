@@ -1,17 +1,17 @@
 # ChoPro Plugin for Obsidian
 
-An Obsidian plugin that renders ChoPro format chord sheets with accurate chord positioning above lyrics.
+An Obsidian plugin that renders ChordPro format chord sheets with accurate chord positioning above lyrics.
 
-![ChoPro Source](docs/chopro-source.png)
+![Source](docs/chopro-source.png)
 
 ... becomes ...
 
-![ChoPro Rendered](docs/chopro-render.png)
+![Rendered](docs/chopro-render.png)
 
 ## Features
 
 - **Accurate Chord Positioning**: Improved algorithm for precise chord-to-lyric alignment
-- **ChoPro Directives Support**: Display song metadata like `{title}`, `{artist}`, `{key}`, etc.
+- **ChordPro Directives Support**: Display song metadata like `{title}`, `{artist}`, `{key}`, etc.
 - **Configurable Styling**: Customizable chord color, directive display
 - **Chord Normalization**: Automatic cleanup and standardization of chord notation
 
@@ -33,12 +33,12 @@ Was [C]blind but [Am]now I [F]see[C]
 
 ## Configuration
 
-Access settings via Settings → Community Plugins → ChoPro:
+Access settings via Settings → Community Plugins → ChordPro Viewer:
 
 - **Chord Color**: Set the color for chord text (CSS color value)
-- **Show Directives**: Toggle display of ChoPro metadata directives
+- **Show Directives**: Toggle display of ChordPro metadata directives
 
-## Supported ChoPro Features
+## Supported ChordPro Features
 
 ### Chords
 - Basic chords: `[C]`, `[F]`, `[G]`, etc.
@@ -54,14 +54,7 @@ Access settings via Settings → Community Plugins → ChoPro:
 - `{key: C}`
 - `{tempo: 120}`
 - `{capo: 2}`
-- And other standard ChoPro directives
-
-## Configuration
-
-You can customize the chord color in the plugin settings:
-1. Go to Settings → Community Plugins → ChoPro
-2. Change the "Chord Color" setting
-3. Use any valid CSS color value (hex, rgb, color names, etc.)
+- And other standard ChordPro directives
 
 ## Installation
 
