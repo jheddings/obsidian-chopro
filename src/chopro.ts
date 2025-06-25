@@ -372,15 +372,6 @@ export class ChoproRenderer {
 
         return chord;
     }
-
-    /**
-     * Calculate the minimum width needed for a chord to prevent collisions.
-     */
-    private calculateChordWidth(chord: string): number {
-        const baseWidth = chord.length;
-        const safetyMargin = 0.5;
-        return baseWidth + safetyMargin;
-    }
 }
 
 /**
