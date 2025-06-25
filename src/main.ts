@@ -146,12 +146,13 @@ class ChoproSettingTab extends PluginSettingTab {
         const preview = previewContent.createDiv();
         
         const choproPreview = `
-            [C]Amazing grace, how [F]sweet the [1]sound
-            That [Am]saved a [C]wretch like [G]me
+            [C]Amazing [C7]grace, how [F]sweet the [C]sound, that [Am]saved a [C]wretch like [G]me
+            I [C]once was [C7]lost but [F]now I'm [C]found, was [Am]blind but [G]now I [C]see
         `;
         
         // Update preview content based on current settings
         const updatePreview = () => {
+            preview.empty();
             this.plugin.saveSettings();
 
             const trimmedChopro = choproPreview.replace(/^[ \t]+|[ \t]+$/gm, '');
