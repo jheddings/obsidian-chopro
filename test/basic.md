@@ -17,3 +17,9 @@ Another plain text line
 Mixed with [C]chord [F]lines
 Back to plain text
 ```
+
+## Instrumental
+```chopro
+[C]     [F]     [G]     [C]
+[Am]    [F]     [G]     [C]
+```
