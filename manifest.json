@@ -1,6 +1,6 @@
 {
   "id": "chopro-plugin",
-  "name": "ChoPro",
+  "name": "ChoPro Viewer",
   "version": "0.1.0",
   "minAppVersion": "0.15.0",
   "description": "Render ChoPro format code blocks in Obsidian.",
