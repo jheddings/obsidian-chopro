@@ -4,8 +4,6 @@ Test cases for advanced chord patterns and edge cases.
 
 ## Advanced Features & Edge Cases
 ```chopro
-{title: Advanced Edge Cases}
-
 [Cmaj9#11]Complex [Dm7add13]extended [G7alt]altered chords
 [C]Start[F]No[G]Space[Am]Between consecutive chords
 [C]  Wide  [F]  Spacing  [G]  Test

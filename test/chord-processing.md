@@ -4,8 +4,6 @@ Test cases for chord parsing, positioning, and complex chord notation.
 
 ## Complex Chord Names & Modifiers
 ```chopro
-{title: Chord Modifiers Test}
-
 [Am7]Seven [Bmaj7]major seven [C#dim]diminished
 [F/A]Slash [G/B]chords [Dm/F#]with bass notes
 [Csus4]Suspended [Dadd9]added tones [Em11]extensions
@@ -14,8 +12,6 @@ Test cases for chord parsing, positioning, and complex chord notation.
 
 ## Chord-Only Lines (Instrumental)
 ```chopro
-{title: Instrumental Section}
-
 Verse:
 [C]Amazing [F]grace
 
@@ -29,8 +25,6 @@ Bridge:
 
 ## Chord Positioning Edge Cases
 ```chopro
-{title: Chord Positioning}
-
 [C]Start of line
 End of line [G]
 [C][F][G] Multiple consecutive chords

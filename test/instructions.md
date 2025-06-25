@@ -4,8 +4,6 @@ Test cases for instruction lines and section markers.
 
 ## Instruction Lines & Section Markers
 ```chopro
-{title: Section & Instruction Test}
-
 (Verse 1)
 [C]Amazing [F]grace how [G]sweet the sound
 That [C]saved a [Am]wretch like [F]me[G]

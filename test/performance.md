@@ -4,13 +4,6 @@ Test cases for performance validation with large content and complex songs.
 
 ## Performance Test Data
 ```chopro
-{title: Performance Test - Large Song}
-{artist: Test Artist}
-{album: Test Album}
-{key: C}
-{tempo: 120}
-{capo: 0}
-
 (Verse 1)
 [C]This is line one with [F]chords and [G]lyrics for [Am]testing
 [F]Line two continues the [C]pattern with [G]more complex [C]progressions
