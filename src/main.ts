@@ -7,13 +7,13 @@ import { ChoproStyleManager } from './styles';
 export interface ChoproPluginSettings {
     chordColor: string;
     showDirectives: boolean;
-    chordModifierStyle: 'superscript' | 'normal';
+    superscriptChordMods: boolean;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
     showDirectives: true,
-    chordModifierStyle: 'normal'
+    superscriptChordMods: false
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -100,14 +100,12 @@ class ChoproSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Chord Modifier Style')
-            .setDesc('How to display chord modifiers (7, maj7, sus4, etc.)')
-            .addDropdown(dropdown => dropdown
-                .addOption('normal', 'Normal')
-                .addOption('superscript', 'Superscript')
-                .setValue(this.plugin.settings.chordModifierStyle)
+            .setName('Superscript Chord Modifiers')
+            .setDesc('Display chord modifiers (7, maj7, sus4, etc.) as superscript')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.superscriptChordMods)
                 .onChange(async (value) => {
-                    this.plugin.settings.chordModifierStyle = value as 'superscript' | 'normal';
+                    this.plugin.settings.superscriptChordMods = value;
                     await this.plugin.saveSettings();
                     updatePreview();
                 }));

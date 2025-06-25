@@ -16,7 +16,7 @@ export class ChoproStyleManager {
         this.removeStyles();
 
         var modPlacementStyle = {};
-        if (settings.chordModifierStyle === 'superscript') {
+        if (settings.superscriptChordMods) {
             modPlacementStyle = {
                 'vertical-align': 'top',
                 'font-size': '0.75em'
