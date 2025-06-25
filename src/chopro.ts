@@ -31,11 +31,11 @@ export class ChoproProcessor {
             } else if (this.isInstructionLine(trimmedLine)) {
                 this.processInstructionLine(trimmedLine, container);
 
-            } else if (this.isChordLine(trimmedLine)) {
-                this.processLine(trimmedLine, container);
+            } else if (this.hasChords(trimmedLine)) {
+                this.processChordLine(trimmedLine, container);
 
             } else {
-                this.processLine(trimmedLine, container);
+                this.processTextLine(trimmedLine, container);
             }
         }
     }
@@ -44,7 +44,7 @@ export class ChoproProcessor {
      * Check if a line is an instruction line (wrapped in parentheses).
      */
     private isInstructionLine(line: string): boolean {
-        return /^\([^)]*\)$/.test(line.trim());
+        return /^\(.+\)$/.test(line);
     }
 
     /**
@@ -52,8 +52,9 @@ export class ChoproProcessor {
      */
     private processInstructionLine(line: string, container: HTMLElement): void {
         const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
-        // Remove the parentheses for display
-        const instructionText = line.trim().slice(1, -1);
+
+        // Remove the first and last parentheses for display
+        const instructionText = line.slice(1, -1);
         instructionDiv.createSpan({ text: instructionText });
     }
 
@@ -61,7 +62,7 @@ export class ChoproProcessor {
      * Check if a line is a ChoPro directive (e.g. {title: My Song}).
      */
     private isDirective(line: string): boolean {
-        return /^\{[^}]+\}$/.test(line.trim());
+        return /^\{.+\}$/.test(line);
     }
 
     /**
@@ -83,27 +84,28 @@ export class ChoproProcessor {
     }
 
     /**
-     * Check if a line contains only chords (no lyrics) and whitespace.
+     * Check if a line contains chords.
      */
-    private isChordLine(line: string): boolean {
-        const withoutChords = line.replace(/\[[^\]]*\]/g, '');
-        return withoutChords.trim() === '' && line.includes('[');
+    private hasChords(line: string): boolean {
+        return /\[[^\]]+\]/.test(line);
     }
 
     /**
-     * Process a line that may contain chords and/or lyrics.
+     * Process a line that contains chords and/or lyrics.
      */
-    private processLine(line: string, container: HTMLElement): void {
+    private processChordLine(line: string, container: HTMLElement): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
 
-        if (! line.includes('[')) {
-            // No chords, just add the text
-            lineDiv.createSpan({ text: line, cls: 'chopro-lyrics' });
+        const segments = this.parseChordLine(line);
+        this.renderSegments(segments, lineDiv);
+    }
 
-        } else {
-            const segments = this.parseChordLine(line);
-            this.renderSegments(segments, lineDiv);
-        }
+    /**
+     * Process a text-only line.
+     */
+    private processTextLine(line: string, container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        lineDiv.createSpan({ text: line, cls: 'chopro-lyrics' });
     }
 
     /**
@@ -117,141 +119,151 @@ export class ChoproProcessor {
 
         while ((match = chordRegex.exec(line)) !== null) {
             // Add text before the chord (if any)
-            if (match.index > lastIndex) {
-                const textContent = line.substring(lastIndex, match.index);
-                segments.push({
-                    type: 'text',
-                    content: textContent,
-                    position: lastIndex
-                });
-            }
+            this.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
 
-            // Check if this is an annotation (starts with asterisk)
+            // Add the chord or annotation
             const content = match[1];
-            if (content.startsWith('*')) {
-                // Add the annotation (remove the asterisk)
-                segments.push({
-                    type: 'annotation',
-                    content: content.substring(1),
-                    position: match.index
-                });
-            } else {
-                // Add the chord
-                segments.push({
-                    type: 'chord',
-                    content: content,
-                    position: match.index
-                });
-            }
+            const segmentType = content.startsWith('*') ? 'annotation' : 'chord';
+            const segmentContent = segmentType === 'annotation' ? content.substring(1) : content;
+            
+            segments.push({
+                type: segmentType,
+                content: segmentContent,
+                position: match.index
+            });
 
             lastIndex = match.index + match[0].length;
         }
 
         // Add remaining text after the last chord
-        if (lastIndex < line.length) {
-            const remainingText = line.substring(lastIndex);
-            segments.push({
-                type: 'text',
-                content: remainingText,
-                position: lastIndex
-            });
-        }
+        this.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
 
         return segments;
+    }
+
+    /**
+     * Helper method to add text segments only if they have content
+     */
+    private addTextSegmentIfNotEmpty(
+        segments: ChordSegment[], 
+        line: string, 
+        startIndex: number, 
+        endIndex: number
+    ): void {
+        if (endIndex > startIndex) {
+            const textContent = line.substring(startIndex, endIndex);
+            segments.push({
+                type: 'text',
+                content: textContent,
+                position: startIndex
+            });
+        }
     }
 
     /**
      * Render chord and text segments into HTML elements
      */
     private renderSegments(segments: ChordSegment[], lineDiv: HTMLElement): void {
-        let i = 0;
-
-        while (i < segments.length) {
+        for (let i = 0; i < segments.length; i++) {
             const segment = segments[i];
 
-            if (segment.type === 'chord') {
-                const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
-
-                const normalizedChord = this.normalizeChord(segment.content);
-                const decoratedChord = this.decorateChord(normalizedChord);
-                const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
-                chordSpan.innerHTML = decoratedChord;
-
-                // Check if there's text immediately following this chord
-                let textContent = '';
-                if (i + 1 < segments.length && segments[i + 1].type === 'text') {
-                    textContent = segments[i + 1].content;
-                    i++; // Skip the text segment as we've consumed it
+            if (segment.type === 'chord' || segment.type === 'annotation') {
+                const nextSegment = i + 1 < segments.length ? segments[i + 1] : null;
+                const consumed = this.renderChordOrAnnotation(segment, nextSegment, lineDiv);
+                if (consumed) {
+                    i++; // Skip the consumed text segment
                 }
-
-                // Create the text span (may be empty for chord-only positions)
-                const textSpan = pairSpan.createSpan({
-                    text: textContent || '\u00A0',
-                    cls: 'chopro-lyrics'
-                });
-
-                // If the text is only whitespace, ensure minimum width for chord positioning
-                if (!textContent || textContent.trim() === '') {
-                    textSpan.style.minWidth = '1ch';
-                }
-
-            } else if (segment.type === 'annotation') {
-                const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
-
-                // Create annotation span (similar to chord but with different class)
-                const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
-                annotationSpan.textContent = segment.content;
-
-                // Check if there's text immediately following this annotation
-                let textContent = '';
-                if (i + 1 < segments.length && segments[i + 1].type === 'text') {
-                    textContent = segments[i + 1].content;
-                    i++; // Skip the text segment as we've consumed it
-                }
-
-                // Create the text span (may be empty for annotation-only positions)
-                const textSpan = pairSpan.createSpan({
-                    text: textContent || '\u00A0',
-                    cls: 'chopro-lyrics'
-                });
-
-                // If the text is only whitespace, ensure minimum width for annotation positioning
-                if (!textContent || textContent.trim() === '') {
-                    textSpan.style.minWidth = '1ch';
-                }
-
             } else if (segment.type === 'text') {
-                // Text without a chord above it (orphaned text)
-                lineDiv.createSpan({
-                    text: segment.content,
-                    cls: 'chopro-lyrics'
-                });
+                this.renderOrphanedText(segment, lineDiv);
             }
-
-            i++;
         }
+    }
+
+    /**
+     * Render a chord or annotation with optional following text
+     */
+    private renderChordOrAnnotation(
+        segment: ChordSegment, 
+        nextSegment: ChordSegment | null, 
+        lineDiv: HTMLElement
+    ): boolean {
+        const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
+
+        // Create the chord or annotation span
+        if (segment.type === 'chord') {
+            const normalizedChord = this.normalizeChord(segment.content);
+            const decoratedChord = this.decorateChord(normalizedChord);
+            const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
+            chordSpan.innerHTML = decoratedChord;
+        } else {
+            const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
+            annotationSpan.textContent = segment.content;
+        }
+
+        // Check if there's text immediately following
+        let textContent = '';
+        let textConsumed = false;
+        if (nextSegment && nextSegment.type === 'text') {
+            textContent = nextSegment.content;
+            textConsumed = true;
+        }
+
+        // Create the text span (may be empty for chord/annotation-only positions)
+        const textSpan = pairSpan.createSpan({
+            text: textContent || '\u00A0',
+            cls: 'chopro-lyrics'
+        });
+
+        // If the text is only whitespace, ensure minimum width for positioning
+        if (!textContent || textContent.trim() === '') {
+            textSpan.style.minWidth = '1ch';
+        }
+
+        return textConsumed;
+    }
+
+    /**
+     * Render text that doesn't have a chord above it
+     */
+    private renderOrphanedText(segment: ChordSegment, lineDiv: HTMLElement): void {
+        lineDiv.createSpan({
+            text: segment.content,
+            cls: 'chopro-lyrics'
+        });
     }
 
     /**
      * Validates and normalizes chord notation with modifier styling
      */
     private normalizeChord(chord: string): string {
-        let normalized = chord.trim().replace(/\s+/g, ' ');
-
+        const normalized = chord.trim().replace(/\s+/g, ' ');
         const chordPattern = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]*)(\/.*)?$/i;
         const chordMatch = normalized.match(chordPattern);
 
-        if (chordMatch) {
-            const [, root, lift, modifier, bass] = chordMatch;
-
-            const baseChord = root + (lift || '');
-            const modPart = modifier ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` : '';
-            const slashPart = bass || '';
-
-            return baseChord + modPart + slashPart;
+        if (!chordMatch) {
+            return normalized;
         }
 
-        return normalized;
+        const [, root, lift, modifier, bass] = chordMatch;
+        return this.buildNormalizedChord(root, lift, modifier, bass);
+    }
+
+    /**
+     * Build a normalized chord string with proper styling
+     */
+    private buildNormalizedChord(
+        root: string, 
+        lift?: string, 
+        modifier?: string, 
+        bass?: string
+    ): string {
+        const baseChord = root + (lift || '');
+        const modPart = modifier 
+            ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` 
+            : '';
+        const slashPart = bass || '';
+
+        return baseChord + modPart + slashPart;
     }
 
     /**
