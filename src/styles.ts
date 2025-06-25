@@ -28,11 +28,12 @@ export class ChoproStyleManager {
         style.textContent = `
             .chopro-container {
                 line-height: 1.8;
-                white-space: pre-wrap;
+                white-space: pre;
                 tab-size: 4;
                 padding: 1rem;
                 background: var(--background-primary);
                 border-radius: 6px;
+                overflow-x: auto;
             }
             
             .chopro-preview {
@@ -66,8 +67,9 @@ export class ChoproStyleManager {
                 min-height: 2.5em;
                 padding-top: 1.5em;
                 display: flex;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 align-items: baseline;
+                white-space: nowrap;
             }
             
             .chopro-pair {
