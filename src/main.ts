@@ -6,12 +6,14 @@ import { ChoproStyleManager } from './styles';
 
 export interface ChoproPluginSettings {
     chordColor: string;
+    chordSize: string;
     showDirectives: boolean;
     superscriptChordMods: boolean;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
+    chordSize: '1em',
     showDirectives: true,
     superscriptChordMods: false
 };
@@ -95,6 +97,18 @@ class ChoproSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.chordColor)
                 .onChange(async (value) => {
                     this.plugin.settings.chordColor = value || DEFAULT_SETTINGS.chordColor;
+                    await this.plugin.saveSettings();
+                    updatePreview();
+                }));
+
+        new Setting(containerEl)
+            .setName('Chord Size')
+            .setDesc('Font size for chord text (CSS size value)')
+            .addText(text => text
+                .setPlaceholder('1em')
+                .setValue(this.plugin.settings.chordSize)
+                .onChange(async (value) => {
+                    this.plugin.settings.chordSize = value || DEFAULT_SETTINGS.chordSize;
                     await this.plugin.saveSettings();
                     updatePreview();
                 }));

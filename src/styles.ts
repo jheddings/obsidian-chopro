@@ -83,7 +83,7 @@ export class ChoproStyleManager {
                 left: 0;
                 color: ${settings.chordColor};
                 font-weight: bold;
-                font-size: 0.85em;
+                font-size: ${settings.chordSize};
                 white-space: nowrap;
                 z-index: 1;
                 font-family: var(--font-monospace);
