@@ -104,6 +104,20 @@ export class ChoproStyleManager {
                 overflow: visible;
             }
             
+            .chopro-annotation {
+                position: absolute;
+                top: -1.5em;
+                left: 0;
+                color: ${settings.chordColor};
+                font-weight: bold;
+                font-size: ${settings.chordSize};
+                white-space: nowrap;
+                z-index: 1;
+                font-family: var(--font-monospace);
+                overflow: visible;
+                ${settings.italicAnnotations ? 'font-style: italic;' : ''}
+            }
+            
             .chopro-chord-modifier {
                 padding-left: 0.1em;
                 ${Object.entries(modPlacementStyle).map(([key, value]) => `${key}: ${value};`).join('\n')}

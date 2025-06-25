@@ -3,107 +3,116 @@
 import { ChoproPluginSettings } from './main';
 
 export interface ChordSegment {
-    type: 'chord' | 'text';
+    type: 'chord' | 'annotation' | 'text';
     content: string;
     position: number;
 }
 
-export class ChoproProcessor {
-    constructor(private settings: ChoproPluginSettings) {}
+export interface ChoproLine {
+    type: 'empty' | 'directive' | 'instruction' | 'chord' | 'text';
+    content?: string;
+    segments?: ChordSegment[];
+    directive?: {
+        name: string;
+        value?: string;
+    };
+}
 
+export interface ChoproBlock {
+    lines: ChoproLine[];
+}
+
+/**
+ * Parser for ChoPro source text into an abstract syntax tree
+ */
+export class ChoproParser {
     /**
-     * Main entry point to process a ChoPro block
+     * Parse ChoPro source text into a structured representation
      */
-    processBlock(source: string, container: HTMLElement): void {
+    parseBlock(source: string): ChoproBlock {
         const lines = source.trim().split('\n');
+        const choproLines: ChoproLine[] = [];
 
         for (const line of lines) {
             const trimmedLine = line.trim();
-
-            if (trimmedLine === '') {
-                container.createEl('br');
-
-            } else if (this.isDirective(trimmedLine)) {
-                if (this.settings.showDirectives) {
-                    this.processDirective(trimmedLine, container);
-                }
-
-            } else if (this.isInstructionLine(trimmedLine)) {
-                this.processInstructionLine(trimmedLine, container);
-
-            } else if (this.isChordLine(trimmedLine)) {
-                this.processLine(trimmedLine, container);
-
-            } else {
-                this.processLine(trimmedLine, container);
-            }
+            const parsedLine = this.parseLine(trimmedLine);
+            choproLines.push(parsedLine);
         }
+
+        return { lines: choproLines };
+    }
+
+    /**
+     * Parse a single line into its appropriate type
+     */
+    private parseLine(line: string): ChoproLine {
+        if (line === '') {
+            return { type: 'empty' };
+        }
+
+        if (this.isDirective(line)) {
+            const directive = this.parseDirective(line);
+            return {
+                type: 'directive',
+                directive: directive
+            };
+        }
+
+        if (this.isInstructionLine(line)) {
+            return {
+                type: 'instruction',
+                content: line.slice(1, -1) // Remove parentheses
+            };
+        }
+
+        if (this.hasChords(line)) {
+            return {
+                type: 'chord',
+                content: line,
+                segments: this.parseChordLine(line)
+            };
+        }
+
+        return {
+            type: 'text',
+            content: line
+        };
     }
 
     /**
      * Check if a line is an instruction line (wrapped in parentheses).
      */
     private isInstructionLine(line: string): boolean {
-        return /^\([^)]*\)$/.test(line.trim());
-    }
-
-    /**
-     * Process an instruction line.
-     */
-    private processInstructionLine(line: string, container: HTMLElement): void {
-        const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
-        // Remove the parentheses for display
-        const instructionText = line.trim().slice(1, -1);
-        instructionDiv.createSpan({ text: instructionText });
+        return /^\(.+\)$/.test(line);
     }
 
     /**
      * Check if a line is a ChoPro directive (e.g. {title: My Song}).
      */
     private isDirective(line: string): boolean {
-        return /^\{[^}]+\}$/.test(line.trim());
+        return /^\{.+\}$/.test(line);
     }
 
     /**
-     * Process a ChoPro directive line.
+     * Parse a ChoPro directive line.
      */
-    private processDirective(line: string, container: HTMLElement): void {
+    private parseDirective(line: string): { name: string; value?: string } {
         const match = line.match(/^\{([^:]+):?\s*(.*)\}$/);
-        if (! match) { return; }
+        if (!match) {
+            return { name: 'unknown' };
+        }
 
         const directive = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : null;
+        const value = match[2] ? match[2].trim() : undefined;
 
-        const directiveEl = container.createDiv({ cls: 'chopro-directive' });
-        directiveEl.createSpan({ text: directive, cls: 'chopro-directive-name' });
-
-        if (value) {
-            directiveEl.createSpan({ text: ': ' + value, cls: 'chopro-directive-value' });
-        }
+        return { name: directive, value };
     }
 
     /**
-     * Check if a line contains only chords (no lyrics) and whitespace.
+     * Check if a line contains chords.
      */
-    private isChordLine(line: string): boolean {
-        const withoutChords = line.replace(/\[[^\]]*\]/g, '');
-        return withoutChords.trim() === '' && line.includes('[');
-    }
-
-    /**
-     * Process a line that may contain chords and/or lyrics.
-     */
-    private processLine(line: string, container: HTMLElement): void {
-        const lineDiv = container.createDiv({ cls: 'chopro-line' });
-
-        if (! line.includes('[')) {
-            // No chords, just add the text
-            lineDiv.createSpan({ text: line, cls: 'chopro-lyrics' });
-
-        } else {
-            const segments = this.parseChordLine(line);
-            this.renderSegments(segments, lineDiv);
-        }
+    private hasChords(line: string): boolean {
+        return /\[[^\]]+\]/.test(line);
     }
 
     /**
@@ -117,19 +126,16 @@ export class ChoproProcessor {
 
         while ((match = chordRegex.exec(line)) !== null) {
             // Add text before the chord (if any)
-            if (match.index > lastIndex) {
-                const textContent = line.substring(lastIndex, match.index);
-                segments.push({
-                    type: 'text',
-                    content: textContent,
-                    position: lastIndex
-                });
-            }
+            this.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
 
-            // Add the chord
+            // Add the chord or annotation
+            const content = match[1];
+            const segmentType = content.startsWith('*') ? 'annotation' : 'chord';
+            const segmentContent = segmentType === 'annotation' ? content.substring(1) : content;
+            
             segments.push({
-                type: 'chord',
-                content: match[1],
+                type: segmentType,
+                content: segmentContent,
                 position: match.index
             });
 
@@ -137,85 +143,215 @@ export class ChoproProcessor {
         }
 
         // Add remaining text after the last chord
-        if (lastIndex < line.length) {
-            const remainingText = line.substring(lastIndex);
-            segments.push({
-                type: 'text',
-                content: remainingText,
-                position: lastIndex
-            });
-        }
+        this.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
 
         return segments;
+    }
+
+    /**
+     * Helper method to add text segments only if they have content
+     */
+    private addTextSegmentIfNotEmpty(
+        segments: ChordSegment[], 
+        line: string, 
+        startIndex: number, 
+        endIndex: number
+    ): void {
+        if (endIndex > startIndex) {
+            const textContent = line.substring(startIndex, endIndex);
+            segments.push({
+                type: 'text',
+                content: textContent,
+                position: startIndex
+            });
+        }
+    }
+}
+
+/**
+ * Renderer for converting ChoPro AST into DOM elements
+ */
+export class ChoproRenderer {
+    constructor(private settings: ChoproPluginSettings) {}
+
+    /**
+     * Render a ChoPro block into DOM elements
+     */
+    renderBlock(block: ChoproBlock, container: HTMLElement): void {
+        for (const line of block.lines) {
+            this.renderLine(line, container);
+        }
+    }
+
+    /**
+     * Render a single line based on its type
+     */
+    private renderLine(line: ChoproLine, container: HTMLElement): void {
+        switch (line.type) {
+            case 'empty':
+                container.createEl('br');
+                break;
+
+            case 'directive':
+                if (this.settings.showDirectives && line.directive) {
+                    this.renderDirective(line.directive, container);
+                }
+                break;
+
+            case 'instruction':
+                this.renderInstruction(line.content!, container);
+                break;
+
+            case 'chord':
+                this.renderChordLine(line.segments!, container);
+                break;
+
+            case 'text':
+                this.renderTextLine(line.content!, container);
+                break;
+        }
+    }
+
+    /**
+     * Render a directive
+     */
+    private renderDirective(directive: { name: string; value?: string }, container: HTMLElement): void {
+        const directiveEl = container.createDiv({ cls: 'chopro-directive' });
+        directiveEl.createSpan({ text: directive.name, cls: 'chopro-directive-name' });
+
+        if (directive.value) {
+            directiveEl.createSpan({ text: ': ' + directive.value, cls: 'chopro-directive-value' });
+        }
+    }
+
+    /**
+     * Render an instruction line
+     */
+    private renderInstruction(content: string, container: HTMLElement): void {
+        const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
+        instructionDiv.createSpan({ text: content });
+    }
+
+    /**
+     * Render a line with chords and/or lyrics
+     */
+    private renderChordLine(segments: ChordSegment[], container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        this.renderSegments(segments, lineDiv);
+    }
+
+    /**
+     * Render a text-only line
+     */
+    private renderTextLine(content: string, container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        lineDiv.createSpan({ text: content, cls: 'chopro-lyrics' });
     }
 
     /**
      * Render chord and text segments into HTML elements
      */
     private renderSegments(segments: ChordSegment[], lineDiv: HTMLElement): void {
-        let i = 0;
-
-        while (i < segments.length) {
+        for (let i = 0; i < segments.length; i++) {
             const segment = segments[i];
 
-            if (segment.type === 'chord') {
-                const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
-
-                const normalizedChord = this.normalizeChord(segment.content);
-                const decoratedChord = this.decorateChord(normalizedChord);
-                const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
-                chordSpan.innerHTML = decoratedChord;
-
-                // Check if there's text immediately following this chord
-                let textContent = '';
-                if (i + 1 < segments.length && segments[i + 1].type === 'text') {
-                    textContent = segments[i + 1].content;
-                    i++; // Skip the text segment as we've consumed it
+            if (segment.type === 'chord' || segment.type === 'annotation') {
+                const nextSegment = i + 1 < segments.length ? segments[i + 1] : null;
+                const consumed = this.renderChordOrAnnotation(segment, nextSegment, lineDiv);
+                if (consumed) {
+                    i++; // Skip the consumed text segment
                 }
-
-                // Create the text span (may be empty for chord-only positions)
-                const textSpan = pairSpan.createSpan({
-                    text: textContent || '\u00A0',
-                    cls: 'chopro-lyrics'
-                });
-
-                // If the text is only whitespace, ensure minimum width for chord positioning
-                if (!textContent || textContent.trim() === '') {
-                    textSpan.style.minWidth = '1ch';
-                }
-
             } else if (segment.type === 'text') {
-                // Text without a chord above it (orphaned text)
-                lineDiv.createSpan({
-                    text: segment.content,
-                    cls: 'chopro-lyrics'
-                });
+                this.renderOrphanedText(segment, lineDiv);
             }
-
-            i++;
         }
+    }
+
+    /**
+     * Render a chord or annotation with optional following text
+     */
+    private renderChordOrAnnotation(
+        segment: ChordSegment, 
+        nextSegment: ChordSegment | null, 
+        lineDiv: HTMLElement
+    ): boolean {
+        const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
+
+        // Create the chord or annotation span
+        if (segment.type === 'chord') {
+            const normalizedChord = this.normalizeChord(segment.content);
+            const decoratedChord = this.decorateChord(normalizedChord);
+            const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
+            chordSpan.innerHTML = decoratedChord;
+        } else {
+            const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
+            annotationSpan.textContent = segment.content;
+        }
+
+        // Check if there's text immediately following
+        let textContent = '';
+        let textConsumed = false;
+        if (nextSegment && nextSegment.type === 'text') {
+            textContent = nextSegment.content;
+            textConsumed = true;
+        }
+
+        // Create the text span (may be empty for chord/annotation-only positions)
+        const textSpan = pairSpan.createSpan({
+            text: textContent || '\u00A0',
+            cls: 'chopro-lyrics'
+        });
+
+        // If the text is only whitespace, ensure minimum width for positioning
+        if (!textContent || textContent.trim() === '') {
+            textSpan.style.minWidth = '1ch';
+        }
+
+        return textConsumed;
+    }
+
+    /**
+     * Render text that doesn't have a chord above it
+     */
+    private renderOrphanedText(segment: ChordSegment, lineDiv: HTMLElement): void {
+        lineDiv.createSpan({
+            text: segment.content,
+            cls: 'chopro-lyrics'
+        });
     }
 
     /**
      * Validates and normalizes chord notation with modifier styling
      */
     private normalizeChord(chord: string): string {
-        let normalized = chord.trim().replace(/\s+/g, ' ');
-
+        const normalized = chord.trim().replace(/\s+/g, ' ');
         const chordPattern = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]*)(\/.*)?$/i;
         const chordMatch = normalized.match(chordPattern);
 
-        if (chordMatch) {
-            const [, root, lift, modifier, bass] = chordMatch;
-
-            const baseChord = root + (lift || '');
-            const modPart = modifier ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` : '';
-            const slashPart = bass || '';
-
-            return baseChord + modPart + slashPart;
+        if (!chordMatch) {
+            return normalized;
         }
 
-        return normalized;
+        const [, root, lift, modifier, bass] = chordMatch;
+        return this.buildNormalizedChord(root, lift, modifier, bass);
+    }
+
+    /**
+     * Build a normalized chord string with proper styling
+     */
+    private buildNormalizedChord(
+        root: string, 
+        lift?: string, 
+        modifier?: string, 
+        bass?: string
+    ): string {
+        const baseChord = root + (lift || '');
+        const modPart = modifier 
+            ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` 
+            : '';
+        const slashPart = bass || '';
+
+        return baseChord + modPart + slashPart;
     }
 
     /**
@@ -234,5 +370,28 @@ export class ChoproProcessor {
         }
 
         return chord;
+    }
+}
+
+/**
+ * Main processor that orchestrates parsing and rendering
+ * Maintains backward compatibility with existing code
+ */
+export class ChoproProcessor {
+    private parser: ChoproParser;
+    private renderer: ChoproRenderer;
+
+    constructor(private settings: ChoproPluginSettings) {
+        this.parser = new ChoproParser();
+        this.renderer = new ChoproRenderer(settings);
+    }
+
+    /**
+     * Main entry point to process a ChoPro block
+     * Maintains backward compatibility with existing API
+     */
+    processBlock(source: string, container: HTMLElement): void {
+        const block = this.parser.parseBlock(source);
+        this.renderer.renderBlock(block, container);
     }
 }

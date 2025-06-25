@@ -19,5 +19,7 @@ obsidian-chopro-*.zip
 # obsidian
 data.json
 
-# Exclude macOS Finder (System Explorer) View States
+# Exclude temp and system files
 .DS_Store
+*.swp
+*~
