@@ -1,5 +1,7 @@
 // styles - Style Manager for the ChoPro plugin in Obsidian
 
+import { ChoproPluginSettings } from './main';
+
 export class ChoproStyleManager {
     private static readonly STYLE_ID = 'chopro-plugin-styles';
 
@@ -10,8 +12,16 @@ export class ChoproStyleManager {
         }
     }
 
-    static applyStyles(chordColor: string): void {
+    static applyStyles(settings: ChoproPluginSettings): void {
         this.removeStyles();
+
+        var modPlacementStyle = {};
+        if (settings.chordModifierStyle === 'superscript') {
+            modPlacementStyle = {
+                'vertical-align': 'top',
+                'font-size': '0.75em'
+            };
+        }
 
         const style = document.createElement('style');
         style.id = this.STYLE_ID;
@@ -71,20 +81,22 @@ export class ChoproStyleManager {
                 position: absolute;
                 top: -1.5em;
                 left: 0;
-                color: ${chordColor};
+                color: ${settings.chordColor};
                 font-weight: bold;
                 font-size: 0.85em;
                 white-space: nowrap;
                 z-index: 1;
                 font-family: var(--font-monospace);
-                max-width: calc(100vw - 2rem);
                 overflow: visible;
+            }
+            
+            .chopro-chord-modifier {
+                ${Object.entries(modPlacementStyle).map(([key, value]) => `${key}: ${value};`).join('\n')}
             }
             
             .chopro-lyrics {
                 white-space: pre;
                 display: inline-block;
-                min-width: 0;
             }
             
             /* Ensure proper spacing for chord-only sections */

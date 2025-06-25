@@ -1,17 +1,19 @@
 // main - ChoPro Obsidian Plugin
 
 import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
-import { ChoproProcessor, ChoproProcessorSettings } from './chopro';
+import { ChoproProcessor } from './chopro';
 import { ChoproStyleManager } from './styles';
 
-interface ChoproPluginSettings {
+export interface ChoproPluginSettings {
     chordColor: string;
     showDirectives: boolean;
+    chordModifierStyle: 'superscript' | 'normal';
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
-    showDirectives: true
+    showDirectives: true,
+    chordModifierStyle: 'normal'
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -22,7 +24,7 @@ export default class ChoproPlugin extends Plugin {
         await this.loadSettings();
 
         // Initialize the processor with current settings
-        this.processor = new ChoproProcessor(this.getProcessorSettings());
+        this.processor = new ChoproProcessor(this.settings);
 
         this.registerMarkdownCodeBlockProcessor('chopro', (source, el, ctx) => {
             this.processChoproBlock(source, el);
@@ -30,7 +32,7 @@ export default class ChoproPlugin extends Plugin {
 
         this.addSettingTab(new ChoproSettingTab(this.app, this));
 
-        ChoproStyleManager.applyStyles(this.settings.chordColor);
+        ChoproStyleManager.applyStyles(this.settings);
     }
 
     async loadSettings() {
@@ -41,17 +43,10 @@ export default class ChoproPlugin extends Plugin {
         await this.saveData(this.settings);
 
         // Update the processor with new settings
-        this.processor.updateSettings(this.getProcessorSettings());
+        this.processor.updateSettings(this.settings);
 
         // reapply the current styles
-        ChoproStyleManager.applyStyles(this.settings.chordColor);
-    }
-
-    private getProcessorSettings(): ChoproProcessorSettings {
-        return {
-            chordColor: this.settings.chordColor,
-            showDirectives: this.settings.showDirectives
-        };
+        ChoproStyleManager.applyStyles(this.settings);
     }
 
     processChoproBlock(source: string, el: HTMLElement) {
@@ -104,6 +99,19 @@ class ChoproSettingTab extends PluginSettingTab {
                     updatePreview();
                 }));
 
+        new Setting(containerEl)
+            .setName('Chord Modifier Style')
+            .setDesc('How to display chord modifiers (7, maj7, sus4, etc.)')
+            .addDropdown(dropdown => dropdown
+                .addOption('normal', 'Normal')
+                .addOption('superscript', 'Superscript')
+                .setValue(this.plugin.settings.chordModifierStyle)
+                .onChange(async (value) => {
+                    this.plugin.settings.chordModifierStyle = value as 'superscript' | 'normal';
+                    await this.plugin.saveSettings();
+                    updatePreview();
+                }));
+
         // Add preview section
         const previewDiv = containerEl.createDiv({ cls: 'setting-item' });
         previewDiv.createDiv({ cls: 'setting-item-info' })
@@ -132,7 +140,7 @@ class ChoproSettingTab extends PluginSettingTab {
                             <span class="chopro-lyrics">grace how </span>
                         </span>
                         <span class="chopro-pair">
-                            <span class="chopro-chord">G</span>
+                            <span class="chopro-chord">G<span class="chopro-chord-modifier">7</span></span>
                             <span class="chopro-lyrics">sweet the sound</span>
                         </span>
                     </div>
