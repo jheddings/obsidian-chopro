@@ -110,7 +110,6 @@ class ChoproSettingTab extends PluginSettingTab {
                     updatePreview();
                 }));
 
-        // Add preview section
         const previewDiv = containerEl.createDiv({ cls: 'setting-item' });
         previewDiv.createDiv({ cls: 'setting-item-info' })
             .createDiv({ cls: 'setting-item-name', text: 'Preview' });
@@ -144,7 +143,7 @@ class ChoproSettingTab extends PluginSettingTab {
                     </div>
                     <div class="chopro-line">
                         <span class="chopro-pair">
-                            <span class="chopro-chord">Am</span>
+                            <span class="chopro-chord">A<span class="chopro-chord-modifier">m</span></span>
                             <span class="chopro-lyrics">That saved a </span>
                         </span>
                         <span class="chopro-pair">
