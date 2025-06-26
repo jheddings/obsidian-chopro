@@ -325,7 +325,7 @@ export class ChoproRenderer {
      */
     private normalizeChord(chord: string): string {
         const normalized = chord.trim().replace(/\s+/g, ' ');
-        const chordPattern = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]*)(\/.*)?$/i;
+        const chordPattern = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/.+)?$/i;
         const chordMatch = normalized.match(chordPattern);
 
         if (!chordMatch) {
@@ -333,18 +333,7 @@ export class ChoproRenderer {
         }
 
         const [, root, lift, modifier, bass] = chordMatch;
-        return this.buildNormalizedChord(root, lift, modifier, bass);
-    }
 
-    /**
-     * Build a normalized chord string with proper styling
-     */
-    private buildNormalizedChord(
-        root: string, 
-        lift?: string, 
-        modifier?: string, 
-        bass?: string
-    ): string {
         const baseChord = root + (lift || '');
         const modPart = modifier 
             ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` 
