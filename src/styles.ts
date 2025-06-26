@@ -76,12 +76,18 @@ export class ChoproStyleManager {
             .chopro-line {
                 margin-bottom: 0.5rem;
                 position: relative;
-                min-height: 2.5em;
-                padding-top: 1.5em;
+                min-height: auto;
+                padding-top: 0;
                 display: flex;
                 flex-wrap: nowrap;
-                align-items: baseline;
+                align-items: center;
                 white-space: nowrap;
+            }
+            
+            .chopro-line:has(.chopro-pair) {
+                min-height: 2.5em;
+                padding-top: 1.5em;
+                align-items: baseline;
             }
             
             .chopro-pair {
@@ -92,30 +98,42 @@ export class ChoproStyleManager {
             }
             
             .chopro-chord {
-                position: absolute;
-                top: -1.5em;
-                left: 0;
                 color: ${settings.chordColor};
                 font-weight: bold;
                 font-size: ${settings.chordSize};
                 white-space: nowrap;
-                z-index: 1;
                 font-family: var(--font-monospace);
                 overflow: visible;
+                position: static;
+                display: inline;
+                margin-right: 0.5em;
+            }
+            
+            .chopro-pair .chopro-chord {
+                position: absolute;
+                top: -1.5em;
+                left: 0;
+                z-index: 1;
             }
             
             .chopro-annotation {
-                position: absolute;
-                top: -1.5em;
-                left: 0;
                 color: ${settings.chordColor};
                 font-weight: bold;
                 font-size: ${settings.chordSize};
                 white-space: nowrap;
-                z-index: 1;
                 font-family: var(--font-monospace);
                 overflow: visible;
+                position: static;
+                display: inline;
+                margin-right: 0.5em;
                 ${settings.italicAnnotations ? 'font-style: italic;' : ''}
+            }
+            
+            .chopro-pair .chopro-annotation {
+                position: absolute;
+                top: -1.5em;
+                left: 0;
+                z-index: 1;
             }
             
             .chopro-chord-modifier {
@@ -125,10 +143,13 @@ export class ChoproStyleManager {
             
             .chopro-lyrics {
                 white-space: pre;
+                display: inline;
+            }
+            
+            .chopro-pair .chopro-lyrics {
                 display: inline-block;
             }
             
-            /* Ensure proper spacing for chord-only sections */
             .chopro-pair .chopro-lyrics:empty::after {
                 content: '\\00A0';
                 min-width: 1ch;

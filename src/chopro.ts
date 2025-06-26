@@ -9,7 +9,7 @@ export interface ChordSegment {
 }
 
 export interface ChoproLine {
-    type: 'empty' | 'metadata' | 'instruction' | 'chord' | 'text';
+    type: 'empty' | 'metadata' | 'instruction' | 'chord-lyrics' | 'instrumental' | 'text';
     content?: string;
     segments?: ChordSegment[];
     directive?: {
@@ -73,11 +73,19 @@ export class ChoproParser {
         }
 
         if (this.hasChords(line)) {
-            return {
-                type: 'chord',
-                content: line,
-                segments: this.parseChordLine(line)
-            };
+            if (this.isInstrumentalLine(line)) {
+                return {
+                    type: 'instrumental',
+                    content: line,
+                    segments: this.parseChordLine(line)
+                };
+            } else {
+                return {
+                    type: 'chord-lyrics',
+                    content: line,
+                    segments: this.parseChordLine(line)
+                };
+            }
         }
 
         return {
@@ -127,6 +135,15 @@ export class ChoproParser {
      */
     private hasChords(line: string): boolean {
         return /\[[^\]]+\]/.test(line);
+    }
+
+    /**
+     * Check if a line is instrumental (contains only chords and whitespace).
+     */
+    private isInstrumentalLine(line: string): boolean {
+        // Remove all chord notations and check if only whitespace remains
+        const withoutChords = line.replace(/\[[^\]]+\]/g, '');
+        return withoutChords.trim() === '';
     }
 
     /**
@@ -216,8 +233,12 @@ export class ChoproRenderer {
                 this.renderInstruction(line.content!, container);
                 break;
 
-            case 'chord':
+            case 'chord-lyrics':
                 this.renderChordLine(line.segments!, container);
+                break;
+
+            case 'instrumental':
+                this.renderInstrumentalLine(line.segments!, container);
                 break;
 
             case 'text':
@@ -255,6 +276,14 @@ export class ChoproRenderer {
     }
 
     /**
+     * Render an instrumental line with chords only (inline)
+     */
+    private renderInstrumentalLine(segments: ChordSegment[], container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        this.renderInstrumentalSegments(segments, lineDiv);
+    }
+
+    /**
      * Render a text-only line
      */
     private renderTextLine(content: string, container: HTMLElement): void {
@@ -282,6 +311,23 @@ export class ChoproRenderer {
     }
 
     /**
+     * Create a chord or annotation span with proper styling
+     */
+    private createChordOrAnnotationSpan(segment: ChordSegment, container: HTMLElement): HTMLElement {
+        if (segment.type === 'chord') {
+            const normalizedChord = this.normalizeChord(segment.content);
+            const decoratedChord = this.decorateChord(normalizedChord);
+            const chordSpan = container.createSpan({ cls: 'chopro-chord' });
+            chordSpan.innerHTML = decoratedChord;
+            return chordSpan;
+        } else {
+            const annotationSpan = container.createSpan({ cls: 'chopro-annotation' });
+            annotationSpan.textContent = segment.content;
+            return annotationSpan;
+        }
+    }
+
+    /**
      * Render a chord or annotation with optional following text
      */
     private renderChordOrAnnotation(
@@ -292,15 +338,7 @@ export class ChoproRenderer {
         const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
 
         // Create the chord or annotation span
-        if (segment.type === 'chord') {
-            const normalizedChord = this.normalizeChord(segment.content);
-            const decoratedChord = this.decorateChord(normalizedChord);
-            const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
-            chordSpan.innerHTML = decoratedChord;
-        } else {
-            const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
-            annotationSpan.textContent = segment.content;
-        }
+        this.createChordOrAnnotationSpan(segment, pairSpan);
 
         // Check if there's text immediately following
         let textContent = '';
@@ -373,6 +411,21 @@ export class ChoproRenderer {
         }
 
         return chord;
+    }
+
+    /**
+     * Render chord segments inline for instrumental lines
+     */
+    private renderInstrumentalSegments(segments: ChordSegment[], lineDiv: HTMLElement): void {
+        for (const segment of segments) {
+            if (segment.type === 'chord' || segment.type === 'annotation') {
+                this.createChordOrAnnotationSpan(segment, lineDiv);
+            } else if (segment.type === 'text') {
+                // Preserve whitespace in instrumental lines for proper chord spacing
+                const textSpan = lineDiv.createSpan({ cls: 'chopro-lyrics' });
+                textSpan.textContent = segment.content;
+            }
+        }
     }
 }
 
