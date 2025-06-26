@@ -43,20 +43,20 @@ export class ChoproStyleManager {
                 border-radius: 6px;
             }
             
-            .chopro-directive {
+            .chopro-metadata {
                 margin-bottom: 0.75rem;
                 padding: 0.5rem;
                 background: var(--background-secondary);
                 border-radius: 4px;
             }
             
-            .chopro-directive-name {
+            .chopro-metadata-name {
                 font-weight: bold;
                 font-size: 0.9em;
                 text-transform: uppercase;
             }
             
-            .chopro-directive-value {
+            .chopro-metadata-value {
                 color: var(--text-muted);
                 font-size: 0.9em;
             }

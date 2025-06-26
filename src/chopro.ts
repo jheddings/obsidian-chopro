@@ -9,7 +9,7 @@ export interface ChordSegment {
 }
 
 export interface ChoproLine {
-    type: 'empty' | 'directive' | 'instruction' | 'chord' | 'text';
+    type: 'empty' | 'metadata' | 'instruction' | 'chord' | 'text';
     content?: string;
     segments?: ChordSegment[];
     directive?: {
@@ -57,11 +57,11 @@ export class ChoproParser {
             return { type: 'empty' };
         }
 
-        if (this.isDirective(line)) {
-            const directive = this.parseDirective(line);
+        if (this.isMetadata(line)) {
+            const meta = this.parseMetadata(line);
             return {
-                type: 'directive',
-                directive: directive
+                type: 'metadata',
+                directive: meta
             };
         }
 
@@ -103,23 +103,23 @@ export class ChoproParser {
     /**
      * Check if a line is a ChoPro directive (e.g. {title: My Song}).
      */
-    private isDirective(line: string): boolean {
+    private isMetadata(line: string): boolean {
         return /^\{.+\}$/.test(line);
     }
 
     /**
-     * Parse a ChoPro directive line.
+     * Parse a ChoPro metadata line.
      */
-    private parseDirective(line: string): { name: string; value?: string } {
+    private parseMetadata(line: string): { name: string; value?: string } {
         const match = line.match(/^\{([^:]+):?\s*(.*)\}$/);
-        if (!match) {
+        if (! match) {
             return { name: 'unknown' };
         }
 
-        const directive = match[1].trim().toLowerCase();
+        const name = match[1].trim().toLowerCase();
         const value = match[2] ? match[2].trim() : undefined;
 
-        return { name: directive, value };
+        return { name: name, value };
     }
 
     /**
@@ -206,9 +206,9 @@ export class ChoproRenderer {
                 container.createEl('br');
                 break;
 
-            case 'directive':
+            case 'metadata':
                 if (this.settings.showDirectives && line.directive) {
-                    this.renderDirective(line.directive, container);
+                    this.renderMetadata(line.directive, container);
                 }
                 break;
 
@@ -227,14 +227,14 @@ export class ChoproRenderer {
     }
 
     /**
-     * Render a directive
+     * Render metadata.
      */
-    private renderDirective(directive: { name: string; value?: string }, container: HTMLElement): void {
-        const directiveEl = container.createDiv({ cls: 'chopro-directive' });
-        directiveEl.createSpan({ text: directive.name, cls: 'chopro-directive-name' });
+    private renderMetadata(meta: { name: string; value?: string }, container: HTMLElement): void {
+        const directiveEl = container.createDiv({ cls: 'chopro-metadata' });
+        directiveEl.createSpan({ text: meta.name, cls: 'chopro-metadata-name' });
 
-        if (directive.value) {
-            directiveEl.createSpan({ text: ': ' + directive.value, cls: 'chopro-directive-value' });
+        if (meta.value) {
+            directiveEl.createSpan({ text: ': ' + meta.value, cls: 'chopro-metadata-value' });
         }
     }
 
