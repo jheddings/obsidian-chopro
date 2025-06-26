@@ -36,7 +36,10 @@ export class ChoproParser {
         for (const line of lines) {
             const trimmedLine = line.trim();
             const parsedLine = this.parseLine(trimmedLine);
-            choproLines.push(parsedLine);
+            
+            if (parsedLine !== null) {
+                choproLines.push(parsedLine);
+            }
         }
 
         return { lines: choproLines };
@@ -45,7 +48,11 @@ export class ChoproParser {
     /**
      * Parse a single line into its appropriate type
      */
-    private parseLine(line: string): ChoproLine {
+    private parseLine(line: string): ChoproLine | null {
+        if (this.isComment(line)) {
+            return null;
+        }
+
         if (line === '') {
             return { type: 'empty' };
         }
@@ -77,6 +84,13 @@ export class ChoproParser {
             type: 'text',
             content: line
         };
+    }
+
+    /**
+     * Check if a line is a comment line (starts with a single #).
+     */
+    private isComment(line: string): boolean {
+        return line.startsWith('#');
     }
 
     /**
