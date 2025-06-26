@@ -61,18 +61,10 @@ export class ChoproStyleManager {
                 font-size: 0.9em;
             }
             
-            .chopro-instruction {
-                margin-bottom: 0.75rem;
-                padding: 0.5rem;
-                background: var(--background-modifier-border);
-                border-radius: 4px;
-                font-style: italic;
-                color: var(--text-muted);
-                font-size: 0.95em;
-                text-align: center;
-                border: 1px solid var(--background-modifier-border);
+            .chopro-section {
+                margin-bottom: 1.5rem;
             }
-           
+
             .chopro-line {
                 margin-bottom: 0.5rem;
                 position: relative;
@@ -132,6 +124,81 @@ export class ChoproStyleManager {
             .chopro-pair .chopro-lyrics:empty::after {
                 content: '\\00A0';
                 min-width: 1ch;
+            }
+            
+            /* Section headers and structure */
+            .chopro-section-header {
+                margin: 1rem 0 0.5rem;
+                padding: 0.25rem 0.5rem;
+                background: var(--background-modifier-hover);
+                border-radius: 4px;
+                border-left: 3px solid ${settings.chordColor};
+            }
+            
+            .chopro-section-name {
+                font-weight: bold;
+                color: var(--text-accent);
+                font-size: 0.9em;
+                text-transform: uppercase;
+            }
+            
+            /* Comment lines */
+            .chopro-comment {
+                margin: 0.25rem 0;
+                padding: 0.25rem 0.5rem;
+                background: var(--background-modifier-hover);
+                border-radius: 3px;
+                border-left: 2px solid var(--text-muted);
+            }
+            
+            .chopro-comment-text {
+                color: var(--text-muted);
+                font-style: italic;
+                font-size: 0.9em;
+            }
+            
+            /* Custom lines */
+            .chopro-custom {
+                margin: 0.25rem 0;
+                color: var(--text-normal);
+            }
+            
+            .chopro-custom-text {
+                font-family: var(--font-monospace);
+                background: var(--background-modifier-hover);
+                padding: 0.1rem 0.3rem;
+                border-radius: 2px;
+            }
+            
+            /* Tab lines */
+            .chopro-tab-line {
+                margin: 0.15rem 0;
+                font-family: var(--font-monospace);
+                background: var(--background-secondary);
+                padding: 0.25rem 0.5rem;
+                border-radius: 3px;
+                overflow-x: auto;
+                white-space: pre;
+            }
+            
+            .chopro-tab-content {
+                color: var(--text-normal);
+                line-height: 1.2;
+            }
+            
+            /* Tabs section container */
+            .chopro-tabs-section {
+                margin: 0.5rem 0;
+                padding: 0.5rem;
+                background: var(--background-secondary);
+                border-radius: 4px;
+                border: 1px solid var(--background-modifier-border);
+            }
+            
+            /* Generic fallback styles */
+            .chopro-generic-line {
+                margin: 0.25rem 0;
+                color: var(--text-normal);
             }
         `;
         
