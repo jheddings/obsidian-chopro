@@ -73,7 +73,7 @@ export abstract class ChoproLine {
      * Static factory method to parse a line into the appropriate ChoproLine subclass
      */
     static parse(line: string): ChoproLine | null {
-        // Check for comments first (should be ignored)
+        // ignore comment lines
         if (line.startsWith('#')) {
             return null;
         }
@@ -98,7 +98,7 @@ export abstract class ChoproLine {
             return ChordLyricsLine.parse(line);
         }
 
-        // Default to text line
+        // default to text line
         return TextLine.parse(line);
     }
 }
