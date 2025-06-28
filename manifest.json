@@ -7,5 +7,6 @@
   "author": "Jason Heddings",
   "authorUrl": "https://github.com/jheddings",
   "fundingUrl": "https://github.com/sponsors/jheddings",
-  "isDesktopOnly": false
+  "isDesktopOnly": false,
+  "css": "styles.css"
 }

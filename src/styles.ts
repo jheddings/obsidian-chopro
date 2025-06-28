@@ -3,7 +3,7 @@
 import { ChoproPluginSettings } from './main';
 
 export class ChoproStyleManager {
-    private static readonly STYLE_ID = 'chopro-plugin-styles';
+    private static readonly STYLE_ID = 'chopro-plugin-user-overrides';
 
     static removeStyles(): void {
         const existingStyle = document.getElementById(this.STYLE_ID);
@@ -15,147 +15,41 @@ export class ChoproStyleManager {
     static applyStyles(settings: ChoproPluginSettings): void {
         this.removeStyles();
 
-        var modPlacementStyle = {};
-        if (settings.superscriptChordMods) {
-            modPlacementStyle = {
-                'vertical-align': 'top',
-                'font-size': '0.75em'
-            };
-        }
-
+        // Only apply user setting overrides
         const style = document.createElement('style');
         style.id = this.STYLE_ID;
-        style.textContent = `
-            .chopro-container {
-                line-height: 1.8;
-                white-space: pre;
-                tab-size: 4;
-                padding: 1rem;
-                background: var(--background-primary);
-                border-radius: 6px;
-                overflow-x: auto;
-            }
-            
-            .chopro-preview {
-                line-height: 1.8;
-                padding: 1rem;
-                background: var(--background-secondary);
-                border-radius: 6px;
-            }
-            
-            .chopro-metadata {
-                margin-bottom: 0.75rem;
-                padding: 0.5rem;
-                background: var(--background-secondary);
-                border-radius: 4px;
-            }
-            
-            .chopro-metadata-name {
-                font-weight: bold;
-                font-size: 0.9em;
-                text-transform: uppercase;
-            }
-            
-            .chopro-metadata-value {
-                color: var(--text-muted);
-                font-size: 0.9em;
-            }
-            
-            .chopro-instruction {
-                margin-bottom: 0.75rem;
-                padding: 0.5rem;
-                background: var(--background-modifier-border);
-                border-radius: 4px;
-                font-style: italic;
-                color: var(--text-muted);
-                font-size: 0.95em;
-                text-align: center;
-                border: 1px solid var(--background-modifier-border);
-            }
-           
-            .chopro-line {
-                margin-bottom: 0.5rem;
-                position: relative;
-                min-height: auto;
-                padding-top: 0;
-                display: flex;
-                flex-wrap: nowrap;
-                align-items: center;
-                white-space: nowrap;
-            }
-            
-            .chopro-line:has(.chopro-pair) {
-                min-height: 2.5em;
-                padding-top: 1.5em;
-                align-items: baseline;
-            }
-            
-            .chopro-pair {
-                position: relative;
-                display: inline-block;
-                vertical-align: baseline;
-                flex-shrink: 0;
-            }
-            
-            .chopro-chord {
-                color: ${settings.chordColor};
-                font-weight: bold;
-                font-size: ${settings.chordSize};
-                white-space: nowrap;
-                font-family: var(--font-monospace);
-                overflow: visible;
-                position: static;
-                display: inline;
-                margin-right: 0.5em;
-            }
-            
-            .chopro-pair .chopro-chord {
-                position: absolute;
-                top: -1.5em;
-                left: 0;
-                z-index: 1;
-            }
-            
+        
+        let overrides = '';
+
+        // Chord and annotation color and size overrides
+        overrides += `
+            .chopro-chord,
             .chopro-annotation {
                 color: ${settings.chordColor};
-                font-weight: bold;
                 font-size: ${settings.chordSize};
-                white-space: nowrap;
-                font-family: var(--font-monospace);
-                overflow: visible;
-                position: static;
-                display: inline;
-                margin-right: 0.5em;
-                ${settings.italicAnnotations ? 'font-style: italic;' : ''}
-            }
-            
-            .chopro-pair .chopro-annotation {
-                position: absolute;
-                top: -1.5em;
-                left: 0;
-                z-index: 1;
-            }
-            
-            .chopro-chord-modifier {
-                padding-left: 0.1em;
-                ${Object.entries(modPlacementStyle).map(([key, value]) => `${key}: ${value};`).join('\n')}
-            }
-            
-            .chopro-lyrics {
-                white-space: pre;
-                display: inline;
-            }
-            
-            .chopro-pair .chopro-lyrics {
-                display: inline-block;
-            }
-            
-            .chopro-pair .chopro-lyrics:empty::after {
-                content: '\\00A0';
-                min-width: 1ch;
             }
         `;
-        
+
+        // Italic annotations override
+        if (settings.italicAnnotations) {
+            overrides += `
+            .chopro-annotation {
+                font-style: italic;
+            }
+            `;
+        }
+
+        // Superscript chord modifiers override
+        if (settings.superscriptChordMods) {
+            overrides += `
+            .chopro-chord-modifier {
+                vertical-align: top;
+                font-size: 0.75em;
+            }
+            `;
+        }
+
+        style.textContent = overrides;
         document.head.appendChild(style);
     }
 }
