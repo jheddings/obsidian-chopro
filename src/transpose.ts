@@ -7,7 +7,6 @@ import {
     SegmentedLine,
     ChordType,
     ChoproBlock,
-    ContentBlock,
     Frontmatter
 } from './parser';
 
@@ -23,15 +22,8 @@ export class ChordTransposer {
         'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
     };
     
-    private static readonly NASHVILLE_MAP: { [key: string]: string } = {
-        'C': '1', 'C#': '1#', 'Db': '2b', 'D': '2', 'D#': '2#', 'Eb': '3b', 
-        'E': '3', 'F': '4', 'F#': '4#', 'Gb': '5b', 'G': '5', 'G#': '5#', 
-        'Ab': '6b', 'A': '6', 'A#': '6#', 'Bb': '7b', 'B': '7'
-    };
-
     static transposeChordNotation(chord: ChordNotation, fromKey: string, toKey: string): ChordNotation {
-        // Handle Nashville numbers - don't transpose them
-        if (this.isNashvilleNumber(chord.root)) {
+        if (chord.chordType === ChordType.NASHVILLE) {
             return chord;
         }
 
@@ -47,7 +39,7 @@ export class ChordTransposer {
     }
 
     static chordNotationToNashville(chord: ChordNotation, key: string): ChordNotation {
-        if (this.isNashvilleNumber(chord.root)) {
+        if (chord.chordType === ChordType.NASHVILLE) {
             return chord;
         }
 
@@ -104,10 +96,6 @@ export class ChordTransposer {
         const nashvilleNumbers = ['1', '1#', '2', '2#', '3', '4', '4#', '5', '5#', '6', '6#', '7'];
         
         return nashvilleNumbers[interval];
-    }
-
-    private static isNashvilleNumber(chord: string): boolean {
-        return /^[1-7][#b]?[^A-G]*/.test(chord);
     }
 }
 
