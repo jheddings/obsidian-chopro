@@ -35,6 +35,10 @@
     font-size: 0.9em;
 }
 
+.chopro-metadata + .chopro-metadata {
+    margin-top: -0.5rem;
+}
+
 .chopro-instruction {
     margin-bottom: 0.75rem;
     padding: 0.5rem;
