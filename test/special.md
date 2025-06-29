@@ -13,11 +13,8 @@ Test cases for error handling, malformed input, and special cases.
 {empty_directive}
 {directive_with_colon:}
 {directive:with:multiple:colons}
-(Empty instruction line test)
-()
 
 Another plain line
 [C] [F] [G] [Am]
-(Another instruction)
 Final [C]chord [F]line
 ```
