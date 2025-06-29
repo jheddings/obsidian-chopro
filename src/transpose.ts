@@ -5,7 +5,6 @@ import {
     ChordNotation, 
     ChoproParser, 
     ChordLine, 
-    ChoproBlock, 
     ChoproLine, 
     EmptyLine, 
     MetadataLine, 

@@ -1,6 +1,6 @@
 // main - ChoPro Obsidian Plugin
 
-import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent } from 'obsidian';
+import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent, Editor } from 'obsidian';
 import { ChoproProcessor } from './chopro';
 import { ChoproStyleManager } from './styles';
 import { FileTransposer, TransposeOptions } from './transpose';
@@ -26,32 +26,23 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     processor: ChoproProcessor;
-    fileTransposer: FileTransposer;
+    transposer: FileTransposer;
 
     async onload() {
         await this.loadSettings();
 
-        // Initialize the processor with current settings
         this.processor = new ChoproProcessor(this.settings);
-        this.fileTransposer = new FileTransposer(this.app);
+        this.transposer = new FileTransposer(this.app);
 
         this.registerMarkdownCodeBlockProcessor('chopro', (source, el, ctx) => {
             this.processChoproBlock(source, el);
         });
 
-        // Add transpose command
         this.addCommand({
-            id: 'transpose-chopro',
-            name: 'Transpose ChoPro in current file',
-            checkCallback: (checking: boolean) => {
-                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (activeView) {
-                    if (!checking) {
-                        this.openTransposeModal();
-                    }
-                    return true;
-                }
-                return false;
+            id: 'chopro-transpose',
+            name: 'Transpose chords in current file',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.openTransposeModal(view);
             }
         });
 
@@ -60,13 +51,7 @@ export default class ChoproPlugin extends Plugin {
         ChoproStyleManager.applyStyles(this.settings);
     }
 
-    private async openTransposeModal() {
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!activeView) {
-            new Notice('No active markdown file');
-            return;
-        }
-
+    private async openTransposeModal(activeView: MarkdownView) {
         const file = activeView.file;
         if (!file) {
             new Notice('No file is currently open');
@@ -74,11 +59,11 @@ export default class ChoproPlugin extends Plugin {
         }
 
         const content = await this.app.vault.read(file);
-        const key = this.fileTransposer.extractKeyFromFrontmatter(content);
+        const key = this.transposer.extractKeyFromFrontmatter(content);
 
         const modal = new TransposeModal(this.app, key, async (options) => {
             try {
-                await this.fileTransposer.transposeFile(file, options);
+                await this.transposer.transposeFile(file, options);
                 new Notice('File transposed successfully');
             } catch (error) {
                 console.error('Transpose error:', error);
