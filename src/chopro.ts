@@ -1,6 +1,7 @@
 // chopro - Chord Pro Processor for Obsidian
 
 import { ChoproPluginSettings } from './main';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 export enum ChordType {
     ALPHA = 'alpha',
@@ -367,14 +368,131 @@ export class InstrumentalLine extends SegmentedLine {
     }
 }
 
-export class ChoproBlock {
-    constructor(public lines: ChoproLine[]) {}
+/**
+ * Base class for content blocks that can be rendered.
+ */
+export abstract class ContentBlock {
+    constructor() {}
+
+    /**
+     * Convert the block to its string representation.
+     */
+    abstract toString(): string;
+}
+
+/**
+ * Represents a block of generic markdown content.
+ */
+export class MarkdownBlock extends ContentBlock {
+    constructor(public content: string) {
+        super();
+    }
+
+    /**
+     * Create a MarkdownBlock from content.
+     */
+    static create(content: string): MarkdownBlock {
+        return new MarkdownBlock(content);
+    }
+
+    /**
+     * Convert the markdown block to its string representation.
+     */
+    toString(): string {
+        return this.content;
+    }
+}
+
+/**
+ * Represents a block of ChoPro content, containing multiple lines.
+ */
+export class ChoproBlock extends ContentBlock {
+    constructor(public lines: ChoproLine[]) {
+        super();
+    }
+
+    /**
+     * Create a ChoproBlock by parsing the content.
+     */
+    static create(content: string): ChoproBlock {
+        const parser = new ChoproParser();
+        return parser.parseBlock(content);
+    }
 
     /**
      * Convert the block to its normalized ChoPro representation.
      */
     toString(): string {
-        return this.lines.map(line => line.toString()).join('\n');
+        const content = this.lines.map(line => line.toString()).join('\n');
+        return '```chopro\n' + content + '\n```';
+    }
+}
+
+/**
+ * Represents a frontmatter block containing properties serialized as YAML.
+ */
+export class Frontmatter extends ContentBlock {
+    constructor(public properties: Record<string, any> = {}) {
+        super();
+    }
+
+    /**
+     * Create a Frontmatter block from YAML content.
+     */
+    static create(yamlContent: string): Frontmatter {
+        const frontmatter = new Frontmatter();
+
+        try {
+            frontmatter.properties = parseYaml(yamlContent) || {};
+        } catch (error) {
+            console.warn('Failed to parse YAML frontmatter:', error);
+            frontmatter.properties = {};
+        }
+
+        return frontmatter;
+    }
+
+    /**
+     * Get a property value by key.
+     */
+    get(key: string): any {
+        return this.properties[key];
+    }
+
+    /**
+     * Set a property value.
+     */
+    set(key: string, value: any): void {
+        this.properties[key] = value;
+    }
+
+    /**
+     * Check if a property exists.
+     */
+    has(key: string): boolean {
+        return key in this.properties;
+    }
+
+    /**
+     * Remove a property.
+     */
+    remove(key: string): void {
+        delete this.properties[key];
+    }
+
+    /**
+     * Get all property keys.
+     */
+    keys(): string[] {
+        return Object.keys(this.properties);
+    }
+
+    /**
+     * Convert the frontmatter to YAML string representation.
+     */
+    toString(): string {
+        const content = stringifyYaml(this.properties);
+        return '---\n' + content + '---';
     }
 }
 
@@ -605,11 +723,9 @@ export class ChoproRenderer {
  * Orchestrates parsing and rendering of ChoPro blocks.
  */
 export class ChoproProcessor {
-    private parser: ChoproParser;
     private renderer: ChoproRenderer;
 
     constructor(private settings: ChoproPluginSettings) {
-        this.parser = new ChoproParser();
         this.renderer = new ChoproRenderer(settings);
     }
 
@@ -617,7 +733,7 @@ export class ChoproProcessor {
      * Main entry point to process a raw ChoPro block.
      */
     processBlock(source: string, container: HTMLElement): void {
-        const block = this.parser.parseBlock(source);
+        const block = ChoproBlock.create(source);
         this.renderer.renderBlock(block, container);
     }
 }
