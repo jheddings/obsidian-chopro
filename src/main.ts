@@ -115,96 +115,6 @@ export default class ChoproPlugin extends Plugin {
     }
 }
 
-class TransposeModal extends Modal {
-    private fromKey: string | null = null;
-    private toKey: string = 'C';
-    private toNashville: boolean = false;
-    private onConfirm: (options: TransposeOptions) => void;
-
-    constructor(app: App, currentKey: string | null, onConfirm: (options: TransposeOptions) => void) {
-        super(app);
-        this.fromKey = currentKey;
-        this.toKey = currentKey || 'C';
-        this.onConfirm = onConfirm;
-    }
-
-    onOpen() {
-        const { contentEl } = this;
-        contentEl.empty();
-
-        contentEl.createEl('h2', { text: 'Transpose ChoPro' });
-
-        // Current key selection
-        new Setting(contentEl)
-            .setName('Current Key')
-            .setDesc('Select the current key of the song')
-            .addDropdown(dropdown => {
-                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
-                if (this.fromKey) {
-                    dropdown.setValue(this.fromKey);
-                }
-                dropdown.onChange(value => {
-                    this.fromKey = value;
-                });
-            });
-
-        // Target key selection
-        new Setting(contentEl)
-            .setName('Target Key')
-            .setDesc('Choose the key to transpose to')
-            .addDropdown(dropdown => {
-                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
-                dropdown.setValue(this.toKey);
-                dropdown.onChange(value => {
-                    this.toKey = value;
-                    this.toNashville = false;
-                });
-            });
-
-        // Nashville option
-        new Setting(contentEl)
-            .setName('Nashville Numbers')
-            .setDesc('Convert to Nashville number system instead of transposing')
-            .addToggle(toggle => toggle
-                .setValue(this.toNashville)
-                .onChange(value => {
-                    this.toNashville = value;
-                    if (value) {
-                        this.toKey = this.fromKey || 'C';
-                    }
-                }));
-
-        // Buttons
-        const buttonContainer = contentEl.createDiv({ cls: 'chopro-modal-button-container' });
-        
-        new ButtonComponent(buttonContainer)
-            .setButtonText('Cancel')
-            .onClick(() => this.close());
-
-        new ButtonComponent(buttonContainer)
-            .setButtonText('Transpose')
-            .setCta()
-            .onClick(() => {
-                if (!this.fromKey && !this.toNashville) {
-                    new Notice('Cannot transpose without knowing the current key. Please add a "key" property to the frontmatter.');
-                    return;
-                }
-                
-                this.onConfirm({
-                    fromKey: this.fromKey || undefined,
-                    toKey: this.toNashville ? this.fromKey || 'C' : this.toKey,
-                    toNashville: this.toNashville
-                });
-                this.close();
-            });
-    }
-
-    onClose() {
-        const { contentEl } = this;
-        contentEl.empty();
-    }
-}
-
 class ChoproSettingTab extends PluginSettingTab {
     plugin: ChoproPlugin;
 
@@ -311,5 +221,104 @@ class ChoproSettingTab extends PluginSettingTab {
         
         // Initial preview render
         updatePreview();
+    }
+}
+
+class TransposeModal extends Modal {
+    private fromKey: string | null = null;
+    private toKey: string = 'C';
+    private chordType: string = 'alpha';
+    private onConfirm: (options: TransposeOptions) => void;
+
+    constructor(app: App, currentKey: string | null, onConfirm: (options: TransposeOptions) => void) {
+        super(app);
+        this.fromKey = currentKey;
+        this.toKey = currentKey || 'C';
+        this.onConfirm = onConfirm;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+
+        contentEl.createEl('h2', { text: 'Transpose ChoPro' });
+
+        new Setting(contentEl)
+            .setName('Current Key')
+            .setDesc('Select the current key of the song')
+            .addDropdown(dropdown => {
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                if (this.fromKey) {
+                    dropdown.setValue(this.fromKey);
+                }
+                dropdown.onChange(value => {
+                    this.fromKey = value;
+                });
+            });
+
+        new Setting(contentEl)
+            .setName('Chord Type')
+            .setDesc('Choose output format for chords')
+            .addDropdown(dropdown => dropdown
+                .addOption('alpha', 'Alpha (C, G, Am, etc.)')
+                .addOption('nash', 'Nashville Numbers (1, 5, 6m, etc.)')
+                .setValue(this.chordType)
+                .onChange(value => {
+                    this.chordType = value;
+                    if (value === 'nash') {
+                        this.toKey = this.fromKey || 'C';
+                        targetKeyDropdown.setDisabled(true);
+                        targetKeySetting.setDesc('Not applicable for the selected chord type');
+                    } else {
+                        targetKeyDropdown.setDisabled(false);
+                        targetKeySetting.setDesc('Choose the key to transpose to');
+                    }
+                }));
+
+        let targetKeyDropdown: any;
+        const targetKeySetting = new Setting(contentEl)
+            .setName('Target Key')
+            .setDesc('Choose the key to transpose to')
+            .addDropdown(dropdown => {
+                targetKeyDropdown = dropdown;
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                dropdown.setValue(this.toKey);
+                dropdown.onChange(value => {
+                    this.toKey = value;
+                });
+            });
+
+        if (this.chordType !== 'alpha') {
+            targetKeyDropdown.setDisabled(true);
+            targetKeySetting.setDesc('Not applicable for the selected chord type');
+        }
+
+        const buttonContainer = contentEl.createDiv({ cls: 'chopro-modal-button-container' });
+        
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Cancel')
+            .onClick(() => this.close());
+
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Transpose')
+            .setCta()
+            .onClick(() => {
+                if (!this.fromKey && this.chordType === 'alpha') {
+                    new Notice('Cannot transpose without the current key.');
+                    return;
+                }
+                
+                this.onConfirm({
+                    fromKey: this.fromKey || undefined,
+                    toKey: this.chordType === 'nash' ? this.fromKey || 'C' : this.toKey,
+                    toNashville: this.chordType === 'nash'
+                });
+                this.close();
+            });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
