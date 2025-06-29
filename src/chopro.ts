@@ -33,12 +33,12 @@ export class ChordNotation extends LineSegment {
     }
 
     /**
-     * Display the chord in a string format.
+     * Convert the chord notation to its normalized ChoPro representation.
      */
     toString(): string {
         const modPart = this.modifier ? this.modifier.toLowerCase() : '';
         const slashPart = this.bass ? `/${this.bass}` : '';
-        return this.chord + modPart + slashPart;
+        return `[${this.chord + modPart + slashPart}]`;
     }
 
     /**
@@ -58,11 +58,25 @@ export class Annotation extends LineSegment {
     constructor(content: string) {
         super(content);
     }
+
+    /**
+     * Convert the annotation to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `[*${this.content}]`;
+    }
 }
 
 export class TextSegment extends LineSegment {
     constructor(content: string) {
         super(content);
+    }
+
+    /**
+     * Convert the text segment to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `[${this.content}]`;
     }
 }
 
@@ -114,6 +128,13 @@ export class EmptyLine extends ChoproLine {
     static parse(line: string): EmptyLine {
         return new EmptyLine();
     }
+
+    /**
+     * Convert the empty line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return '';
+    }
 }
 
 export class MetadataLine extends ChoproLine {
@@ -143,10 +164,65 @@ export class MetadataLine extends ChoproLine {
 
         return new MetadataLine(name, value);
     }
+
+    /**
+     * Convert the metadata line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        const colonSeparator = this.value ? ':' : '';
+        const valueString = this.value ? ` ${this.value}` : '';
+        return `{${this.name}${colonSeparator}${valueString}}`;
+    }
+}
+
+export class TextLine extends ChoproLine {
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return line.trim() !== '';
+    }
+
+    static parse(line: string): TextLine {
+        return new TextLine(line);
+    }
+
+    /**
+     * Convert the text line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return this.content;
+    }
+}
+
+export class CommentLine extends ChoproLine {
+    public static readonly LINE_PATTERN = /^#+\s*(.*)$/;
+
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return CommentLine.LINE_PATTERN.test(line);
+    }
+
+    static parse(line: string): CommentLine {
+        const match = line.match(CommentLine.LINE_PATTERN);
+        const content = match ? match[1] : line;
+        return new CommentLine(content);
+    }
+
+    /**
+     * Convert the comment line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `# ${this.content}`;
+    }
 }
 
 export class InstructionLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^\(.+\)$/;
+    public static readonly LINE_PATTERN = /^\((.+)\)$/;
 
     constructor(public content: string) {
         super();
@@ -157,11 +233,20 @@ export class InstructionLine extends ChoproLine {
     }
 
     static parse(line: string): InstructionLine {
-        return new InstructionLine(line.slice(1, -1)); // Remove parentheses
+        const match = line.match(InstructionLine.LINE_PATTERN);
+        const content = match ? match[1] : line;
+        return new InstructionLine(content);
+    }
+
+    /**
+     * Convert the instruction line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `(${this.content})`;
     }
 }
 
-export abstract class ChordLine extends ChoproLine {
+export abstract class SegmentedLine extends ChoproLine {
     public static readonly INLINE_MARKER_PATTERN = /\[([^\]]+)\]/;
     public static readonly CHORD_PATTERN = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?$/i;
 
@@ -170,28 +255,28 @@ export abstract class ChordLine extends ChoproLine {
     }
 
     static test(line: string): boolean {
-        return ChordLine.INLINE_MARKER_PATTERN.test(line);
+        return SegmentedLine.INLINE_MARKER_PATTERN.test(line);
     }
 
     protected static parseLineSegments(line: string): LineSegment[] {
         const segments: LineSegment[] = [];
-        const allMarkers = new RegExp(ChordLine.INLINE_MARKER_PATTERN.source, 'g');
+        const allMarkers = new RegExp(SegmentedLine.INLINE_MARKER_PATTERN.source, 'g');
         let lastIndex = 0;
         let match;
 
         while ((match = allMarkers.exec(line)) !== null) {
             // Add text before the chord (if any)
-            ChordLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
+            SegmentedLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
 
             const content = match[1];
-            const segment = ChordLine.parseLineSegment(content);
+            const segment = SegmentedLine.parseLineSegment(content);
             segments.push(segment);
 
             lastIndex = match.index + match[0].length;
         }
 
         // Add remaining text after the last chord
-        ChordLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
+        SegmentedLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
 
         return segments;
     }
@@ -201,7 +286,7 @@ export abstract class ChordLine extends ChoproLine {
             return new Annotation(marker.substring(1));
         }
 
-        const chordMatch = marker.match(ChordLine.CHORD_PATTERN);
+        const chordMatch = marker.match(SegmentedLine.CHORD_PATTERN);
 
         if (chordMatch) {
             return new ChordNotation(
@@ -226,66 +311,48 @@ export abstract class ChordLine extends ChoproLine {
             segments.push(new TextSegment(textContent));
         }
     }
+
+    /**
+     * Convert the chord line to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return this.segments.map(segment => segment.toString()).join('');
+    }
 }
 
-export class ChordLyricsLine extends ChordLine {
+export class ChordLyricsLine extends SegmentedLine {
     static test(line: string): boolean {
-        return ChordLine.test(line) && !InstrumentalLine.test(line);
+        return SegmentedLine.test(line) && !InstrumentalLine.test(line);
     }
 
     static parse(line: string): ChordLyricsLine {
-        const segments = ChordLine.parseLineSegments(line);
+        const segments = SegmentedLine.parseLineSegments(line);
         return new ChordLyricsLine(line, segments);
     }
 }
 
-export class InstrumentalLine extends ChordLine {
+export class InstrumentalLine extends SegmentedLine {
     static test(line: string): boolean {
-        // instrumental contains only chords and whitespace
-        const allMarkers = new RegExp(ChordLine.INLINE_MARKER_PATTERN.source, 'g');
+        const allMarkers = new RegExp(SegmentedLine.INLINE_MARKER_PATTERN.source, 'g');
         const withoutChords = line.replace(allMarkers, '');
         return withoutChords.trim() === '';
     }
 
     static parse(line: string): InstrumentalLine {
-        const segments = ChordLine.parseLineSegments(line);
+        const segments = SegmentedLine.parseLineSegments(line);
         return new InstrumentalLine(line, segments);
     }
 }
 
-export class TextLine extends ChoproLine {
-    constructor(public content: string) {
-        super();
+export class ChoproBlock {
+    constructor(public lines: ChoproLine[]) {}
+
+    /**
+     * Convert the block to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return this.lines.map(line => line.toString()).join('\n');
     }
-
-    static test(line: string): boolean {
-        return line.trim() !== '';
-    }
-
-    static parse(line: string): TextLine {
-        return new TextLine(line);
-    }
-}
-
-export class CommentLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^#+\s*(.*)$/;
-
-    constructor(public content: string) {
-        super();
-    }
-
-    static test(line: string): boolean {
-        return CommentLine.LINE_PATTERN.test(line);
-    }
-
-    static parse(line: string): CommentLine {
-        const match = line.match(CommentLine.LINE_PATTERN);
-        return match ? new CommentLine(match[1]) : new CommentLine(line);
-    }
-}
-
-export interface ChoproBlock {
-    lines: ChoproLine[];
 }
 
 /**
@@ -308,7 +375,7 @@ export class ChoproParser {
             }
         }
 
-        return { lines: choproLines };
+        return new ChoproBlock(choproLines);
     }
 }
 
@@ -387,7 +454,7 @@ export class ChoproRenderer {
     }
 
     /**
-     * Render a text-only line
+     * Render a lyrics-only line
      */
     private renderTextLine(content: string, container: HTMLElement): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
