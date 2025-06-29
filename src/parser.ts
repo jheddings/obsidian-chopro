@@ -34,7 +34,7 @@ export class ChordNotation extends LineSegment {
     /**
      * Get the base chord (root + accidental).
      */
-    get chord(): string {
+    get note(): string {
         return this.root + (this.accidental || '');
     }
 
@@ -61,7 +61,7 @@ export class ChordNotation extends LineSegment {
     toString(): string {
         const modPart = this.modifier ? this.modifier.toLowerCase() : '';
         const slashPart = this.bass ? `/${this.bass}` : '';
-        return `[${this.chord + modPart + slashPart}]`;
+        return `[${this.note + modPart + slashPart}]`;
     }
 
     /**
@@ -73,7 +73,7 @@ export class ChordNotation extends LineSegment {
             : '';
         const slashPart = this.bass ? `/${this.bass}` : '';
 
-        return this.chord + modPart + slashPart;
+        return this.note + modPart + slashPart;
     }
 }
 
