@@ -21,3 +21,19 @@ Another plain line
 (Another instruction)
 Final [C]chord [F]line
 ```
+
+## Comment Handling
+```chopro
+# This is a single hash comment
+## Double hash comment
+### Triple hash comment
+#    Comment with spaces after hash
+#No space after hash
+# Comment with [C]chord notation inside
+# Comment with {directive:value} inside
+
+[C]Verse with [F]chords
+# Another comment in the middle
+[G]More chords [Am]here
+# Final comment at the end
+```

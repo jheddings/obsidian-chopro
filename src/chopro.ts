@@ -73,13 +73,12 @@ export abstract class ChoproLine {
      * Static factory method to parse a line into the appropriate ChoproLine subclass
      */
     static parse(line: string): ChoproLine | null {
-        // ignore comment lines
-        if (line.startsWith('#')) {
-            return null;
-        }
-
         if (EmptyLine.test(line)) {
             return EmptyLine.parse(line);
+        }
+
+        if (CommentLine.test(line)) {
+            return CommentLine.parse(line);
         }
 
         if (MetadataLine.test(line)) {
@@ -268,6 +267,23 @@ export class TextLine extends ChoproLine {
     }
 }
 
+export class CommentLine extends ChoproLine {
+    public static readonly LINE_PATTERN = /^#+\s*(.*)$/;
+
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return CommentLine.LINE_PATTERN.test(line);
+    }
+
+    static parse(line: string): CommentLine {
+        const match = line.match(CommentLine.LINE_PATTERN);
+        return match ? new CommentLine(match[1]) : new CommentLine(line);
+    }
+}
+
 export interface ChoproBlock {
     lines: ChoproLine[];
 }
@@ -330,6 +346,8 @@ export class ChoproRenderer {
         } else if (line instanceof TextLine) {
             this.renderTextLine(line.content, container);
         }
+
+        // NOTE - CommentLine's are ignored when rendering
     }
 
     /**
