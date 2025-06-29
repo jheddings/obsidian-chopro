@@ -134,8 +134,13 @@ export class MetadataLine extends ChoproLine {
             return new MetadataLine('unknown', line);
         }
 
-        const name = match[1].trim().toLowerCase();
+        let name = match[1].trim().toLowerCase();
         const value = match[2] ? match[2].trim() : undefined;
+
+        // handle custom meta fields (start with x_)
+        if (name.startsWith('x_')) {
+            name = name.substring(2).replace(/_/g, ' ');
+        }
 
         return new MetadataLine(name, value);
     }
