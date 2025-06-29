@@ -578,24 +578,28 @@ export class ChoproFile {
             }
         };
 
+        const addChoproBlock = (content: string) => {
+            if (content) {
+                blocks.push(ChoproBlock.parse(content));
+            }
+        };
+
         while ((match = blocksPattern.exec(content)) !== null) {
-            // Add any markdown content before this chopro block
+            // add any markdown content before this chopro block
             if (match.index > lastIndex) {
-                const markdownContent = content.substring(lastIndex, match.index);
-                addMarkdownBlock(markdownContent);
+                const markdown = content.substring(lastIndex, match.index);
+                addMarkdownBlock(markdown);
             }
 
-            // Add the chopro block
-            const choproContent = match[1];
-            blocks.push(ChoproBlock.parse(choproContent));
+            addChoproBlock(match[1]);
 
             lastIndex = match.index + match[0].length;
         }
 
-        // Add any remaining markdown content after the last chopro block
+        // add any remaining markdown content after the last chopro block
         if (lastIndex < content.length) {
-            const markdownContent = content.substring(lastIndex);
-            addMarkdownBlock(markdownContent);
+            const markdown = content.substring(lastIndex);
+            addMarkdownBlock(markdown);
         }
 
         return blocks;
