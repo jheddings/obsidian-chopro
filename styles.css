@@ -1,5 +1,6 @@
 /* ChordPro Plugin Styles for Obsidian */
 
+/* ===== Container Styles ===== */
 .chopro-container {
     line-height: 1.8;
     white-space: pre;
@@ -17,6 +18,7 @@
     border-radius: 6px;
 }
 
+/* ===== Metadata Styles ===== */
 .chopro-metadata {
     margin-bottom: 0.75rem;
     padding: 0.5rem;
@@ -39,6 +41,7 @@
     margin-top: -0.5rem;
 }
 
+/* ===== Instruction Styles ===== */
 .chopro-instruction {
     margin-bottom: 0.75rem;
     padding: 0.5rem;
@@ -48,14 +51,12 @@
     color: var(--text-muted);
     font-size: 0.95em;
     text-align: center;
-    border: 1px solid var(--background-modifier-border);
 }
 
+/* ===== Line and Pair Layout ===== */
 .chopro-line {
     margin-bottom: 0.5rem;
     position: relative;
-    min-height: auto;
-    padding-top: 0;
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -75,33 +76,17 @@
     flex-shrink: 0;
 }
 
-.chopro-chord {
-    font-weight: bold;
-    white-space: nowrap;
-    font-family: var(--font-monospace);
-    overflow: visible;
-    position: static;
-    display: inline;
-    margin-right: 0.5em;
-}
-
-.chopro-pair .chopro-chord {
-    position: absolute;
-    top: -1.5em;
-    left: 0;
-    z-index: 1;
-}
-
+/* ===== Chord and Annotation Styles ===== */
+.chopro-chord,
 .chopro-annotation {
     font-weight: bold;
     white-space: nowrap;
     font-family: var(--font-monospace);
-    overflow: visible;
-    position: static;
     display: inline;
     margin-right: 0.5em;
 }
 
+.chopro-pair .chopro-chord,
 .chopro-pair .chopro-annotation {
     position: absolute;
     top: -1.5em;
@@ -113,6 +98,7 @@
     padding-left: 0.1em;
 }
 
+/* ===== Lyrics Styles ===== */
 .chopro-lyrics {
     white-space: pre;
     display: inline;
