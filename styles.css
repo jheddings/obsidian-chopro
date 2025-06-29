@@ -35,6 +35,10 @@
     font-size: 0.9em;
 }
 
+.chopro-section {
+    margin-bottom: 1.5rem;
+}
+
 .chopro-instruction {
     margin-bottom: 0.75rem;
     padding: 0.5rem;
@@ -121,4 +125,9 @@
 .chopro-pair .chopro-lyrics:empty::after {
     content: '\00A0';
     min-width: 1ch;
+}
+
+.chopro-text-line {
+    margin: 0.25rem 0;
+    color: var(--text-normal);
 }
