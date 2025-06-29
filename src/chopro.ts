@@ -2,6 +2,12 @@
 
 import { ChoproPluginSettings } from './main';
 
+export enum ChordType {
+    ALPHA = 'alpha',
+    NASHVILLE = 'nashville',
+    UNKNOWN = 'unknown'
+}
+
 export abstract class LineSegment {
     constructor(public content: string) {}
 }
@@ -30,6 +36,23 @@ export class ChordNotation extends LineSegment {
      */
     get chord(): string {
         return this.root + (this.accidental || '');
+    }
+
+    /**
+     * Determine the type of chord notation (alpha, nashville, or unknown).
+     */
+    get chordType(): ChordType {
+        // Check if root is a letter (A-G) - alpha notation
+        if (/^[A-G]$/i.test(this.root)) {
+            return ChordType.ALPHA;
+        }
+        
+        // Check if root is a number (1-7) - nashville notation
+        if (/^[1-7]$/.test(this.root)) {
+            return ChordType.NASHVILLE;
+        }
+        
+        return ChordType.UNKNOWN;
     }
 
     /**
@@ -487,8 +510,11 @@ export class ChoproRenderer {
         if (segment instanceof ChordNotation) {
             const styledChord = segment.getStyledChord();
             const decoratedChord = this.decorateChord(styledChord);
+
             const chordSpan = container.createSpan({ cls: 'chopro-chord' });
+            chordSpan.addClasses([`chopro-chord-${segment.chordType}`]);
             chordSpan.innerHTML = decoratedChord;
+
             return chordSpan;
         }
 
