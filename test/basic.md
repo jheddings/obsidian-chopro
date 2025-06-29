@@ -1,3 +1,7 @@
+---
+key: C
+---
+
 # Basic Functionality Tests
 
 Test cases for core ChoPro functionality.
