@@ -1,4 +1,4 @@
-# Error Handling Tests
+# Error Handling & Special Cases
 
 Test cases for error handling, malformed input, and special cases.
 

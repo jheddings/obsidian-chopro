@@ -1,13 +1,14 @@
 {
   "name": "obsidian-chopro-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render ChoPro format chord sheets in Obsidian",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "package": "npm run build && zip -r obsidian-chopro-$npm_package_version.zip main.js manifest.json",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
+    "test": "npm run build",
+    "release": "npm run test && git push origin v$npm_package_version",
+    "version": "node version.mjs && git add manifest.json versions.json"
   },
   "keywords": [
     "obsidian",

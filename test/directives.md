@@ -10,11 +10,8 @@ Test cases for ChoPro directives (metadata and commands).
 {tempo: 120}
 {key: C}
 {capo: 2}
-{verse}
-{chorus}
-{custom_field: Custom Value}
-{another-directive: Another Value}
-{no_value_directive}
+{x_custom_field: Custom Value}
+{x_custom_tag}
 
 [C]Test song with various [F]standard and [G]custom directives
 ```

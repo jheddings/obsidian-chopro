@@ -2,20 +2,270 @@
 
 import { ChoproPluginSettings } from './main';
 
-export interface ChordSegment {
-    type: 'chord' | 'annotation' | 'text';
-    content: string;
-    position: number;
+export abstract class LineSegment {
+    constructor(public content: string) {}
 }
 
-export interface ChoproLine {
-    type: 'empty' | 'directive' | 'instruction' | 'chord' | 'text';
-    content?: string;
-    segments?: ChordSegment[];
-    directive?: {
-        name: string;
-        value?: string;
-    };
+export class ChordNotation extends LineSegment {
+    public readonly root: string;
+    public readonly accidental?: string;
+    public readonly modifier?: string;
+    public readonly bass?: string;
+
+    constructor(
+        root: string,
+        accidental?: string,
+        modifier?: string,
+        bass?: string
+    ) {
+        super(root + (accidental || ''));
+        this.root = root;
+        this.accidental = accidental;
+        this.modifier = modifier;
+        this.bass = bass;
+    }
+
+    /**
+     * Get the base chord (root + accidental).
+     */
+    get chord(): string {
+        return this.root + (this.accidental || '');
+    }
+
+    /**
+     * Display the chord in a string format.
+     */
+    toString(): string {
+        const modPart = this.modifier ? this.modifier.toLowerCase() : '';
+        const slashPart = this.bass ? `/${this.bass}` : '';
+        return this.chord + modPart + slashPart;
+    }
+
+    /**
+     * Get the chord with modifier styling for HTML.
+     */
+    getStyledChord(): string {
+        const modPart = this.modifier 
+            ? `<span class="chopro-chord-modifier">${this.modifier.toLowerCase()}</span>` 
+            : '';
+        const slashPart = this.bass ? `/${this.bass}` : '';
+
+        return this.chord + modPart + slashPart;
+    }
+}
+
+export class Annotation extends LineSegment {
+    constructor(content: string) {
+        super(content);
+    }
+}
+
+export class TextSegment extends LineSegment {
+    constructor(content: string) {
+        super(content);
+    }
+}
+
+export abstract class ChoproLine {
+    constructor() {}
+
+    /**
+     * Static factory method to parse a line into the appropriate ChoproLine subclass
+     */
+    static parse(line: string): ChoproLine | null {
+        // ignore comment lines
+        if (line.startsWith('#')) {
+            return null;
+        }
+
+        if (EmptyLine.test(line)) {
+            return EmptyLine.parse(line);
+        }
+
+        if (MetadataLine.test(line)) {
+            return MetadataLine.parse(line);
+        }
+
+        if (InstructionLine.test(line)) {
+            return InstructionLine.parse(line);
+        }
+
+        if (InstrumentalLine.test(line)) {
+            return InstrumentalLine.parse(line);
+        }
+
+        if (ChordLyricsLine.test(line)) {
+            return ChordLyricsLine.parse(line);
+        }
+
+        // default to text line
+        return TextLine.parse(line);
+    }
+}
+
+export class EmptyLine extends ChoproLine {
+    constructor() {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return line.trim() === '';
+    }
+
+    static parse(line: string): EmptyLine {
+        return new EmptyLine();
+    }
+}
+
+export class MetadataLine extends ChoproLine {
+    public static readonly LINE_PATTERN = /^\{([^:]+):?\s*(.*)\}$/;
+
+    constructor(public name: string, public value?: string ) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return MetadataLine.LINE_PATTERN.test(line);
+    }
+
+    static parse(line: string): MetadataLine {
+        const match = line.match(MetadataLine.LINE_PATTERN);
+        if (!match) {
+            return new MetadataLine('unknown', line);
+        }
+
+        let name = match[1].trim().toLowerCase();
+        const value = match[2] ? match[2].trim() : undefined;
+
+        // handle custom meta fields (start with x_)
+        if (name.startsWith('x_')) {
+            name = name.substring(2).replace(/_/g, ' ');
+        }
+
+        return new MetadataLine(name, value);
+    }
+}
+
+export class InstructionLine extends ChoproLine {
+    public static readonly LINE_PATTERN = /^\(.+\)$/;
+
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return InstructionLine.LINE_PATTERN.test(line);
+    }
+
+    static parse(line: string): InstructionLine {
+        return new InstructionLine(line.slice(1, -1)); // Remove parentheses
+    }
+}
+
+export abstract class ChordLine extends ChoproLine {
+    public static readonly INLINE_MARKER_PATTERN = /\[([^\]]+)\]/;
+    public static readonly CHORD_PATTERN = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?$/i;
+
+    constructor(public content: string, public segments: LineSegment[]) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return ChordLine.INLINE_MARKER_PATTERN.test(line);
+    }
+
+    protected static parseLineSegments(line: string): LineSegment[] {
+        const segments: LineSegment[] = [];
+        const allMarkers = new RegExp(ChordLine.INLINE_MARKER_PATTERN.source, 'g');
+        let lastIndex = 0;
+        let match;
+
+        while ((match = allMarkers.exec(line)) !== null) {
+            // Add text before the chord (if any)
+            ChordLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
+
+            const content = match[1];
+            const segment = ChordLine.parseLineSegment(content);
+            segments.push(segment);
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // Add remaining text after the last chord
+        ChordLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
+
+        return segments;
+    }
+
+    protected static parseLineSegment(marker: string): LineSegment {
+        if (marker.startsWith('*')) {
+            return new Annotation(marker.substring(1));
+        }
+
+        const chordMatch = marker.match(ChordLine.CHORD_PATTERN);
+
+        if (chordMatch) {
+            return new ChordNotation(
+                chordMatch[1],       // Root note
+                chordMatch[2] || '', // Accidental (sharp/flat)
+                chordMatch[3] || '', // Modifier (e.g. 7, maj7, etc.)
+                chordMatch[5] || ''  // Bass note (e.g. /C)
+            );
+        }
+
+        return new TextSegment(marker);
+    }
+
+    protected static addTextSegmentIfNotEmpty(
+        segments: LineSegment[], 
+        line: string, 
+        startIndex: number, 
+        endIndex: number
+    ): void {
+        if (endIndex > startIndex) {
+            const textContent = line.substring(startIndex, endIndex);
+            segments.push(new TextSegment(textContent));
+        }
+    }
+}
+
+export class ChordLyricsLine extends ChordLine {
+    static test(line: string): boolean {
+        return ChordLine.test(line) && !InstrumentalLine.test(line);
+    }
+
+    static parse(line: string): ChordLyricsLine {
+        const segments = ChordLine.parseLineSegments(line);
+        return new ChordLyricsLine(line, segments);
+    }
+}
+
+export class InstrumentalLine extends ChordLine {
+    static test(line: string): boolean {
+        // instrumental contains only chords and whitespace
+        const allMarkers = new RegExp(ChordLine.INLINE_MARKER_PATTERN.source, 'g');
+        const withoutChords = line.replace(allMarkers, '');
+        return withoutChords.trim() === '';
+    }
+
+    static parse(line: string): InstrumentalLine {
+        const segments = ChordLine.parseLineSegments(line);
+        return new InstrumentalLine(line, segments);
+    }
+}
+
+export class TextLine extends ChoproLine {
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return line.trim() !== '';
+    }
+
+    static parse(line: string): TextLine {
+        return new TextLine(line);
+    }
 }
 
 export interface ChoproBlock {
@@ -23,11 +273,11 @@ export interface ChoproBlock {
 }
 
 /**
- * Parser for ChoPro source text into an abstract syntax tree
+ * Parser for ChoPro source text into an abstract syntax tree.
  */
 export class ChoproParser {
     /**
-     * Parse ChoPro source text into a structured representation
+     * Parse ChoPro source text into a structured representation.
      */
     parseBlock(source: string): ChoproBlock {
         const lines = source.trim().split('\n');
@@ -35,136 +285,14 @@ export class ChoproParser {
 
         for (const line of lines) {
             const trimmedLine = line.trim();
-            const parsedLine = this.parseLine(trimmedLine);
-            choproLines.push(parsedLine);
+            const parsedLine = ChoproLine.parse(trimmedLine);
+            
+            if (parsedLine !== null) {
+                choproLines.push(parsedLine);
+            }
         }
 
         return { lines: choproLines };
-    }
-
-    /**
-     * Parse a single line into its appropriate type
-     */
-    private parseLine(line: string): ChoproLine {
-        if (line === '') {
-            return { type: 'empty' };
-        }
-
-        if (this.isDirective(line)) {
-            const directive = this.parseDirective(line);
-            return {
-                type: 'directive',
-                directive: directive
-            };
-        }
-
-        if (this.isInstructionLine(line)) {
-            return {
-                type: 'instruction',
-                content: line.slice(1, -1) // Remove parentheses
-            };
-        }
-
-        if (this.hasChords(line)) {
-            return {
-                type: 'chord',
-                content: line,
-                segments: this.parseChordLine(line)
-            };
-        }
-
-        return {
-            type: 'text',
-            content: line
-        };
-    }
-
-    /**
-     * Check if a line is an instruction line (wrapped in parentheses).
-     */
-    private isInstructionLine(line: string): boolean {
-        return /^\(.+\)$/.test(line);
-    }
-
-    /**
-     * Check if a line is a ChoPro directive (e.g. {title: My Song}).
-     */
-    private isDirective(line: string): boolean {
-        return /^\{.+\}$/.test(line);
-    }
-
-    /**
-     * Parse a ChoPro directive line.
-     */
-    private parseDirective(line: string): { name: string; value?: string } {
-        const match = line.match(/^\{([^:]+):?\s*(.*)\}$/);
-        if (!match) {
-            return { name: 'unknown' };
-        }
-
-        const directive = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : undefined;
-
-        return { name: directive, value };
-    }
-
-    /**
-     * Check if a line contains chords.
-     */
-    private hasChords(line: string): boolean {
-        return /\[[^\]]+\]/.test(line);
-    }
-
-    /**
-     * Parse a line with chords into segments.
-     */
-    private parseChordLine(line: string): ChordSegment[] {
-        const segments: ChordSegment[] = [];
-        const chordRegex = /\[([^\]]+)\]/g;
-        let lastIndex = 0;
-        let match;
-
-        while ((match = chordRegex.exec(line)) !== null) {
-            // Add text before the chord (if any)
-            this.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
-
-            // Add the chord or annotation
-            const content = match[1];
-            const segmentType = content.startsWith('*') ? 'annotation' : 'chord';
-            const segmentContent = segmentType === 'annotation' ? content.substring(1) : content;
-            
-            segments.push({
-                type: segmentType,
-                content: segmentContent,
-                position: match.index
-            });
-
-            lastIndex = match.index + match[0].length;
-        }
-
-        // Add remaining text after the last chord
-        this.addTextSegmentIfNotEmpty(segments, line, lastIndex, line.length);
-
-        return segments;
-    }
-
-    /**
-     * Helper method to add text segments only if they have content
-     */
-    private addTextSegmentIfNotEmpty(
-        segments: ChordSegment[], 
-        line: string, 
-        startIndex: number, 
-        endIndex: number
-    ): void {
-        if (endIndex > startIndex) {
-            const textContent = line.substring(startIndex, endIndex);
-            segments.push({
-                type: 'text',
-                content: textContent,
-                position: startIndex
-            });
-        }
     }
 }
 
@@ -187,40 +315,32 @@ export class ChoproRenderer {
      * Render a single line based on its type
      */
     private renderLine(line: ChoproLine, container: HTMLElement): void {
-        switch (line.type) {
-            case 'empty':
-                container.createEl('br');
-                break;
-
-            case 'directive':
-                if (this.settings.showDirectives && line.directive) {
-                    this.renderDirective(line.directive, container);
-                }
-                break;
-
-            case 'instruction':
-                this.renderInstruction(line.content!, container);
-                break;
-
-            case 'chord':
-                this.renderChordLine(line.segments!, container);
-                break;
-
-            case 'text':
-                this.renderTextLine(line.content!, container);
-                break;
+        if (line instanceof EmptyLine) {
+            container.createEl('br');
+        } else if (line instanceof MetadataLine) {
+            if (this.settings.showDirectives) {
+                this.renderMetadata(line, container);
+            }
+        } else if (line instanceof InstructionLine) {
+            this.renderInstruction(line.content, container);
+        } else if (line instanceof ChordLyricsLine) {
+            this.renderChordLine(line.segments, container);
+        } else if (line instanceof InstrumentalLine) {
+            this.renderInstrumentalLine(line.segments, container);
+        } else if (line instanceof TextLine) {
+            this.renderTextLine(line.content, container);
         }
     }
 
     /**
-     * Render a directive
+     * Render metadata.
      */
-    private renderDirective(directive: { name: string; value?: string }, container: HTMLElement): void {
-        const directiveEl = container.createDiv({ cls: 'chopro-directive' });
-        directiveEl.createSpan({ text: directive.name, cls: 'chopro-directive-name' });
+    private renderMetadata(meta: MetadataLine, container: HTMLElement): void {
+        const directiveEl = container.createDiv({ cls: 'chopro-metadata' });
+        directiveEl.createSpan({ text: meta.name, cls: 'chopro-metadata-name' });
 
-        if (directive.value) {
-            directiveEl.createSpan({ text: ': ' + directive.value, cls: 'chopro-directive-value' });
+        if (meta.value) {
+            directiveEl.createSpan({ text: ': ' + meta.value, cls: 'chopro-metadata-value' });
         }
     }
 
@@ -235,9 +355,17 @@ export class ChoproRenderer {
     /**
      * Render a line with chords and/or lyrics
      */
-    private renderChordLine(segments: ChordSegment[], container: HTMLElement): void {
+    private renderChordLine(segments: LineSegment[], container: HTMLElement): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
         this.renderSegments(segments, lineDiv);
+    }
+
+    /**
+     * Render an instrumental line with chords only (inline)
+     */
+    private renderInstrumentalLine(segments: LineSegment[], container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        this.renderInstrumentalSegments(segments, lineDiv);
     }
 
     /**
@@ -251,49 +379,58 @@ export class ChoproRenderer {
     /**
      * Render chord and text segments into HTML elements
      */
-    private renderSegments(segments: ChordSegment[], lineDiv: HTMLElement): void {
+    private renderSegments(segments: LineSegment[], lineDiv: HTMLElement): void {
         for (let i = 0; i < segments.length; i++) {
             const segment = segments[i];
 
-            if (segment.type === 'chord' || segment.type === 'annotation') {
+            if (segment instanceof ChordNotation || segment instanceof Annotation) {
                 const nextSegment = i + 1 < segments.length ? segments[i + 1] : null;
                 const consumed = this.renderChordOrAnnotation(segment, nextSegment, lineDiv);
                 if (consumed) {
                     i++; // Skip the consumed text segment
                 }
-            } else if (segment.type === 'text') {
+            } else if (segment instanceof TextSegment) {
                 this.renderOrphanedText(segment, lineDiv);
             }
         }
     }
 
     /**
+     * Create a chord or annotation span with proper styling
+     */
+    private createChordOrAnnotationSpan(segment: LineSegment, container: HTMLElement): HTMLElement {
+        if (segment instanceof ChordNotation) {
+            const styledChord = segment.getStyledChord();
+            const decoratedChord = this.decorateChord(styledChord);
+            const chordSpan = container.createSpan({ cls: 'chopro-chord' });
+            container.style.setProperty('--chord-min-width', `${decoratedChord.length}ch`);
+            chordSpan.innerHTML = decoratedChord;
+            return chordSpan;
+        }
+
+        const annotationSpan = container.createSpan({ cls: 'chopro-annotation' });
+        annotationSpan.textContent = segment.content;
+        container.style.setProperty('--chord-min-width', `${segment.content.length}ch`);
+        return annotationSpan;
+    }
+
+    /**
      * Render a chord or annotation with optional following text
      */
     private renderChordOrAnnotation(
-        segment: ChordSegment, 
-        nextSegment: ChordSegment | null, 
+        segment: LineSegment, 
+        nextSegment: LineSegment | null, 
         lineDiv: HTMLElement
     ): boolean {
         const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
 
         // Create the chord or annotation span
-        if (segment.type === 'chord') {
-            const normalizedChord = this.normalizeChord(segment.content);
-            const decoratedChord = this.decorateChord(normalizedChord);
-            const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
-            pairSpan.style.setProperty('--chord-min-width', `${decoratedChord.length}ch`);
-            chordSpan.innerHTML = decoratedChord;
-        } else {
-            const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
-            annotationSpan.textContent = segment.content;
-            pairSpan.style.setProperty('--chord-min-width', `${segment.content.length}ch`);
-        }
+        this.createChordOrAnnotationSpan(segment, pairSpan);
 
         // Check if there's text immediately following
         let textContent = '';
         let textConsumed = false;
-        if (nextSegment && nextSegment.type === 'text') {
+        if (nextSegment && nextSegment instanceof TextSegment) {
             textContent = nextSegment.content;
             textConsumed = true;
         }
@@ -315,34 +452,11 @@ export class ChoproRenderer {
     /**
      * Render text that doesn't have a chord above it
      */
-    private renderOrphanedText(segment: ChordSegment, lineDiv: HTMLElement): void {
+    private renderOrphanedText(segment: LineSegment, lineDiv: HTMLElement): void {
         lineDiv.createSpan({
             text: segment.content,
             cls: 'chopro-lyrics'
         });
-    }
-
-    /**
-     * Validates and normalizes chord notation with modifier styling
-     */
-    private normalizeChord(chord: string): string {
-        const normalized = chord.trim().replace(/\s+/g, ' ');
-        const chordPattern = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/.+)?$/i;
-        const chordMatch = normalized.match(chordPattern);
-
-        if (!chordMatch) {
-            return normalized;
-        }
-
-        const [, root, lift, modifier, bass] = chordMatch;
-
-        const baseChord = root + (lift || '');
-        const modPart = modifier 
-            ? `<span class="chopro-chord-modifier">${modifier.toLowerCase()}</span>` 
-            : '';
-        const slashPart = bass || '';
-
-        return baseChord + modPart + slashPart;
     }
 
     /**
@@ -362,11 +476,24 @@ export class ChoproRenderer {
 
         return chord;
     }
+
+    /**
+     * Render chord segments inline for instrumental lines
+     */
+    private renderInstrumentalSegments(segments: LineSegment[], lineDiv: HTMLElement): void {
+        for (const segment of segments) {
+            if (segment instanceof ChordNotation || segment instanceof Annotation) {
+                this.createChordOrAnnotationSpan(segment, lineDiv);
+            } else if (segment instanceof TextSegment) {
+                const textSpan = lineDiv.createSpan({ cls: 'chopro-lyrics' });
+                textSpan.textContent = segment.content;
+            }
+        }
+    }
 }
 
 /**
- * Main processor that orchestrates parsing and rendering
- * Maintains backward compatibility with existing code
+ * Orchestrates parsing and rendering of ChoPro blocks.
  */
 export class ChoproProcessor {
     private parser: ChoproParser;
@@ -378,8 +505,7 @@ export class ChoproProcessor {
     }
 
     /**
-     * Main entry point to process a ChoPro block
-     * Maintains backward compatibility with existing API
+     * Main entry point to process a raw ChoPro block.
      */
     processBlock(source: string, container: HTMLElement): void {
         const block = this.parser.parseBlock(source);
