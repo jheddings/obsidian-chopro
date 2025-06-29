@@ -1,8 +1,9 @@
 // main - ChoPro Obsidian Plugin
 
-import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
+import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent } from 'obsidian';
 import { ChoproProcessor } from './chopro';
 import { ChoproStyleManager } from './styles';
+import { FileTransposer, TransposeOptions } from './transpose';
 
 export interface ChoproPluginSettings {
     chordColor: string;
@@ -25,20 +26,67 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     processor: ChoproProcessor;
+    fileTransposer: FileTransposer;
 
     async onload() {
         await this.loadSettings();
 
         // Initialize the processor with current settings
         this.processor = new ChoproProcessor(this.settings);
+        this.fileTransposer = new FileTransposer(this.app);
 
         this.registerMarkdownCodeBlockProcessor('chopro', (source, el, ctx) => {
             this.processChoproBlock(source, el);
         });
 
+        // Add transpose command
+        this.addCommand({
+            id: 'transpose-chopro',
+            name: 'Transpose ChoPro in current file',
+            checkCallback: (checking: boolean) => {
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (activeView) {
+                    if (!checking) {
+                        this.openTransposeModal();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
         this.addSettingTab(new ChoproSettingTab(this.app, this));
 
         ChoproStyleManager.applyStyles(this.settings);
+    }
+
+    private async openTransposeModal() {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!activeView) {
+            new Notice('No active markdown file');
+            return;
+        }
+
+        const file = activeView.file;
+        if (!file) {
+            new Notice('No file is currently open');
+            return;
+        }
+
+        const content = await this.app.vault.read(file);
+        const key = this.fileTransposer.extractKeyFromFrontmatter(content);
+
+        const modal = new TransposeModal(this.app, key, async (options) => {
+            try {
+                await this.fileTransposer.transposeFile(file, options);
+                new Notice('File transposed successfully');
+            } catch (error) {
+                console.error('Transpose error:', error);
+                new Notice('Error transposing file');
+            }
+        });
+
+        modal.open();
     }
 
     async loadSettings() {
@@ -64,6 +112,96 @@ export default class ChoproPlugin extends Plugin {
     }
     onunload() {
         ChoproStyleManager.removeStyles();
+    }
+}
+
+class TransposeModal extends Modal {
+    private fromKey: string | null = null;
+    private toKey: string = 'C';
+    private toNashville: boolean = false;
+    private onConfirm: (options: TransposeOptions) => void;
+
+    constructor(app: App, currentKey: string | null, onConfirm: (options: TransposeOptions) => void) {
+        super(app);
+        this.fromKey = currentKey;
+        this.toKey = currentKey || 'C';
+        this.onConfirm = onConfirm;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+
+        contentEl.createEl('h2', { text: 'Transpose ChoPro' });
+
+        // Current key selection
+        new Setting(contentEl)
+            .setName('Current Key')
+            .setDesc('Select the current key of the song')
+            .addDropdown(dropdown => {
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                if (this.fromKey) {
+                    dropdown.setValue(this.fromKey);
+                }
+                dropdown.onChange(value => {
+                    this.fromKey = value;
+                });
+            });
+
+        // Target key selection
+        new Setting(contentEl)
+            .setName('Target Key')
+            .setDesc('Choose the key to transpose to')
+            .addDropdown(dropdown => {
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                dropdown.setValue(this.toKey);
+                dropdown.onChange(value => {
+                    this.toKey = value;
+                    this.toNashville = false;
+                });
+            });
+
+        // Nashville option
+        new Setting(contentEl)
+            .setName('Nashville Numbers')
+            .setDesc('Convert to Nashville number system instead of transposing')
+            .addToggle(toggle => toggle
+                .setValue(this.toNashville)
+                .onChange(value => {
+                    this.toNashville = value;
+                    if (value) {
+                        this.toKey = this.fromKey || 'C';
+                    }
+                }));
+
+        // Buttons
+        const buttonContainer = contentEl.createDiv({ cls: 'chopro-modal-button-container' });
+        
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Cancel')
+            .onClick(() => this.close());
+
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Transpose')
+            .setCta()
+            .onClick(() => {
+                if (!this.fromKey && !this.toNashville) {
+                    new Notice('Cannot transpose without knowing the current key. Please add a "key" property to the frontmatter.');
+                    return;
+                }
+                
+                this.onConfirm({
+                    fromKey: this.fromKey || undefined,
+                    toKey: this.toNashville ? this.fromKey || 'C' : this.toKey,
+                    toNashville: this.toNashville
+                });
+                this.close();
+            });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
 
