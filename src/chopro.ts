@@ -99,7 +99,7 @@ export class TextSegment extends LineSegment {
      * Convert the text segment to its normalized ChoPro representation.
      */
     toString(): string {
-        return `[${this.content}]`;
+        return this.content;
     }
 }
 
