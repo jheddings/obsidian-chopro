@@ -6,7 +6,7 @@ import {
     ChoproParser, 
     SegmentedLine,
     ChordType
-} from './chopro';
+} from './parser';
 
 export interface TransposeOptions {
     fromKey?: string;

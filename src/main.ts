@@ -1,7 +1,8 @@
 // main - ChoPro Obsidian Plugin
 
 import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent, Editor } from 'obsidian';
-import { ChoproProcessor, ChordType } from './chopro';
+import { ChoproProcessor } from './render';
+import { ChordType } from './parser';
 import { ChoproStyleManager } from './styles';
 import { FileTransposer, TransposeOptions } from './transpose';
 
