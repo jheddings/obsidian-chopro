@@ -3,9 +3,12 @@
 import { App, TFile } from 'obsidian';
 import { 
     ChordNotation, 
-    ChoproParser, 
+    ChoproFile, 
     SegmentedLine,
-    ChordType
+    ChordType,
+    ChoproBlock,
+    ContentBlock,
+    Frontmatter
 } from './parser';
 
 export interface TransposeOptions {
@@ -111,11 +114,7 @@ export class ChordTransposer {
 export class FileTransposer {
     static readonly KEYS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
 
-    private parser: ChoproParser;
-
-    constructor(private app: App) {
-        this.parser = new ChoproParser();
-    }
+    constructor(private app: App) {}
 
     async transposeFile(file: TFile, options: TransposeOptions): Promise<void> {
         const originalContent = await this.app.vault.read(file);
@@ -124,30 +123,32 @@ export class FileTransposer {
     }
 
     private transposeContent(sourceContent: string, options: TransposeOptions): string {
-        let updatedContent = sourceContent;
+        const choproFile = ChoproFile.parse(sourceContent);
 
         // Update frontmatter key if transposing to a new key (but not Nashville)
         if (options.toKey && options.toKey !== '##') {
-            updatedContent = this.updateFrontmatterKey(updatedContent, options.toKey);
+            if (!choproFile.frontmatter) {
+                choproFile.frontmatter = new Frontmatter();
+            }
+            choproFile.frontmatter.set('key', options.toKey);
         }
 
         // transpose chopro blocks in the content
-        return updatedContent.replace(/```chopro\n([\s\S]*?)\n```/g, (match, choproContent) => {
-            const transposedChopro = this.transposeChoproBlock(choproContent, options);
-            return `\`\`\`chopro\n${transposedChopro}\n\`\`\``;
-        });
+        for (const block of choproFile.blocks) {
+            if (block instanceof ChoproBlock) {
+                this.transposeChoproBlock(block, options);
+            }
+        }
+
+        return choproFile.toString();
     }
 
-    private transposeChoproBlock(content: string, options: TransposeOptions): string {
-        const block = this.parser.parseBlock(content);
-
+    private transposeChoproBlock(block: ChoproBlock, options: TransposeOptions): void {
         for (const line of block.lines) {
             if (line instanceof SegmentedLine) {
                 this.transposeSegmentedLine(line, options);
             }
         }
-
-        return block.toString();
     }
 
     private transposeSegmentedLine(line: SegmentedLine, options: TransposeOptions): void {
@@ -176,35 +177,7 @@ export class FileTransposer {
     }
 
     extractKeyFromFrontmatter(content: string): string | null {
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (!frontmatterMatch) {
-            return null;
-        }
-
-        const frontmatter = frontmatterMatch[1];
-        const keyMatch = frontmatter.match(/^key:\s*([A-G][#b]?)\s*$/m);
-
-        return keyMatch ? keyMatch[1] : null;
-    }
-
-    private updateFrontmatterKey(content: string, newKey: string): string {
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (!frontmatterMatch) {
-            // No frontmatter exists, add it
-            return `---\nkey: ${newKey}\n---\n\n${content}`;
-        }
-
-        const frontmatter = frontmatterMatch[1];
-        const keyMatch = frontmatter.match(/^key:\s*([A-G][#b]?)\s*$/m);
-
-        if (keyMatch) {
-            // Update existing key
-            const updatedFrontmatter = frontmatter.replace(/^key:\s*([A-G][#b]?)\s*$/m, `key: ${newKey}`);
-            return content.replace(/^---\n([\s\S]*?)\n---/, `---\n${updatedFrontmatter}\n---`);
-        } else {
-            // Add key to existing frontmatter
-            const updatedFrontmatter = `${frontmatter}\nkey: ${newKey}`;
-            return content.replace(/^---\n([\s\S]*?)\n---/, `---\n${updatedFrontmatter}\n---`);
-        }
+        const choproFile = ChoproFile.parse(content);
+        return choproFile.key || null;
     }
 }
