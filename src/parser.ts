@@ -393,7 +393,7 @@ export class Frontmatter extends ContentBlock {
     /**
      * Create a Frontmatter block from YAML content.
      */
-    static create(yamlContent: string): Frontmatter {
+    static parse(yamlContent: string): Frontmatter {
         const frontmatter = new Frontmatter();
 
         try {
@@ -445,8 +445,7 @@ export class Frontmatter extends ContentBlock {
      * Convert the frontmatter to YAML string representation.
      */
     toString(): string {
-        const content = stringifyYaml(this.properties);
-        return '---\n' + content.trim() + '\n---\n';
+        return '---\n' + stringifyYaml(this.properties) + '---';
     }
 }
 
@@ -461,8 +460,8 @@ export class MarkdownBlock extends ContentBlock {
     /**
      * Create a MarkdownBlock from content.
      */
-    static create(content: string): MarkdownBlock {
-        return new MarkdownBlock(content);
+    static parse(content: string): MarkdownBlock {
+        return new MarkdownBlock(content.trim());
     }
 
     /**
@@ -486,7 +485,7 @@ export class ChoproBlock extends ContentBlock {
     /**
      * Create a ChoproBlock by parsing the content.
      */
-    static create(content: string): ChoproBlock {
+    static parse(content: string): ChoproBlock {
         const lines = content.trim().split('\n');
         const choproLines: ChoproLine[] = [];
 
@@ -519,7 +518,7 @@ export class ChoproBlock extends ContentBlock {
      */
     toString(): string {
         const content = this.lines.map(line => line.toString()).join('\n');
-        return '```chopro\n' + content + '\n```\n';
+        return '```chopro\n' + content + '\n```';
     }
 }
 
@@ -554,7 +553,7 @@ export class ChoproFile {
         const frontmatterMatch = source.match(ChoproFile.FRONTMATTER_PATTERN);
 
         if (frontmatterMatch) {
-            frontmatter = Frontmatter.create(frontmatterMatch[1]);
+            frontmatter = Frontmatter.parse(frontmatterMatch[1]);
             remainingContent = source.substring(frontmatterMatch[0].length);
         }
 
@@ -575,7 +574,7 @@ export class ChoproFile {
 
         const addMarkdownBlock = (content: string) => {
             if (content) {
-                blocks.push(MarkdownBlock.create(content));
+                blocks.push(MarkdownBlock.parse(content));
             }
         };
 
@@ -588,7 +587,7 @@ export class ChoproFile {
 
             // Add the chopro block
             const choproContent = match[1];
-            blocks.push(ChoproBlock.create(choproContent));
+            blocks.push(ChoproBlock.parse(choproContent));
 
             lastIndex = match.index + match[0].length;
         }
@@ -609,10 +608,10 @@ export class ChoproFile {
         let result = '';
         
         if (this.frontmatter) {
-            result += this.frontmatter.toString();
+            result += this.frontmatter.toString() + '\n\n';
         }
         
-        result += this.blocks.map(block => block.toString()).join('');
+        result += this.blocks.map(block => block.toString()).join('\n');
         
         return result;
     }

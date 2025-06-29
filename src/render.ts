@@ -229,7 +229,7 @@ export class ChoproProcessor {
      * Main entry point to process a raw ChoPro block.
      */
     processBlock(source: string, container: HTMLElement): void {
-        const block = ChoproBlock.create(source);
+        const block = ChoproBlock.parse(source);
         this.renderer.renderBlock(block, container);
     }
 }
