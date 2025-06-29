@@ -29,47 +29,17 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
         
-      - name: Create Release
+      - name: Verify gh CLI and create release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: obsidian-chopro-${{ steps.version.outputs.VERSION }}
-          draft: true
-          prerelease: false
-          body: |
-            ## What's Changed
-            
-            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ github.ref }}
-            
-      - name: Upload main.js
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./main.js
-          asset_name: main.js
-          asset_content_type: application/javascript
+        run: |
+          # Verify gh CLI is available and authenticated
+          gh auth status
           
-      - name: Upload manifest.json
-        uses: actions/upload-release-asset@v1
+          # Create release with auto-generated notes
+          gh release create ${{ github.ref_name }} \
+            --title "obsidian-chopro-${{ steps.version.outputs.VERSION }}" \
+            --generate-notes --draft \
+            ./main.js ./manifest.json ./styles.css
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./manifest.json
-          asset_name: manifest.json
-          asset_content_type: application/json
-          
-      - name: Upload styles.css
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./styles.css
-          asset_name: styles.css
-          asset_content_type: text/css
+
