@@ -67,11 +67,6 @@ The settings panel includes a live preview that updates as you change configurat
 - **Structural annotations**: `[*Fine]`, `[*D.C. al Fine]`, `[*Begin softly]`
 - **Configurable styling**: Toggle italic display for all annotations
 
-### Instructions
-- **Section markers**: `(Verse 1)`, `(Chorus)`, `(Bridge - Slow and reverent)`
-- **Performance instructions**: `(Intro)`, `(Outro)`, `(Instrumental break)`
-- **Descriptive notes**: Any text wrapped in parentheses for organization
-
 ## Installation
 
 ### Manual Installation
