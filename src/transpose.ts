@@ -1,21 +1,17 @@
-// transpose - Transposition and Nashville Number System conversion for ChoPro
+// transpose - chord conversion for the ChoPro Plugin
 
 import { App, TFile } from 'obsidian';
 import { 
     ChordNotation, 
     ChoproParser, 
-    ChordLine, 
-    ChoproLine, 
-    EmptyLine, 
-    MetadataLine, 
-    InstructionLine,
-    TextLine 
+    SegmentedLine,
+    ChordType
 } from './chopro';
 
 export interface TransposeOptions {
     fromKey?: string;
     toKey?: string;
-    toNashville?: boolean;
+    chordType?: ChordType;
 }
 
 export class ChordTransposer {
@@ -48,7 +44,6 @@ export class ChordTransposer {
     }
 
     static chordNotationToNashville(chord: ChordNotation, key: string): ChordNotation {
-        // Already Nashville - return as is
         if (this.isNashvilleNumber(chord.root)) {
             return chord;
         }
@@ -68,7 +63,7 @@ export class ChordTransposer {
 
         return new ChordNotation(
             nashvilleRoot,
-            undefined, // Nashville numbers don't use accidentals on the root
+            undefined,
             modifier,
             nashvilleBass
         );
@@ -114,30 +109,29 @@ export class ChordTransposer {
 }
 
 export class FileTransposer {
-    private parser: ChoproParser;
-    
-    // Available musical keys for transposition
     static readonly KEYS = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+
+    private parser: ChoproParser;
 
     constructor(private app: App) {
         this.parser = new ChoproParser();
     }
 
     async transposeFile(file: TFile, options: TransposeOptions): Promise<void> {
-        const content = await this.app.vault.read(file);
-        const transposedContent = this.transposeContent(content, options);
+        const originalContent = await this.app.vault.read(file);
+        const transposedContent = this.transposeContent(originalContent, options);
         await this.app.vault.modify(file, transposedContent);
     }
 
-    private transposeContent(content: string, options: TransposeOptions): string {
-        let updatedContent = content;
+    private transposeContent(sourceContent: string, options: TransposeOptions): string {
+        let updatedContent = sourceContent;
 
-        // Update frontmatter key if transposing to a new key
-        if (options.toKey && !options.toNashville) {
+        // Update frontmatter key if transposing to a new key (but not Nashville)
+        if (options.toKey && options.toKey !== '##') {
             updatedContent = this.updateFrontmatterKey(updatedContent, options.toKey);
         }
 
-        // Transpose chopro blocks
+        // transpose chopro blocks in the content
         return updatedContent.replace(/```chopro\n([\s\S]*?)\n```/g, (match, choproContent) => {
             const transposedChopro = this.transposeChoproBlock(choproContent, options);
             return `\`\`\`chopro\n${transposedChopro}\n\`\`\``;
@@ -146,64 +140,39 @@ export class FileTransposer {
 
     private transposeChoproBlock(content: string, options: TransposeOptions): string {
         const block = this.parser.parseBlock(content);
-        const transposedLines: string[] = [];
 
         for (const line of block.lines) {
-            transposedLines.push(this.transposeLine(line, options));
+            if (line instanceof SegmentedLine) {
+                this.transposeSegmentedLine(line, options);
+            }
         }
 
-        return transposedLines.join('\n');
+        return block.toString();
     }
 
-    private transposeLine(line: ChoproLine, options: TransposeOptions): string {
-        if (line instanceof ChordLine) {
-            return this.transposeChordLine(line, options);
-        }
-        
-        if (line instanceof EmptyLine) {
-            return '';
-        }
-        
-        if (line instanceof MetadataLine) {
-            const value = line.value ? `: ${line.value}` : '';
-            return `{${line.name}${value}}`;
-        }
-        
-        if (line instanceof InstructionLine) {
-            return `(${line.content})`;
-        }
-        
-        if (line instanceof TextLine) {
-            return line.content;
-        }
-        
-        return '';
-    }
-
-    private transposeChordLine(line: ChordLine, options: TransposeOptions): string {
-        // Reconstruct the line with transposed chords
-        let result = '';
-        
-        for (const segment of line.segments) {
+    private transposeSegmentedLine(line: SegmentedLine, options: TransposeOptions): void {
+        for (let i = 0; i < line.segments.length; i++) {
+            const segment = line.segments[i];
+            
             if (segment instanceof ChordNotation) {
                 let transposedChord: ChordNotation;
                 
-                if (options.toNashville) {
-                    transposedChord = ChordTransposer.chordNotationToNashville(segment, options.toKey || 'C');
+                if (options.toKey === '##') {
+                    // Nashville notation
+                    transposedChord = ChordTransposer.chordNotationToNashville(segment, options.fromKey || 'C');
+
                 } else if (options.fromKey && options.toKey) {
+                    // Regular transposition
                     transposedChord = ChordTransposer.transposeChordNotation(segment, options.fromKey, options.toKey);
+
                 } else {
                     transposedChord = segment;
                 }
                 
-                result += `[${transposedChord.toString()}]`;
-            } else {
-                // For text segments and annotations, keep original content
-                result += segment.content;
+                // Replace the segment in place
+                line.segments[i] = transposedChord;
             }
         }
-        
-        return result;
     }
 
     extractKeyFromFrontmatter(content: string): string | null {
