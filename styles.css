@@ -22,6 +22,15 @@
     padding: 0.5rem;
     background: var(--background-secondary);
     border-radius: 4px;
+    line-height: 1.4;
+}
+
+.chopro-metadata-item {
+    margin-bottom: 0.25rem;
+}
+
+.chopro-metadata-item:last-child {
+    margin-bottom: 0;
 }
 
 .chopro-metadata-name {

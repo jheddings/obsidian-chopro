@@ -2,7 +2,10 @@
 
 Test cases for ChoPro directives (metadata and commands).
 
-## Directives
+## Basic Directives
+
+Standard ChoPro directives for song metadata.
+
 ```chopro
 {title: Song Title Here}
 {artist: Artist Name}
@@ -10,19 +13,17 @@ Test cases for ChoPro directives (metadata and commands).
 {tempo: 120}
 {key: C}
 {capo: 2}
-{x_custom_field: Custom Value}
-{x_custom_tag}
-
-[C]Test song with various [F]standard and [G]custom directives
 ```
 
-## Directive Visibility Test
-```chopro
-{title: Directive Toggle Test}
-{artist: Test Artist}
-{key: C}
+## Custom Directives
 
-[C]This tests whether directives
-[F]are shown or hidden based
-[G]on the showDirectives [C]setting
+Custom directives (x_ prefix).
+
+```chopro
+{title: Custom Directive Test}
+{artist: Test Artist}
+{x_custom_field: Custom Value}
+{x_custom_tag}
+{x_difficulty: Beginner}
+{x_genre: Folk}
 ```
