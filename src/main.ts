@@ -1,7 +1,7 @@
 // main - ChoPro Obsidian Plugin
 
 import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
-import { ChoproProcessor } from './chopro';
+import { ChoproProcessor } from './render';
 import { ChoproStyleManager } from './styles';
 
 export interface ChoproPluginSettings {
