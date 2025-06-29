@@ -3,168 +3,188 @@
 import { ChoproPluginSettings } from './main';
 import { ChordProParser, Song } from "chordproject-parser";
 
+/**
+ * Obsidian formatter that renders Song objects into DOM elements.
+ */
 export class ObsidianFormatter {
-    constructor(private settings: ChoproPluginSettings) {}
+    private container: HTMLElement;
+    private settings: ChoproPluginSettings;
+
+    constructor(container: HTMLElement, settings: ChoproPluginSettings) {
+        this.container = container;
+        this.settings = settings;
+    }
 
     /**
      * Format a Song into Obsidian elements.
      */
-    render(song: Song, container: HTMLElement): void {
-        this.renderMetadata(song, container);
+    format(song: Song): void {
+        this.container.empty();
 
-        for (const section of song.sections) {
-            const sectionDiv = container.createDiv({ cls: 'chopro-section' });
-            this.renderSection(section, sectionDiv);
+        if (this.settings.showMetadata) {
+            this.formatMetadata(song);
         }
+
+        // Add content container
+        const contentDiv = this.container.createDiv({ cls: 'chopro-content' });
+
+        song.sections.forEach((section) => {
+            this.formatSection(section, contentDiv);
+        });
     }
 
-    /**
-     * Render song metadata as directives.
-     */
-    private renderMetadata(song: Song, container: HTMLElement): void {
+    private formatMetadata(song: Song): void {
+        const metadataDiv = this.container.createDiv({ cls: 'chopro-metadata' });
+
         if (song.title) {
-            this.renderDirective('title', song.title, container);
+            this.createMetadataElement('Title', song.title, metadataDiv);
         }
 
         if (song.subtitle) {
-            this.renderDirective('subtitle', song.subtitle, container);
+            this.createMetadataElement('Subtitle', song.subtitle, metadataDiv);
         }
 
         if (song.artists && song.artists.length > 0) {
-            this.renderDirective('artist', song.artists.join(";"), container);
+            const label = song.artists.length > 1 ? 'Artists' : 'Artist';
+            this.createMetadataElement(label, song.artists.join(', '), metadataDiv);
+        }
+
+        if (song.composers && song.composers.length > 0) {
+            const label = song.composers.length > 1 ? 'Composers' : 'Composer';
+            this.createMetadataElement(label, song.composers.join(', '), metadataDiv);
+        }
+
+        if (song.lyricists && song.lyricists.length > 0) {
+            const label = song.lyricists.length > 1 ? 'Lyricists' : 'Lyricist';
+            this.createMetadataElement(label, song.lyricists.join(', '), metadataDiv);
+        }
+
+        if (song.arrangers && song.arrangers.length > 0) {
+            const label = song.arrangers.length > 1 ? 'Arrangers' : 'Arranger';
+            this.createMetadataElement(label, song.arrangers.join(', '), metadataDiv);
         }
 
         if (song.albums && song.albums.length > 0) {
-            this.renderDirective('album', song.albums.join(";"), container);
+            this.createMetadataElement('Album', song.albums.join(', '), metadataDiv);
         }
 
         if (song.key) {
-            this.renderDirective('key', song.key.toString(), container);
+            this.createMetadataElement('Key', song.key.toString(), metadataDiv);
         }
 
         if (song.tempo) {
-            this.renderDirective('tempo', song.tempo.toString(), container);
+            this.createMetadataElement('Tempo', song.tempo.toString(), metadataDiv);
         }
 
         if (song.time) {
-            this.renderDirective('time', song.time.toString(), container);
+            this.createMetadataElement('Time', song.time.toString(), metadataDiv);
         }
 
         if (song.capo) {
-            this.renderDirective('capo', song.capo.toString(), container);
+            this.createMetadataElement('Capo', song.capo.toString(), metadataDiv);
         }
 
         if (song.year) {
-            this.renderDirective('year', song.year.toString(), container);
+            this.createMetadataElement('Year', song.year.toString(), metadataDiv);
         }
 
         if (song.duration) {
-            this.renderDirective('duration', song.duration.toString(), container);
+            const minutes = Math.floor(song.duration / 60);
+            const seconds = song.duration % 60;
+            const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            this.createMetadataElement('Duration', formatted, metadataDiv);
         }
 
         if (song.copyright) {
-            this.renderDirective('copyright', song.copyright, container);
+            this.createMetadataElement('Copyright', song.copyright, metadataDiv);
         }
 
         if (song.customMetadatas) {
-            for (const meta of song.customMetadatas) {
-                this.renderDirective(meta[0], meta[1], container);
-            }
+            song.customMetadatas.forEach(([key, value]) => {
+                const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+                const text = value ? `${capitalizedKey}: ${value}` : capitalizedKey;
+                metadataDiv.createDiv({ cls: 'chopro-directive', text });
+            });
         }
     }
 
-    private renderDirective(name: string, value: string | null, container: HTMLElement): void {
-        const directiveEl = container.createDiv({ cls: 'chopro-directive' });
-        directiveEl.createSpan({ text: name, cls: 'chopro-directive-name' });
-
-        if (value) {
-            directiveEl.createSpan({ text: ': ' + value, cls: 'chopro-directive-value' });
-        }
+    private createMetadataElement(label: string, value: string, container: HTMLElement): void {
+        container.createDiv({ cls: 'chopro-directive', text: `${label}: ${value}` });
     }
 
-    /**
-     * Render a song section.
-     */
-    private renderSection(section: Section, container: HTMLElement): void {
-        if (section instanceof LyricsSection) {
-            this.renderLyricsSection(section, container);
+    private formatSection(section: any, container: HTMLElement): void {
+        const sectionDiv = container.createDiv({ cls: 'chopro-section' });
+        
+        if (section.value) {
+            sectionDiv.createDiv({ cls: 'chopro-section-title', text: section.value });
+        }
+
+        section.lines.forEach((line: any) => {
+            this.formatLine(line, sectionDiv);
+        });
+    }
+
+    private formatLine(line: any, container: HTMLElement): void {
+        if (this.isEmptyLine(line)) {
+            container.createEl('br');
+        } else if (this.isLyricsLine(line)) {
+            this.formatLyricsLine(line, container);
+        } else if (this.isCommentLine(line)) {
+            this.formatCommentLine(line, container);
+        } else if (this.isTabLine(line)) {
+            this.formatTabLine(line, container);
+        } else if (this.isCustomLine(line)) {
+            this.formatCustomLine(line, container);
         } else {
-            this.renderGenericSection(section, container);
+            this.formatGenericLine(line, container);
         }
     }
 
-    /**
-     * Render a lyrics section with proper styling and section headers.
-     */
-    private renderLyricsSection(section: LyricsSection, container: HTMLElement): void {
-        const debugHeader = container.createEl('h2');
-        debugHeader.textContent = 'Lyrics Section';
-
-        if (section.name) {
-            const headerDiv = container.createEl('h2');
-            headerDiv.textContent = section.name;
-
-            if (section.value) {
-                headerDiv.textContent += ': ' + section.value;
-            }
-        }
-
-        this.renderGenericSection(section, container);
+    private isEmptyLine(line: any): boolean {
+        return line.lineType === 'empty' || (!line.pairs && !line.comment && !line.value && !line.name);
     }
 
-    /**
-     * Render a generic section (fallback for unknown types).
-     */
-    private renderGenericSection(section: Section, container: HTMLElement): void {
-        const debugHeader = container.createEl('h2');
-        debugHeader.textContent = 'Generic Section';
-
-        for (const line of section.lines) {
-            this.renderSectionLine(line, container);
-        }
+    private isLyricsLine(line: any): boolean {
+        return line.lineType === 'lyrics' || line.pairs;
     }
 
-    /**
-     * Render a line within a section based on its type.
-     */
-    private renderSectionLine(line: Line, container: HTMLElement): void {
-        if (line instanceof EmptyLine) {
-            container.createEl("br");
-        } else if (line instanceof LyricsLine) {
-            this.renderLyricsLine(line, container);
-        } else {
-            this.renderGenericLine(line, container);
-        }
+    private isCommentLine(line: any): boolean {
+        return line.lineType === 'comment' || line.comment !== undefined;
     }
 
-    /**
-     * Render a lyrics line with chord-lyric pairs.
-     */
-    private renderLyricsLine(line: LyricsLine, container: HTMLElement): void {
+    private isTabLine(line: any): boolean {
+        return line.lineType === 'tabs' || (line.value && typeof line.value === 'string' && line.value.includes('|'));
+    }
+
+    private isCustomLine(line: any): boolean {
+        return line.lineType === 'custom' || (line.name && line.value !== undefined);
+    }
+
+    private formatLyricsLine(line: any, container: HTMLElement): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
         
         if (line.pairs) {
             for (const pair of line.pairs) {
-                this.renderChordLyricsPair(pair, lineDiv);
+                this.formatChordLyricsPair(pair, lineDiv);
             }
         }
     }
 
-    /**
-     * Render a chord-lyrics pair from the parsed structure.
-     */
-    private renderChordLyricsPair(pair: any, lineDiv: HTMLElement): void {
+    private formatChordLyricsPair(pair: any, lineDiv: HTMLElement): void {
         const pairSpan = lineDiv.createSpan({ cls: 'chopro-pair' });
 
-        // Render chord if present
-        if (pair.hasChord() && pair.chord) {
+        if (pair.chord) {
             const chordSpan = pairSpan.createSpan({ cls: 'chopro-chord' });
             const normalizedChord = this.normalizeChordFromObject(pair.chord);
             const decoratedChord = this.decorateChord(normalizedChord);
             chordSpan.innerHTML = decoratedChord;
         }
 
-        // Render lyrics text
+        if (pair.text) {
+            const annotationSpan = pairSpan.createSpan({ cls: 'chopro-annotation' });
+            annotationSpan.textContent = pair.text;
+        }
+
         const lyricsSpan = pairSpan.createSpan({ 
             text: pair.lyrics || '\u00A0',
             cls: 'chopro-lyrics' 
@@ -176,9 +196,6 @@ export class ObsidianFormatter {
         }
     }
 
-    /**
-     * Normalize chord from parsed chord object.
-     */
     private normalizeChordFromObject(chord: any): string {
         if (!chord) return '';
         
@@ -199,17 +216,6 @@ export class ObsidianFormatter {
         return chordString || chord.toString();
     }
 
-    /**
-     * Render a generic line (fallback).
-     */
-    private renderGenericLine(line: any, container: HTMLElement): void {
-        const lineDiv = container.createDiv({ cls: 'chopro-line' });
-        const content = line.value || line.content || line.toString() || '';
-        lineDiv.createSpan({ text: content });
-    }
-    /**
-     * Decorate the chord according to user settings.
-     */
     private decorateChord(chord: string): string {
         switch (this.settings.chordDecorations) {
             case 'square':
@@ -221,8 +227,26 @@ export class ObsidianFormatter {
             case 'angle':
                 return '&lt;' + chord + '&gt;';
         }
-
         return chord;
+    }
+
+    private formatCommentLine(line: any, container: HTMLElement): void {
+        container.createDiv({ cls: 'chopro-comment', text: line.comment });
+    }
+
+    private formatTabLine(line: any, container: HTMLElement): void {
+        container.createDiv({ cls: 'chopro-tab', text: line.value });
+    }
+
+    private formatCustomLine(line: any, container: HTMLElement): void {
+        const text = line.value ? `${line.name}: ${line.value}` : line.name;
+        container.createDiv({ cls: 'chopro-custom', text });
+    }
+
+    private formatGenericLine(line: any, container: HTMLElement): void {
+        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        const content = line.value || line.content || line.toString() || '';
+        lineDiv.createSpan({ text: content });
     }
 }
 
@@ -231,11 +255,11 @@ export class ObsidianFormatter {
  */
 export class ChoproProcessor {
     private parser: ChordProParser;
-    private renderer: ObsidianFormatter;
+    private settings: ChoproPluginSettings;
 
-    constructor(private settings: ChoproPluginSettings) {
+    constructor(settings: ChoproPluginSettings) {
         this.parser = new ChordProParser();
-        this.renderer = new ObsidianFormatter(settings);
+        this.settings = settings;
     }
 
     /**
@@ -244,6 +268,8 @@ export class ChoproProcessor {
     processBlock(source: string, container: HTMLElement): void {
         const parser = new ChordProParser();
         const song = parser.parse(source);
-        this.renderer.render(song, container);
+        
+        const renderer = new ObsidianFormatter(container, this.settings);
+        renderer.format(song);
     }
 }
