@@ -15,14 +15,10 @@ export class ChoproStyleManager {
     static applyStyles(settings: ChoproPluginSettings): void {
         this.removeStyles();
 
-        // Only apply user setting overrides
         const style = document.createElement('style');
         style.id = this.STYLE_ID;
         
-        let overrides = '';
-
-        // Chord and annotation color and size overrides
-        overrides += `
+        let userStylePrefs = `
             .chopro-chord,
             .chopro-annotation {
                 color: ${settings.chordColor};
@@ -30,18 +26,16 @@ export class ChoproStyleManager {
             }
         `;
 
-        // Italic annotations override
         if (settings.italicAnnotations) {
-            overrides += `
+            userStylePrefs += `
             .chopro-annotation {
                 font-style: italic;
             }
             `;
         }
 
-        // Superscript chord modifiers override
         if (settings.superscriptChordMods) {
-            overrides += `
+            userStylePrefs += `
             .chopro-chord-modifier {
                 vertical-align: top;
                 font-size: 0.75em;
@@ -49,7 +43,7 @@ export class ChoproStyleManager {
             `;
         }
 
-        style.textContent = overrides;
+        style.textContent = userStylePrefs;
         document.head.appendChild(style);
     }
 }

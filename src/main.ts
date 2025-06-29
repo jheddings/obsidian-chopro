@@ -7,7 +7,7 @@ import { ChoproStyleManager } from './styles';
 export interface ChoproPluginSettings {
     chordColor: string;
     chordSize: string;
-    showDirectives: boolean;
+    showMetadata: boolean;
     superscriptChordMods: boolean;
     chordDecorations: string;
     italicAnnotations: boolean;
@@ -16,7 +16,7 @@ export interface ChoproPluginSettings {
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
     chordSize: '1em',
-    showDirectives: true,
+    showMetadata: true,
     superscriptChordMods: false,
     chordDecorations: 'none',
     italicAnnotations: true
@@ -83,12 +83,12 @@ class ChoproSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'ChoPro Settings' });
 
         new Setting(containerEl)
-            .setName('Show Directives')
-            .setDesc('Display ChoPro directives like {title}, {artist}, etc.')
+            .setName('Show Metadata')
+            .setDesc('Display song metadata like {title}, {artist}, etc.')
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showDirectives)
+                .setValue(this.plugin.settings.showMetadata)
                 .onChange(async (value) => {
-                    this.plugin.settings.showDirectives = value;
+                    this.plugin.settings.showMetadata = value;
                     await this.plugin.saveSettings();
                     updatePreview();
                 }));
