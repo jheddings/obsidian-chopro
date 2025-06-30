@@ -27,28 +27,28 @@ export class ChoproRenderer {
      */
     renderBlock(block: ChoproBlock, container: HTMLElement): void {
         for (const line of block.lines) {
-            this.renderLine(line, container);
+            this.renderLine(container, line);
         }
     }
 
     /**
      * Render a single line based on its type
      */
-    private renderLine(line: ChoproLine, container: HTMLElement): void {
+    private renderLine(container: HTMLElement, line: ChoproLine): void {
         if (line instanceof EmptyLine) {
             container.createEl('br');
         } else if (line instanceof MetadataLine) {
             if (this.settings.showDirectives) {
-                this.renderMetadata(line, container);
+                this.renderMetadata(container, line);
             }
         } else if (line instanceof InstructionLine) {
-            this.renderInstruction(line.content, container);
+            this.renderInstruction(container, line.content);
         } else if (line instanceof ChordLyricsLine) {
-            this.renderChordLine(line.segments, container);
+            this.renderChordLine(container, line.segments);
         } else if (line instanceof InstrumentalLine) {
-            this.renderInstrumentalLine(line.segments, container);
+            this.renderInstrumentalLine(container, line.segments);
         } else if (line instanceof TextLine) {
-            this.renderTextLine(line.content, container);
+            this.renderTextLine(container, line.content);
         }
 
         // NOTE - CommentLine's are ignored when rendering
@@ -57,7 +57,7 @@ export class ChoproRenderer {
     /**
      * Render metadata.
      */
-    private renderMetadata(meta: MetadataLine, container: HTMLElement): void {
+    private renderMetadata(container: HTMLElement, meta: MetadataLine): void {
         const directiveEl = container.createDiv({ cls: 'chopro-metadata' });
         directiveEl.createSpan({ text: meta.name, cls: 'chopro-metadata-name' });
 
@@ -69,7 +69,7 @@ export class ChoproRenderer {
     /**
      * Render an instruction line
      */
-    private renderInstruction(content: string, container: HTMLElement): void {
+    private renderInstruction(container: HTMLElement, content: string): void {
         const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
         instructionDiv.createSpan({ text: content });
     }
@@ -77,23 +77,23 @@ export class ChoproRenderer {
     /**
      * Render a line with chords and/or lyrics
      */
-    private renderChordLine(segments: LineSegment[], container: HTMLElement): void {
+    private renderChordLine(container: HTMLElement, segments: LineSegment[]): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
-        this.renderSegments(segments, lineDiv);
+        this.renderSegments(lineDiv, segments);
     }
 
     /**
      * Render an instrumental line with chords only (inline)
      */
-    private renderInstrumentalLine(segments: LineSegment[], container: HTMLElement): void {
+    private renderInstrumentalLine(container: HTMLElement, segments: LineSegment[]): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
-        this.renderInstrumental(segments, lineDiv);
+        this.renderInstrumental(lineDiv, segments);
     }
 
     /**
      * Render a lyrics-only line
      */
-    private renderTextLine(content: string, container: HTMLElement): void {
+    private renderTextLine(container: HTMLElement, content: string): void {
         const lineDiv = container.createDiv({ cls: 'chopro-line' });
         lineDiv.createSpan({ text: content, cls: 'chopro-lyrics' });
     }
@@ -101,29 +101,42 @@ export class ChoproRenderer {
     /**
      * Render chord and text segments into HTML elements
      */
-    private renderSegments(segments: LineSegment[], lineDiv: HTMLElement): void {
+    private renderSegments(container: HTMLElement, segments: LineSegment[]): void {
         for (let i = 0; i < segments.length; i++) {
             const segment = segments[i];
 
             // chord and annotation segments are rendered as a pair with their text
-            if (segment instanceof ChordNotation || segment instanceof Annotation) {
+            if (this.isSegmentPair(segment)) {
                 const nextSegment = i + 1 < segments.length ? segments[i + 1] : null;
-                const consumed = this.renderLineSegment(segment, nextSegment, lineDiv);
 
-                if (consumed) {
+                if (this.renderLineSegment(container, segment, nextSegment)) {
                     i++;
                 }
 
-            } else if (segment instanceof TextSegment) {
-                this.renderOrphanedText(segment, lineDiv);
+            } else {
+                this.renderTextSegment(container, segment as TextSegment);
             }
         }
     }
 
     /**
-     * Render text that doesn't have a chord above it
+     * Check if a segment is a chord or annotation
      */
-    private renderOrphanedText(segment: LineSegment, container: HTMLElement): void {
+    private isSegmentPair(segment: LineSegment): segment is ChordNotation | Annotation {
+        return segment instanceof ChordNotation || segment instanceof Annotation;
+    }
+
+    /**
+     * Check if a segment is text (not chord or annotation)
+     */
+    private isTextSegment(segment: LineSegment): boolean {
+        return !this.isSegmentPair(segment);
+    }
+
+    /**
+     * Render text segment that doesn't have a chord above it
+     */
+    private renderTextSegment(container: HTMLElement, segment: LineSegment): void {
         container.createSpan({
             text: segment.content,
             cls: 'chopro-lyrics'
@@ -131,17 +144,53 @@ export class ChoproRenderer {
     }
 
     /**
-     * Render chord segments inline for instrumental lines
+     * Render a line segment paired with optional text (usually lyrics).
      */
-    private renderInstrumental(segments: LineSegment[], container: HTMLElement): void {
+    private renderLineSegment(
+        container: HTMLElement,
+        segment: ChordNotation | Annotation, 
+        nextSegment: LineSegment | null
+    ): boolean {
+        const pairSpan = container.createSpan({ cls: 'chopro-pair' });
+
+        if (segment instanceof ChordNotation) {
+            this.renderChord(pairSpan, segment);
+        } else if (segment instanceof Annotation) {
+            this.renderAnnotation(pairSpan, segment);
+        }
+
+        // Check if there's text immediately following
+        let textContent = '';
+        let textConsumed = false;
+        if (nextSegment && this.isTextSegment(nextSegment)) {
+            textContent = nextSegment.content;
+            textConsumed = true;
+        }
+
+        const textSpan = pairSpan.createSpan({
+            text: textContent || '\u00A0',
+            cls: 'chopro-lyrics'
+        });
+
+        // ensure minimum width for positioning
+        if (!textContent || textContent.trim() === '') {
+            textSpan.style.minWidth = '1ch';
+        }
+
+        return textConsumed;
+    }
+
+    /**
+     * Render an instrumental line with chords only (inline)
+     */
+    private renderInstrumental(container: HTMLElement, segments: LineSegment[]): void {
         for (const segment of segments) {
             if (segment instanceof ChordNotation) {
-                this.renderChord(segment, container);
+                this.renderChord(container, segment);
             } else if (segment instanceof Annotation) {
-                this.renderAnnotation(segment, container);
-            } else if (segment instanceof TextSegment) {
-                const textSpan = container.createSpan({ cls: 'chopro-lyrics' });
-                textSpan.textContent = segment.content;
+                this.renderAnnotation(container, segment);
+            } else {
+                this.renderTextSegment(container, segment);
             }
         }
     }
@@ -149,23 +198,39 @@ export class ChoproRenderer {
     /**
      * Create a chord span with decorations and styling.
      */
-    private renderChord(segment: ChordNotation, container: HTMLElement): void {
+    private renderChord(container: HTMLElement, segment: ChordNotation): void {
         const chordSpan = container.createSpan({ cls: 'chopro-chord' });
-        let totalChordLength = 0;
+        const totalChordLength = this.applyChordDecorations(chordSpan, segment);
+        this.setMinimumWidth(container, totalChordLength);
+    }
 
+    /**
+     * Create an annotation span with styling.
+     */
+    private renderAnnotation(container: HTMLElement, segment: Annotation): void {
+        const annotationSpan = container.createSpan({ cls: 'chopro-annotation' });
+        annotationSpan.textContent = segment.content;
+        this.setMinimumWidth(container, segment.content.length);
+    }
+
+    /**
+     * Apply chord decorations and calculate total width
+     */
+    private applyChordDecorations(container: HTMLElement, segment: ChordNotation): number {
+        let totalChordLength = 0;
         const { prefix, suffix } = this.getChordDecorations();
         
         if (prefix && prefix.length > 0) {
-            chordSpan.createSpan({ text: prefix });
+            container.createSpan({ text: prefix });
             totalChordLength += prefix.length;
         }
 
         // add the base chord (root + accidental)
-        chordSpan.createSpan({ text: segment.note });
+        container.createSpan({ text: segment.note });
         totalChordLength += segment.note.length;
 
         if (segment.modifier) {
-            chordSpan.createSpan({ 
+            container.createSpan({ 
                 text: segment.modifier.toLowerCase(), 
                 cls: 'chopro-chord-modifier' 
             });
@@ -173,66 +238,16 @@ export class ChoproRenderer {
         }
 
         if (segment.bass) {
-            chordSpan.createSpan({ text: `/${segment.bass}` });
+            container.createSpan({ text: `/${segment.bass}` });
             totalChordLength += 1 + segment.bass.length; // +1 for the slash
         }
 
         if (suffix && suffix.length > 0) {
-            chordSpan.createSpan({ text: suffix });
+            container.createSpan({ text: suffix });
             totalChordLength += suffix.length;
         }
-        
-        // TODO figure out how to account for user font size preference
-        container.style.setProperty('--chord-min-width', `${totalChordLength}ch`);
-    }
 
-    /**
-     * Create an annotation span with styling.
-     */
-    private renderAnnotation(segment: Annotation, container: HTMLElement): void {
-        const annotationSpan = container.createSpan({ cls: 'chopro-annotation' });
-        annotationSpan.textContent = segment.content;
-
-        // TODO figure out how to account for user font size preference
-        container.style.setProperty('--chord-min-width', `${segment.content.length}ch`);
-    }
-
-    /**
-     * Render a line segment with optional following text.
-     */
-    private renderLineSegment(
-        segment: LineSegment, 
-        nextSegment: LineSegment | null, 
-        container: HTMLElement
-    ): boolean {
-        const pairSpan = container.createSpan({ cls: 'chopro-pair' });
-
-        if (segment instanceof ChordNotation) {
-            this.renderChord(segment, pairSpan);
-        } else if (segment instanceof Annotation) {
-            this.renderAnnotation(segment, pairSpan);
-        }
-
-        // Check if there's text immediately following
-        let textContent = '';
-        let textConsumed = false;
-        if (nextSegment && nextSegment instanceof TextSegment) {
-            textContent = nextSegment.content;
-            textConsumed = true;
-        }
-
-        // Create the text span (may be empty for chord/annotation-only positions)
-        const textSpan = pairSpan.createSpan({
-            text: textContent || '\u00A0',
-            cls: 'chopro-lyrics'
-        });
-
-        // If the text is only whitespace, ensure minimum width for positioning
-        if (!textContent || textContent.trim() === '') {
-            textSpan.style.minWidth = '1ch';
-        }
-
-        return textConsumed;
+        return totalChordLength;
     }
 
     /**
@@ -251,6 +266,14 @@ export class ChoproRenderer {
             default:
                 return { prefix: '', suffix: '' };
         }
+    }
+
+    /**
+     * Set minimum width for chord positioning
+     */
+    private setMinimumWidth(container: HTMLElement, lengthInChars: number): void {
+        // TODO figure out how to account for user font size preference
+        container.style.setProperty('--chord-min-width', `${lengthInChars}ch`);
     }
 }
 
