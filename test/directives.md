@@ -15,14 +15,3 @@ Test cases for ChoPro directives (metadata and commands).
 
 [C]Test song with various [F]standard and [G]custom directives
 ```
-
-## Directive Visibility Test
-```chopro
-{title: Directive Toggle Test}
-{artist: Test Artist}
-{key: C}
-
-[C]This tests whether directives
-[F]are shown or hidden based
-[G]on the showDirectives [C]setting
-```
