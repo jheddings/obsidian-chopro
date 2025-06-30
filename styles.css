@@ -5,7 +5,7 @@
     line-height: 1.8;
     white-space: pre;
     tab-size: 4;
-    padding: 1rem;
+    padding: 0.25rem 0rem;
     background: var(--background-primary);
     border-radius: 6px;
     overflow-x: auto;
@@ -64,7 +64,6 @@
 }
 
 .chopro-line:has(.chopro-pair) {
-    min-height: 2.5em;
     padding-top: 1.5em;
     align-items: baseline;
 }
@@ -74,6 +73,8 @@
     display: inline-block;
     vertical-align: baseline;
     flex-shrink: 0;
+    min-width: var(--chord-min-width, 1ch);
+    margin-right: 0.1em;
 }
 
 /* ===== Chord and Annotation Styles ===== */
@@ -84,6 +85,7 @@
     font-family: var(--font-monospace);
     display: inline;
     margin-right: 0.5em;
+    text-overflow: ellipsis;
 }
 
 .chopro-pair .chopro-chord,

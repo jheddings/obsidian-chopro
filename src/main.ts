@@ -1,12 +1,13 @@
 // main - ChoPro Obsidian Plugin
 
 import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
-import { ChoproProcessor } from './render';
+import { ChoproRenderer } from './render';
+import { ChoproBlock } from './parser';
 import { ChoproStyleManager } from './styles';
 
 export interface ChoproPluginSettings {
     chordColor: string;
-    chordSize: string;
+    chordSize: number;
     showDirectives: boolean;
     superscriptChordMods: boolean;
     chordDecorations: string;
@@ -15,7 +16,7 @@ export interface ChoproPluginSettings {
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
-    chordSize: '1em',
+    chordSize: 1.0,
     showDirectives: true,
     superscriptChordMods: false,
     chordDecorations: 'none',
@@ -24,13 +25,12 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
-    processor: ChoproProcessor;
+    renderer: ChoproRenderer;
 
     async onload() {
         await this.loadSettings();
 
-        // Initialize the processor with current settings
-        this.processor = new ChoproProcessor(this.settings);
+        this.renderer = new ChoproRenderer(this.settings);
 
         this.registerMarkdownCodeBlockProcessor('chopro', (source, el, ctx) => {
             this.processChoproBlock(source, el);
@@ -48,8 +48,8 @@ export default class ChoproPlugin extends Plugin {
     async saveSettings() {
         await this.saveData(this.settings);
 
-        // Update the processor with new settings
-        this.processor = new ChoproProcessor(this.settings);
+        // Update the renderer with new settings
+        this.renderer = new ChoproRenderer(this.settings);
 
         // reapply the current styles
         ChoproStyleManager.applyStyles(this.settings);
@@ -58,10 +58,11 @@ export default class ChoproPlugin extends Plugin {
     processChoproBlock(source: string, el: HTMLElement) {
         el.empty();
         
-        // Create container
         const container = el.createDiv({ cls: 'chopro-container' });
-        this.processor.processBlock(source, container);
+        const block = ChoproBlock.parse(source);
+        this.renderer.renderBlock(block, container);
     }
+
     onunload() {
         ChoproStyleManager.removeStyles();
     }
@@ -106,12 +107,13 @@ class ChoproSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Chord Size')
-            .setDesc('Font size for chord text (CSS size value)')
-            .addText(text => text
-                .setPlaceholder('1em')
+            .setDesc('Font size for chord text (relative to base font)')
+            .addSlider(slider => slider
+                .setLimits(0.5, 2.0, 0.05)
                 .setValue(this.plugin.settings.chordSize)
+                .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.chordSize = value || DEFAULT_SETTINGS.chordSize;
+                    this.plugin.settings.chordSize = value;
                     updatePreview();
                 }));
 
@@ -167,11 +169,12 @@ class ChoproSettingTab extends PluginSettingTab {
             preview.empty();
             this.plugin.saveSettings();
 
-            const trimmedChopro = choproPreview.replace(/^[ \t]+|[ \t]+$/gm, '');
-            this.plugin.processor.processBlock(trimmedChopro, preview);
+            const sample = choproPreview.replace(/^\s+/m, '');
+            const block = ChoproBlock.parse(sample);
+            this.plugin.renderer.renderBlock(block, preview);
         };
         
-        // Initial preview render
+        // initial preview
         updatePreview();
     }
 }
