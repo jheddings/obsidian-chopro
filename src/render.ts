@@ -276,22 +276,3 @@ export class ChoproRenderer {
         container.style.setProperty('--chord-min-width', `${lengthInChars}ch`);
     }
 }
-
-/**
- * Orchestrates parsing and rendering of ChoPro blocks.
- */
-export class ChoproProcessor {
-    private renderer: ChoproRenderer;
-
-    constructor(private settings: ChoproPluginSettings) {
-        this.renderer = new ChoproRenderer(settings);
-    }
-
-    /**
-     * Main entry point to process a raw ChoPro block.
-     */
-    processBlock(source: string, container: HTMLElement): void {
-        const block = ChoproBlock.parse(source);
-        this.renderer.renderBlock(block, container);
-    }
-}
