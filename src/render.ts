@@ -157,7 +157,7 @@ export class ChoproRenderer {
         
         if (prefix && prefix.length > 0) {
             chordSpan.createSpan({ text: prefix });
-            totalChordLength += suffix.length;
+            totalChordLength += prefix.length;
         }
 
         // add the base chord (root + accidental)
