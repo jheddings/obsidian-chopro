@@ -28,6 +28,9 @@ export class ChoproStyleManager {
                 color: ${settings.chordColor};
                 font-size: ${settings.chordSize}em;
             }
+            .chopro-line:has(.chopro-pair) {
+                min-height: ${1.5 + settings.chordSize}em;
+            }
         `;
 
         // Italic annotations override
