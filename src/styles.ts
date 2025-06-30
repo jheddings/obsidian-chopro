@@ -26,7 +26,10 @@ export class ChoproStyleManager {
             .chopro-chord,
             .chopro-annotation {
                 color: ${settings.chordColor};
-                font-size: ${settings.chordSize};
+                font-size: ${settings.chordSize}em;
+            }
+            .chopro-line:has(.chopro-pair) {
+                min-height: ${1.5 + settings.chordSize}em;
             }
         `;
 

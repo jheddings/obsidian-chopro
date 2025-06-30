@@ -63,18 +63,6 @@ export class ChordNotation extends LineSegment {
         const slashPart = this.bass ? `/${this.bass}` : '';
         return `[${this.note + modPart + slashPart}]`;
     }
-
-    /**
-     * Get the chord with modifier styling for HTML.
-     */
-    getStyledChord(): string {
-        const modPart = this.modifier 
-            ? `<span class="chopro-chord-modifier">${this.modifier.toLowerCase()}</span>` 
-            : '';
-        const slashPart = this.bass ? `/${this.bass}` : '';
-
-        return this.note + modPart + slashPart;
-    }
 }
 
 export class Annotation extends LineSegment {
