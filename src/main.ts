@@ -1,9 +1,11 @@
 // main - ChoPro Obsidian Plugin
 
-import { Plugin, PluginSettingTab, Setting, App } from 'obsidian';
+import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent, Editor } from 'obsidian';
+import { ChordType } from './parser';
 import { ChoproRenderer } from './render';
 import { ChoproBlock } from './parser';
 import { ChoproStyleManager } from './styles';
+import { FileTransposer, TransposeOptions } from './transpose';
 
 export interface ChoproPluginSettings {
     chordColor: string;
@@ -25,20 +27,53 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
+    transposer: FileTransposer;
     renderer: ChoproRenderer;
 
     async onload() {
         await this.loadSettings();
 
+        this.transposer = new FileTransposer(this.app);
         this.renderer = new ChoproRenderer(this.settings);
 
         this.registerMarkdownCodeBlockProcessor('chopro', (source, el, ctx) => {
             this.processChoproBlock(source, el);
         });
 
+        this.addCommand({
+            id: 'chopro-transpose',
+            name: 'Transpose chords in current file',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.openTransposeModal(view);
+            }
+        });
+
         this.addSettingTab(new ChoproSettingTab(this.app, this));
 
         ChoproStyleManager.applyStyles(this.settings);
+    }
+
+    private async openTransposeModal(activeView: MarkdownView) {
+        const file = activeView.file;
+        if (!file) {
+            new Notice('No file is currently open');
+            return;
+        }
+
+        const content = await this.app.vault.read(file);
+        const key = this.transposer.extractKeyFromFrontmatter(content);
+
+        const modal = new TransposeModal(this.app, key, async (options) => {
+            try {
+                await this.transposer.transposeFile(file, options);
+                new Notice('File transposed successfully');
+            } catch (error) {
+                console.error('Transpose error:', error);
+                new Notice('Error transposing file');
+            }
+        });
+
+        modal.open();
     }
 
     async loadSettings() {
@@ -176,5 +211,105 @@ class ChoproSettingTab extends PluginSettingTab {
         
         // initial preview
         updatePreview();
+    }
+}
+
+class TransposeModal extends Modal {
+    private fromKey: string | null = null;
+    private toKey: string = 'C';
+    private chordType: ChordType = ChordType.ALPHA;
+    private onConfirm: (options: TransposeOptions) => void;
+
+    constructor(app: App, currentKey: string | null, onConfirm: (options: TransposeOptions) => void) {
+        super(app);
+        this.fromKey = currentKey;
+        this.toKey = currentKey || 'C';
+        this.onConfirm = onConfirm;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+
+        contentEl.createEl('h2', { text: 'Transpose ChoPro' });
+
+        new Setting(contentEl)
+            .setName('Current Key')
+            .setDesc('Select the current key of the song')
+            .addDropdown(dropdown => {
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                if (this.fromKey) {
+                    dropdown.setValue(this.fromKey);
+                }
+                dropdown.onChange(value => {
+                    this.fromKey = value;
+                });
+            });
+
+        new Setting(contentEl)
+            .setName('Chord Type')
+            .setDesc('Choose output format for chords')
+            .addDropdown(dropdown => dropdown
+                .addOption(ChordType.ALPHA, 'Alpha (C, G, Am, etc.)')
+                .addOption(ChordType.NASHVILLE, 'Nashville Numbers (1, 5, 6m, etc.)')
+                .setValue(this.chordType)
+                .onChange(value => {
+                    this.chordType = value as ChordType;
+                    if (value === ChordType.NASHVILLE) {
+                        this.toKey = '##';
+                        targetKeyDropdown.setDisabled(true);
+                        targetKeySetting.setDesc('Not applicable for the selected chord type');
+                    } else {
+                        this.toKey = this.fromKey || 'C';
+                        targetKeyDropdown.setDisabled(false);
+                        targetKeySetting.setDesc('Choose the key to transpose to');
+                    }
+                }));
+
+        let targetKeyDropdown: any;
+        const targetKeySetting = new Setting(contentEl)
+            .setName('Target Key')
+            .setDesc('Choose the key to transpose to')
+            .addDropdown(dropdown => {
+                targetKeyDropdown = dropdown;
+                FileTransposer.KEYS.forEach(key => dropdown.addOption(key, key));
+                dropdown.setValue(this.toKey);
+                dropdown.onChange(value => {
+                    this.toKey = value;
+                });
+            });
+
+        if (this.chordType !== ChordType.ALPHA) {
+            targetKeyDropdown.setDisabled(true);
+            targetKeySetting.setDesc('Not applicable for the selected chord type');
+        }
+
+        const buttonContainer = contentEl.createDiv({ cls: 'chopro-modal-button-container' });
+
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Cancel')
+            .onClick(() => this.close());
+
+        new ButtonComponent(buttonContainer)
+            .setButtonText('Transpose')
+            .setCta()
+            .onClick(() => {
+                if (this.chordType === ChordType.ALPHA && !this.fromKey) {
+                    new Notice('Cannot transpose without the current key.');
+                    return;
+                }
+                
+                this.onConfirm({
+                    fromKey: this.fromKey || undefined,
+                    toKey: this.toKey,
+                    chordType: this.chordType
+                });
+                this.close();
+            });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
     }
 }
