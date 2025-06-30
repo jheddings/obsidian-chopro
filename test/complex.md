@@ -27,5 +27,4 @@ End of line [G]
 [C]	Tab[F]	Separated[G]	Chords
 [C]                                                            [F]Wide gap
 Line with no chords at all
-[Em] [] [Dm] [G]
 ```

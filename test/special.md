@@ -20,6 +20,7 @@ Another plain line
 [C] [F] [G] [Am]
 (Another instruction)
 Final [C]chord [F]line
+[Em] []Empty chord [Dm] [G]
 ```
 
 ## Comment Handling
