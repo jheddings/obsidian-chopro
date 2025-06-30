@@ -95,7 +95,7 @@ export abstract class ChoproLine {
     constructor() {}
 
     /**
-     * Static factory method to parse a line into the appropriate ChoproLine subclass
+     * Factory method to parse a line into the appropriate subclass
      */
     static parse(line: string): ChoproLine | null {
         if (EmptyLine.test(line)) {
@@ -106,8 +106,8 @@ export abstract class ChoproLine {
             return CommentLine.parse(line);
         }
 
-        if (MetadataLine.test(line)) {
-            return MetadataLine.parse(line);
+        if (DirectiveLine.test(line)) {
+            return DirectiveLine.parse(line);
         }
 
         if (InstructionLine.test(line)) {
@@ -151,32 +151,33 @@ export class EmptyLine extends ChoproLine {
     }
 }
 
-export class MetadataLine extends ChoproLine {
+/**
+ * Base class for directive lines.
+ */
+export abstract class DirectiveLine extends ChoproLine {
     public static readonly LINE_PATTERN = /^\{([^:]+):?\s*(.*)\}$/;
 
-    constructor(public name: string, public value?: string ) {
+    constructor(public name: string, public value?: string) {
         super();
     }
 
     static test(line: string): boolean {
-        return MetadataLine.LINE_PATTERN.test(line);
+        return DirectiveLine.LINE_PATTERN.test(line);
     }
 
-    static parse(line: string): MetadataLine {
-        const match = line.match(MetadataLine.LINE_PATTERN);
-        if (!match) {
-            return new MetadataLine('unknown', line);
+    /**
+     * Factory method to parse a directive line into the appropriate subclass.
+     */
+    static parse(line: string): DirectiveLine {
+        if (CustomDirective.test(line)) {
+            return CustomDirective.parse(line);
         }
 
-        let name = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : undefined;
-
-        // handle custom meta fields (start with x_)
-        if (name.startsWith('x_')) {
-            name = name.substring(2).replace(/_/g, ' ');
+        if (MetadataDirective.test(line)) {
+            return MetadataDirective.parse(line);
         }
 
-        return new MetadataLine(name, value);
+        throw new Error('Unknown directive');
     }
 
     /**
@@ -186,6 +187,71 @@ export class MetadataLine extends ChoproLine {
         const colonSeparator = this.value ? ':' : '';
         const valueString = this.value ? ` ${this.value}` : '';
         return `{${this.name}${colonSeparator}${valueString}}`;
+    }
+}
+
+export class CustomDirective extends DirectiveLine {
+    constructor(public name: string, public value?: string) {
+        super(name, value);
+    }
+
+    static test(line: string): boolean {
+        const match = line.match(DirectiveLine.LINE_PATTERN);
+        if (!match) {
+            return false;
+        }
+
+        const name = match[1].trim().toLowerCase();
+        return name.startsWith('x_');
+    }
+
+    static parse(line: string): CustomDirective {
+        const match = line.match(DirectiveLine.LINE_PATTERN);
+        if (!match) {
+            throw new Error('Invalid directive format');
+        }
+
+        let name = match[1].trim().toLowerCase();
+        const value = match[2] ? match[2].trim() : undefined;
+
+        if (name.startsWith('x_')) {
+            name = name.substring(2);
+        }
+
+        return new CustomDirective(name, value);
+    }
+
+    /**
+     * Convert the custom directive to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `x_${super.toString()}`;
+    }
+}
+
+export class MetadataDirective extends DirectiveLine {
+    constructor(public name: string, public value?: string ) {
+        super(name, value);
+    }
+
+    static test(line: string): boolean {
+        if (!DirectiveLine.test(line)) {
+            return false;
+        }
+        
+        return !CustomDirective.test(line);
+    }
+
+    static parse(line: string): MetadataDirective {
+        const match = line.match(DirectiveLine.LINE_PATTERN);
+        if (!match) {
+            return new MetadataDirective('unknown', line);
+        }
+
+        const name = match[1].trim().toLowerCase();
+        const value = match[2] ? match[2].trim() : undefined;
+
+        return new MetadataDirective(name, value);
     }
 }
 
@@ -494,7 +560,7 @@ export class ChoproBlock extends ContentBlock {
      */
     get key(): string | undefined {
         for (const line of this.lines) {
-            if (line instanceof MetadataLine && line.name === 'key') {
+            if (line instanceof MetadataDirective && line.name === 'key') {
                 return line.value;
             }
         }

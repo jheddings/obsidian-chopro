@@ -41,6 +41,29 @@
     margin-top: -0.5rem;
 }
 
+/* ===== Custom Directive Styles ===== */
+.chopro-custom {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: var(--background-secondary);
+    border-radius: 4px;
+}
+
+.chopro-custom-name {
+    font-weight: bold;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.chopro-custom-value {
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.chopro-custom + .chopro-custom {
+    margin-top: -0.5rem;
+}
+
 /* ===== Instruction Styles ===== */
 .chopro-instruction {
     margin-bottom: 0.75rem;
