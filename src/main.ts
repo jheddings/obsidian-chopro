@@ -7,7 +7,7 @@ import { ChoproStyleManager } from './styles';
 
 export interface ChoproPluginSettings {
     chordColor: string;
-    chordSize: string;
+    chordSize: number;
     showDirectives: boolean;
     superscriptChordMods: boolean;
     chordDecorations: string;
@@ -16,7 +16,7 @@ export interface ChoproPluginSettings {
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
-    chordSize: '1em',
+    chordSize: 1.0,
     showDirectives: true,
     superscriptChordMods: false,
     chordDecorations: 'none',
@@ -107,12 +107,13 @@ class ChoproSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Chord Size')
-            .setDesc('Font size for chord text (CSS size value)')
-            .addText(text => text
-                .setPlaceholder('1em')
+            .setDesc('Font size for chord text (relative to base font)')
+            .addSlider(slider => slider
+                .setLimits(0.5, 2.0, 0.05)
                 .setValue(this.plugin.settings.chordSize)
+                .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.chordSize = value || DEFAULT_SETTINGS.chordSize;
+                    this.plugin.settings.chordSize = value;
                     updatePreview();
                 }));
 

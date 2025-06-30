@@ -269,10 +269,10 @@ export class ChoproRenderer {
     }
 
     /**
-     * Set minimum width for chord positioning
+     * Set minimum width for chord positioning.
      */
     private setMinimumWidth(container: HTMLElement, lengthInChars: number): void {
-        // TODO figure out how to account for user font size preference
-        container.style.setProperty('--chord-min-width', `${lengthInChars}ch`);
+        const adjustedWidth = lengthInChars * this.settings.chordSize;
+        container.style.setProperty('--chord-min-width', `${adjustedWidth}ch`);
     }
 }

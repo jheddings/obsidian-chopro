@@ -26,7 +26,7 @@ export class ChoproStyleManager {
             .chopro-chord,
             .chopro-annotation {
                 color: ${settings.chordColor};
-                font-size: ${settings.chordSize};
+                font-size: ${settings.chordSize}em;
             }
         `;
 
