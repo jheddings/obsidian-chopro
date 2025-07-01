@@ -265,7 +265,9 @@ export class CustomDirective extends DirectiveLine {
      * Convert the custom directive to its normalized ChoPro representation.
      */
     toString(): string {
-        return `x_${super.toString()}`;
+        const colonSeparator = this.value ? ':' : '';
+        const valueString = this.value ? ` ${this.value}` : '';
+        return `{x_${this.name}${colonSeparator}${valueString}}`;
     }
 }
 
