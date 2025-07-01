@@ -11,7 +11,6 @@ An Obsidian plugin that renders ChordPro format chord sheets with accurate chord
 ## Features
 
 - **Accurate Chord Positioning**: Improved algorithm for precise chord-to-lyric alignment
-- **ChordPro Directives Support**: Display song metadata like `{title}`, `{artist}`, `{key}`, etc.
 - **Configurable Styling**: Customizable chord color, directive display
 - **Chord Normalization**: Automatic cleanup and standardization of chord notation
 
@@ -21,9 +20,6 @@ Create a code block with the `chopro` language identifier:
 
 ````markdown
 ```chopro
-{title: Amazing Grace}
-{artist: Traditional}
-
 [C]Amazing [F]grace how [G]sweet the sound
 That [C]saved a [Am]wretch like [F]me[G]
 [C]I once was [F]lost but [G]now am found
@@ -35,7 +31,6 @@ Was [C]blind but [Am]now I [F]see[C]
 
 Access settings via Settings → Community Plugins → ChordPro Viewer:
 
-- **Show Directives**: Toggle display of ChordPro metadata directives like `{title}`, `{artist}`, etc.
 - **Chord Color**: Set the color for chord text (CSS color value, default: `#2563eb`)
 - **Chord Size**: Font size for chord text (CSS size value, default: `1em`)
 - **Superscript Chord Modifiers**: Display chord modifiers (7, maj7, sus4, etc.) as superscript
@@ -54,23 +49,11 @@ The settings panel includes a live preview that updates as you change configurat
 - **Chords at any position**: Beginning, middle, or end of lines
 - **Chord modifiers**: Support for superscript display of extensions (7, maj7, sus4, etc.)
 
-### Directives
-- **Song metadata**: `{title: Song Title}`, `{artist: Artist Name}`, `{album: Album Name}`
-- **Musical information**: `{key: C}`, `{tempo: 120}`, `{capo: 2}`
-- **Structural markers**: `{verse}`, `{chorus}`, `{bridge}`
-- **Custom directives**: `{custom_field: Custom Value}`, `{any-directive: Value}`
-- **Value-less directives**: `{instrumental}`, `{repeat}`
-
 ### Annotations
 - **Performance markings**: `[*Rit.]`, `[*Forte]`, `[*Andante]`
 - **Dynamic markings**: `[*pp]`, `[*ff]`, `[*Crescendo]`
 - **Structural annotations**: `[*Fine]`, `[*D.C. al Fine]`, `[*Begin softly]`
 - **Configurable styling**: Toggle italic display for all annotations
-
-### Instructions
-- **Section markers**: `(Verse 1)`, `(Chorus)`, `(Bridge - Slow and reverent)`
-- **Performance instructions**: `(Intro)`, `(Outro)`, `(Instrumental break)`
-- **Descriptive notes**: Any text wrapped in parentheses for organization
 
 ## Installation
 

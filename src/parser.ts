@@ -212,14 +212,6 @@ export abstract class ChoproLine {
             return CommentLine.parse(line);
         }
 
-        if (DirectiveLine.test(line)) {
-            return DirectiveLine.parse(line);
-        }
-
-        if (InstructionLine.test(line)) {
-            return InstructionLine.parse(line);
-        }
-
         if (InstrumentalLine.test(line)) {
             return InstrumentalLine.parse(line);
         }
@@ -257,112 +249,6 @@ export class EmptyLine extends ChoproLine {
      */
     toString(): string {
         return '';
-    }
-}
-
-/**
- * Base class for directive lines.
- */
-export abstract class DirectiveLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^\{([^:]+):?\s*(.*)\}$/;
-
-    constructor(public name: string, public value?: string) {
-        super();
-    }
-
-    static test(line: string): boolean {
-        return DirectiveLine.LINE_PATTERN.test(line);
-    }
-
-    /**
-     * Factory method to parse a directive line into the appropriate subclass.
-     */
-    static parse(line: string): DirectiveLine {
-        if (CustomDirective.test(line)) {
-            return CustomDirective.parse(line);
-        }
-
-        if (MetadataDirective.test(line)) {
-            return MetadataDirective.parse(line);
-        }
-
-        throw new Error('Unknown directive');
-    }
-
-    /**
-     * Convert the metadata line to its normalized ChoPro representation.
-     */
-    toString(): string {
-        const colonSeparator = this.value ? ':' : '';
-        const valueString = this.value ? ` ${this.value}` : '';
-        return `{${this.name}${colonSeparator}${valueString}}`;
-    }
-}
-
-export class CustomDirective extends DirectiveLine {
-    constructor(public name: string, public value?: string) {
-        super(name, value);
-    }
-
-    static test(line: string): boolean {
-        const match = line.match(DirectiveLine.LINE_PATTERN);
-        if (!match) {
-            return false;
-        }
-
-        const name = match[1].trim().toLowerCase();
-        return name.startsWith('x_');
-    }
-
-    static parse(line: string): CustomDirective {
-        const match = line.match(DirectiveLine.LINE_PATTERN);
-        if (!match) {
-            throw new Error('Invalid directive format');
-        }
-
-        let name = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : undefined;
-
-        if (name.startsWith('x_')) {
-            name = name.substring(2);
-        }
-
-        return new CustomDirective(name, value);
-    }
-
-    /**
-     * Convert the custom directive to its normalized ChoPro representation.
-     */
-    toString(): string {
-        const colonSeparator = this.value ? ':' : '';
-        const valueString = this.value ? ` ${this.value}` : '';
-        return `{x_${this.name}${colonSeparator}${valueString}}`;
-    }
-}
-
-export class MetadataDirective extends DirectiveLine {
-    constructor(public name: string, public value?: string ) {
-        super(name, value);
-    }
-
-    static test(line: string): boolean {
-        if (!DirectiveLine.test(line)) {
-            return false;
-        }
-        
-        return !CustomDirective.test(line);
-    }
-
-    static parse(line: string): MetadataDirective {
-        const match = line.match(DirectiveLine.LINE_PATTERN);
-        if (!match) {
-            return new MetadataDirective('unknown', line);
-        }
-
-        const name = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : undefined;
-
-        return new MetadataDirective(name, value);
     }
 }
 
@@ -409,31 +295,6 @@ export class CommentLine extends ChoproLine {
      */
     toString(): string {
         return `# ${this.content}`;
-    }
-}
-
-export class InstructionLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^\((.+)\)$/;
-
-    constructor(public content: string) {
-        super();
-    }
-
-    static test(line: string): boolean {
-        return InstructionLine.LINE_PATTERN.test(line);
-    }
-
-    static parse(line: string): InstructionLine {
-        const match = line.match(InstructionLine.LINE_PATTERN);
-        const content = match ? match[1] : line;
-        return new InstructionLine(content);
-    }
-
-    /**
-     * Convert the instruction line to its normalized ChoPro representation.
-     */
-    toString(): string {
-        return `(${this.content})`;
     }
 }
 
@@ -659,18 +520,6 @@ export class ChoproBlock extends ContentBlock {
         }
 
         return new ChoproBlock(choproLines);
-    }
-
-    /**
-     * Get the key from metadata lines, or undefined if none exist.
-     */
-    get key(): string | undefined {
-        for (const line of this.lines) {
-            if (line instanceof MetadataDirective && line.name === 'key') {
-                return line.value;
-            }
-        }
-        return undefined;
     }
 
     /**
