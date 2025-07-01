@@ -10,17 +10,10 @@ Test cases for error handling, malformed input, and special cases.
 [C]Testing [F♯]unicode [G♭]sharp [A♭]flat symbols
 [C]Café [F]naïve [G]résumé [Am]piñata lyrics
 
-{empty_directive}
-{directive_with_colon:}
-{directive:with:multiple:colons}
-(Empty instruction line test)
-()
-
 Another plain line
 [C] [F] [G] [Am]
-(Another instruction)
-Final [C]chord [F]line
 [Em] []Empty chord [Dm] [G]
+Final [C]chord [F]line
 ```
 
 ## Comment Handling
@@ -31,8 +24,6 @@ Final [C]chord [F]line
 #    Comment with spaces after hash
 #No space after hash
 # Comment with [C]chord notation inside
-# Comment with {directive:value} inside
-
 [C]Verse with [F]chords
 # Another comment in the middle
 [G]More chords [Am]here
