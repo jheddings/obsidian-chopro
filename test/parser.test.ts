@@ -1,4 +1,4 @@
-import { ChordNotation, ChordType, Annotation } from '../src/parser';
+import { ChordNotation, ChordType, Annotation, TextSegment } from '../src/parser';
 
 describe('Basic ChordNotation', () => {
   it('parses a standard C chord', () => {
@@ -26,5 +26,14 @@ describe('Basic Annotation', () => {
     // parse again to ensure round-trip compatibility
     const takeTwo = Annotation.parse(roundTrip);
     expect(takeTwo.content).toBe(annotation.content);
+  });
+});
+
+describe('Basic TextSegment', () => {
+  it('stores and stringifies plain text', () => {
+    const text = 'Just some lyrics';
+    const segment = new TextSegment(text);
+    expect(segment.content).toBe(text);
+    expect(segment.toString()).toBe(text);
   });
 });
