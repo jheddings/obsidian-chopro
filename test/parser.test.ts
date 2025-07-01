@@ -11,6 +11,7 @@ import {
     DirectiveLine,
     CustomDirective,
     MetadataDirective,
+    Accidental,
 } from "../src/parser";
 
 describe("Alpha ChordNotation", () => {
@@ -19,7 +20,7 @@ describe("Alpha ChordNotation", () => {
 
         const chord = ChordNotation.parse(original);
         expect(chord.root).toBe("C");
-        expect(chord.accidental).toBeUndefined();
+        expect(chord.accidental).toBe(Accidental.NATURAL);
         expect(chord.modifier).toBeUndefined();
         expect(chord.bass).toBeUndefined();
         expect(chord.note).toBe("C");
@@ -41,7 +42,7 @@ describe("Alpha ChordNotation", () => {
         const chord = ChordNotation.parse(original);
 
         expect(chord.root).toBe("F");
-        expect(chord.accidental).toBe("#");
+        expect(chord.accidental).toBe(Accidental.SHARP);
         expect(chord.modifier).toBe("m7");
         expect(chord.bass).toBe("B");
         expect(chord.note).toBe("F#");
@@ -63,13 +64,51 @@ describe("Alpha ChordNotation", () => {
         const chord = ChordNotation.parse(original);
 
         expect(chord.root).toBe("F");
-        expect(chord.accidental).toBe("♯");
+        expect(chord.accidental).toBe(Accidental.SHARP);
         expect(chord.modifier).toBe("m7");
         expect(chord.note).toBe("F♯");
         expect(chord.chordType).toBe(ChordType.ALPHA);
 
         const roundTrip = chord.toString();
         expect(roundTrip).toBe(original);
+    });
+
+    it("can normalize chord representation when asked", () => {
+        const sharpChord = ChordNotation.parse("[F#m7]");
+        expect(sharpChord.toString(false)).toBe("[F#m7]");
+        expect(sharpChord.toString(true)).toBe("[F♯m7]");
+
+        const flatChord = ChordNotation.parse("[Bbmaj7]");
+        expect(flatChord.toString(false)).toBe("[Bbmaj7]");
+        expect(flatChord.toString(true)).toBe("[B♭maj7]");
+
+        const esChord = ChordNotation.parse("[Fes]");
+        expect(esChord.toString(false)).toBe("[Fes]");
+        expect(esChord.toString(true)).toBe("[F♭]");
+
+        const sChord = ChordNotation.parse("[As]");
+        expect(sChord.toString(false)).toBe("[As]");
+        expect(sChord.toString(true)).toBe("[A♭]");
+
+        const isChord = ChordNotation.parse("[Gis]");
+        expect(isChord.toString(false)).toBe("[Gis]");
+        expect(isChord.toString(true)).toBe("[G♯]");
+    });
+
+    it("preserves unicode accidentals when normalized", () => {
+        const unicodeSharp = ChordNotation.parse("[F♯m7]");
+        expect(unicodeSharp.toString(false)).toBe("[F♯m7]");
+        expect(unicodeSharp.toString(true)).toBe("[F♯m7]");
+
+        const unicodeFlat = ChordNotation.parse("[B♭maj7]");
+        expect(unicodeFlat.toString(false)).toBe("[B♭maj7]");
+        expect(unicodeFlat.toString(true)).toBe("[B♭maj7]");
+    });
+
+    it("normalizes complex chords with bass notes correctly", () => {
+        const complexChord = ChordNotation.parse("[F#m7/B]");
+        expect(complexChord.toString(false)).toBe("[F#m7/B]");
+        expect(complexChord.toString(true)).toBe("[F♯m7/B]");
     });
 
     it("accepts valid formats", () => {
@@ -105,11 +144,11 @@ describe("Alpha ChordNotation", () => {
 });
 
 describe("Nashville ChordNotation", () => {
-    it("parses a basic Nashville chord", () => {
+    it("parses a basic chord", () => {
         const original = "[1]";
         const chord = ChordNotation.parse(original);
         expect(chord.root).toBe("1");
-        expect(chord.accidental).toBeUndefined();
+        expect(chord.accidental).toBe(Accidental.NATURAL);
         expect(chord.modifier).toBeUndefined();
         expect(chord.bass).toBeUndefined();
         expect(chord.note).toBe("1");
@@ -126,11 +165,11 @@ describe("Nashville ChordNotation", () => {
         expect(takeTwo.bass).toBe(chord.bass);
     });
 
-    it("parses a complex Nashville chord", () => {
+    it("parses a complex chord", () => {
         const original = "[4b7/5]";
         const chord = ChordNotation.parse(original);
         expect(chord.root).toBe("4");
-        expect(chord.accidental).toBe("b");
+        expect(chord.accidental).toBe(Accidental.FLAT);
         expect(chord.modifier).toBe("7");
         expect(chord.bass).toBe("5");
         expect(chord.note).toBe("4b");
@@ -151,12 +190,26 @@ describe("Nashville ChordNotation", () => {
         const original = "[4♭7/5]";
         const chord = ChordNotation.parse(original);
         expect(chord.root).toBe("4");
-        expect(chord.accidental).toBe("♭");
+        expect(chord.accidental).toBe(Accidental.FLAT);
         expect(chord.note).toBe("4♭");
         expect(chord.chordType).toBe(ChordType.NASHVILLE);
 
         const roundTrip = chord.toString();
         expect(roundTrip).toBe(original);
+    });
+
+    it("can normalize chord representation when asked", () => {
+        const sharpChord = ChordNotation.parse("[2#m]");
+        expect(sharpChord.toString(false)).toBe("[2#m]");
+        expect(sharpChord.toString(true)).toBe("[2♯m]");
+
+        const flatChord = ChordNotation.parse("[3b7]");
+        expect(flatChord.toString(false)).toBe("[3b7]");
+        expect(flatChord.toString(true)).toBe("[3♭7]");
+
+        const complexChord = ChordNotation.parse("[4b7/5]");
+        expect(complexChord.toString(false)).toBe("[4b7/5]");
+        expect(complexChord.toString(true)).toBe("[4♭7/5]");
     });
 
     it("accepts valid formats", () => {

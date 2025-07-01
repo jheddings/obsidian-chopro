@@ -8,27 +8,33 @@ export enum ChordType {
     UNKNOWN = 'unknown'
 }
 
+export enum Accidental {
+    SHARP = '♯',
+    FLAT = '♭',
+    NATURAL = '♮'
+}
+
 export abstract class LineSegment {
     constructor(public content: string) {}
 }
 
 export class ChordNotation extends LineSegment {
-    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?\]$/i;
+    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s|s)?([^\/]+)?(\/(.+))?\]$/i;
 
     public readonly root: string;
-    public readonly accidental?: string;
+    public readonly postfix?: string;
     public readonly modifier?: string;
     public readonly bass?: string;
 
     constructor(
         root: string,
-        accidental?: string,
+        postfix?: string,
         modifier?: string,
         bass?: string
     ) {
-        super(root + (accidental || ''));
+        super(root + (postfix || '') + (modifier || '') + (bass ? `/${bass}` : ''));
         this.root = root;
-        this.accidental = accidental;
+        this.postfix = postfix;
         this.modifier = modifier;
         this.bass = bass;
     }
@@ -37,7 +43,22 @@ export class ChordNotation extends LineSegment {
      * Get the base chord (root + accidental).
      */
     get note(): string {
-        return this.root + (this.accidental || '');
+        return this.root + (this.postfix || '');
+    }
+
+    get accidental(): Accidental {
+        switch (this.postfix) {
+            case '#':
+            case '♯':
+            case 'is':
+                return Accidental.SHARP;
+            case 'b':
+            case '♭':
+            case 'es':
+            case 's':
+                return Accidental.FLAT;
+        }
+        return Accidental.NATURAL;
     }
 
     /**
@@ -77,12 +98,36 @@ export class ChordNotation extends LineSegment {
     }
 
     /**
-     * Convert the chord notation to its normalized ChoPro representation.
+     * Convert the chord notation to its ChoPro representation.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
-    toString(): string {
-        const modPart = this.modifier ? this.modifier.toLowerCase() : '';
-        const slashPart = this.bass ? `/${this.bass}` : '';
-        return `[${this.note + modPart + slashPart}]`;
+    toString(normalize: boolean = false): string {
+        let chordString = this.root;
+        
+        if (this.postfix) {
+            if (normalize) {
+                switch (this.accidental) {
+                    case Accidental.SHARP:
+                        chordString += '♯';
+                        break;
+                    case Accidental.FLAT:
+                        chordString += '♭';
+                        break;
+                }
+            } else if (this.postfix) {
+                chordString += this.postfix;
+            }
+        }
+        
+        if (this.modifier) {
+            chordString += normalize ? this.modifier.toLowerCase() : this.modifier;
+        }
+
+        if (this.bass) {
+            chordString += `/${this.bass}`;
+        }
+
+        return `[${chordString}]`;
     }
 }
 
