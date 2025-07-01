@@ -8,7 +8,6 @@ import { ChoproStyleManager } from './styles';
 export interface ChoproPluginSettings {
     chordColor: string;
     chordSize: number;
-    showDirectives: boolean;
     superscriptChordMods: boolean;
     chordDecorations: string;
     italicAnnotations: boolean;
@@ -17,7 +16,6 @@ export interface ChoproPluginSettings {
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: '#2563eb',  // blue
     chordSize: 1.0,
-    showDirectives: true,
     superscriptChordMods: false,
     chordDecorations: 'none',
     italicAnnotations: true
@@ -84,17 +82,6 @@ class ChoproSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'ChoPro Settings' });
 
         new Setting(containerEl)
-            .setName('Show Directives')
-            .setDesc('Display ChoPro directives like {title}, {artist}, etc.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showDirectives)
-                .onChange(async (value) => {
-                    this.plugin.settings.showDirectives = value;
-                    await this.plugin.saveSettings();
-                    updatePreview();
-                }));
-
-        new Setting(containerEl)
             .setName('Chord Color')
             .setDesc('Color for chord text (CSS color value)')
             .addText(text => text
@@ -128,7 +115,7 @@ class ChoproSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Chord Decoration')
+            .setName('Chord Decorators')
             .setDesc('Wrap chords with bracket pairs for emphasis')
             .addDropdown(dropdown => dropdown
                 .addOption('none', 'None')
@@ -144,7 +131,7 @@ class ChoproSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Italic Annotations')
-            .setDesc('Display annotations (text starting with asterisk) in italics')
+            .setDesc('Display inline annotations in italics')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.italicAnnotations)
                 .onChange(async (value) => {
