@@ -13,6 +13,8 @@ export abstract class LineSegment {
 }
 
 export class ChordNotation extends LineSegment {
+    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?\]$/i;
+
     public readonly root: string;
     public readonly accidental?: string;
     public readonly modifier?: string;
@@ -55,6 +57,25 @@ export class ChordNotation extends LineSegment {
         return ChordType.UNKNOWN;
     }
 
+    static test(content: string): boolean {
+        return ChordNotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): ChordNotation {
+        const match = content.match(ChordNotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid chord notation format');
+        }
+
+        const root = match[1].toUpperCase();
+        const accidental = match[2] ? match[2].toLowerCase() : undefined;
+        const modifier = match[3] ? match[3].trim() : undefined;
+        const bass = match[5] ? match[5].trim() : undefined;
+
+        return new ChordNotation(root, accidental, modifier, bass);
+    }
+
     /**
      * Convert the chord notation to its normalized ChoPro representation.
      */
@@ -66,8 +87,24 @@ export class ChordNotation extends LineSegment {
 }
 
 export class Annotation extends LineSegment {
+    public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
+
     constructor(content: string) {
         super(content);
+    }
+
+    static test(content: string): boolean {
+        return Annotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): Annotation {
+        const match = content.match(Annotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid annotation format');
+        }
+
+        return new Annotation(match[1]);
     }
 
     /**
@@ -328,7 +365,6 @@ export class InstructionLine extends ChoproLine {
 
 export abstract class SegmentedLine extends ChoproLine {
     public static readonly INLINE_MARKER_PATTERN = /\[([^\]]+)\]/;
-    public static readonly CHORD_PATTERN = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?$/i;
 
     constructor(public content: string, public segments: LineSegment[]) {
         super();
@@ -348,8 +384,7 @@ export abstract class SegmentedLine extends ChoproLine {
             // Add text before the chord (if any)
             SegmentedLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
 
-            const content = match[1];
-            const segment = SegmentedLine.parseLineSegment(content);
+            const segment = SegmentedLine.parseLineSegment(match[0]);
             segments.push(segment);
 
             lastIndex = match.index + match[0].length;
@@ -362,19 +397,12 @@ export abstract class SegmentedLine extends ChoproLine {
     }
 
     protected static parseLineSegment(marker: string): LineSegment {
-        if (marker.startsWith('*')) {
-            return new Annotation(marker.substring(1));
+        if (Annotation.test(marker)) {
+            return Annotation.parse(marker);
         }
 
-        const chordMatch = marker.match(SegmentedLine.CHORD_PATTERN);
-
-        if (chordMatch) {
-            return new ChordNotation(
-                chordMatch[1],       // Root note
-                chordMatch[2] || '', // Accidental (sharp/flat)
-                chordMatch[3] || '', // Modifier (e.g. 7, maj7, etc.)
-                chordMatch[5] || ''  // Bass note (e.g. /C)
-            );
+        if (ChordNotation.test(marker)) {
+            return ChordNotation.parse(marker);
         }
 
         return new TextSegment(marker);
@@ -413,6 +441,10 @@ export class ChordLyricsLine extends SegmentedLine {
 
 export class InstrumentalLine extends SegmentedLine {
     static test(line: string): boolean {
+        if (!SegmentedLine.test(line)) {
+            return false;
+        }
+
         const allMarkers = new RegExp(SegmentedLine.INLINE_MARKER_PATTERN.source, 'g');
         const withoutChords = line.replace(allMarkers, '');
         return withoutChords.trim() === '';
