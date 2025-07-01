@@ -2,20 +2,16 @@
 
 import { ChoproPluginSettings } from './main';
 import {
-    LineSegment,
     ChordNotation,
     Annotation,
     TextSegment,
     ChoproLine,
     EmptyLine,
-    MetadataDirective,
     TextLine,
-    InstructionLine,
+    LineSegment,
     ChordLyricsLine,
     InstrumentalLine,
     ChoproBlock,
-    DirectiveLine,
-    CustomDirective,
 } from './parser';
 
 /**
@@ -39,12 +35,6 @@ export class ChoproRenderer {
     private renderLine(container: HTMLElement, line: ChoproLine): void {
         if (line instanceof EmptyLine) {
             container.createEl('br');
-        } else if (line instanceof DirectiveLine) {
-            if (this.settings.showDirectives) {
-                this.renderDirective(container, line);
-            }
-        } else if (line instanceof InstructionLine) {
-            this.renderInstruction(container, line.content);
         } else if (line instanceof ChordLyricsLine) {
             this.renderChordLine(container, line.segments);
         } else if (line instanceof InstrumentalLine) {
@@ -54,49 +44,6 @@ export class ChoproRenderer {
         }
 
         // NOTE - CommentLine's are ignored when rendering
-    }
-
-    /**
-     * Render a directive line.
-     */
-    private renderDirective(container: HTMLElement, directive: DirectiveLine): void {
-        if (directive instanceof MetadataDirective) {
-            this.renderMetadata(container, directive);
-        } else if (directive instanceof CustomDirective) {
-            this.renderCustomDirective(container, directive);
-        }
-    }
-
-    /**
-     * Render metadata.
-     */
-    private renderMetadata(container: HTMLElement, meta: MetadataDirective): void {
-        const metaDiv = container.createDiv({ cls: 'chopro-metadata' });
-        metaDiv.createSpan({ text: meta.name, cls: 'chopro-metadata-name' });
-
-        if (meta.value) {
-            metaDiv.createSpan({ text: ': ' + meta.value, cls: 'chopro-metadata-value' });
-        }
-    }
-
-    /**
-     * Render custom directive.
-     */
-    private renderCustomDirective(container: HTMLElement, custom: CustomDirective): void {
-        const customDiv = container.createDiv({ cls: 'chopro-custom' });
-        customDiv.createSpan({ text: custom.name, cls: 'chopro-custom-name' });
-
-        if (custom.value) {
-            customDiv.createSpan({ text: ': ' + custom.value, cls: 'chopro-custom-value' });
-        }
-    }
-
-    /**
-     * Render an instruction line
-     */
-    private renderInstruction(container: HTMLElement, content: string): void {
-        const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
-        instructionDiv.createSpan({ text: content });
     }
 
     /**
