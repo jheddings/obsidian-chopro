@@ -1,6 +1,7 @@
 import {
     ChordNotation,
-    ChordType,
+    MusicalNote,
+    NoteType,
     Annotation,
     TextSegment,
     ChoproFile,
@@ -14,234 +15,197 @@ import {
     Accidental,
 } from "../src/parser";
 
-describe("Alpha ChordNotation", () => {
-    it("parses a standard chord", () => {
-        const original = "[C]";
+describe("MusicalNote", () => {
+    const testCases = [
+        // Basic alpha notes
+        { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.ALPHA },
+        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.ALPHA },
+        { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
+        { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        
+        // German notation
+        { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
+        { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        
+        // Nashville notation
+        { input: "1", root: "1", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.NASHVILLE },
+        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT, noteType: NoteType.NASHVILLE },
+        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP, noteType: NoteType.NASHVILLE },
+        
+        // Unicode accidentals
+        { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
+        { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP, noteType: NoteType.NASHVILLE },
+    ];
 
-        const chord = ChordNotation.parse(original);
-        expect(chord.root).toBe("C");
-        expect(chord.accidental).toBe(Accidental.NATURAL);
-        expect(chord.modifier).toBeUndefined();
-        expect(chord.bass).toBeUndefined();
-        expect(chord.note).toBe("C");
-        expect(chord.chordType).toBe(ChordType.ALPHA);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses $input correctly",
+            ({ input, root, postfix, accidental, noteType }) => {
+                const note = MusicalNote.parse(input);
+                
+                expect(note.root).toBe(root);
+                expect(note.postfix).toBe(postfix);
+                expect(note.accidental).toBe(accidental);
+                expect(note.noteType).toBe(noteType);
+            }
+        );
 
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
-
-        // parse again to ensure round-trip compatibility
-        const takeTwo = ChordNotation.parse(roundTrip);
-        expect(takeTwo.root).toBe(chord.root);
-        expect(takeTwo.accidental).toBe(chord.accidental);
-        expect(takeTwo.modifier).toBe(chord.modifier);
-        expect(takeTwo.bass).toBe(chord.bass);
+        it("throws error for invalid note format", () => {
+            expect(() => MusicalNote.parse("H")).toThrow("Invalid note format");
+            expect(() => MusicalNote.parse("8")).toThrow("Invalid note format");
+            expect(() => MusicalNote.parse("")).toThrow("Invalid note format");
+        });
     });
 
-    it("parses a complex chord", () => {
-        const original = "[F#m7/B]";
-        const chord = ChordNotation.parse(original);
+    describe("normalization", () => {
+        const normalizationCases = [
+            // Basic notes (no change)
+            { input: "C", normalized: "C" },
+            { input: "G", normalized: "G" },
+            
+            // ASCII accidentals to Unicode
+            { input: "F#", normalized: "F♯" },
+            { input: "Bb", normalized: "B♭" },
+            { input: "2#", normalized: "2♯" },
+            { input: "4b", normalized: "4♭" },
+            
+            // German notation to Unicode
+            { input: "Gis", normalized: "G♯" },
+            { input: "Fes", normalized: "F♭" },
+        ];
 
-        expect(chord.root).toBe("F");
-        expect(chord.accidental).toBe(Accidental.SHARP);
-        expect(chord.modifier).toBe("m7");
-        expect(chord.bass).toBe("B");
-        expect(chord.note).toBe("F#");
-        expect(chord.chordType).toBe(ChordType.ALPHA);
+        test.each(normalizationCases)(
+            "normalizes $input correctly",
+            ({ input, normalized }) => {
+                const note = MusicalNote.parse(input);
+                expect(note.toString()).toBe(input);
+                expect(note.toString(false)).toBe(input);
+                expect(note.toString(true)).toBe(normalized);
+            }
+        );
 
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
+        it("preserves unicode accidentals when normalized", () => {
+            const unicodeSharp = MusicalNote.parse("F♯");
+            expect(unicodeSharp.toString(false)).toBe("F♯");
+            expect(unicodeSharp.toString(true)).toBe("F♯");
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = ChordNotation.parse(roundTrip);
-        expect(takeTwo.root).toBe(chord.root);
-        expect(takeTwo.accidental).toBe(chord.accidental);
-        expect(takeTwo.modifier).toBe(chord.modifier);
-        expect(takeTwo.bass).toBe(chord.bass);
-    });
-
-    it("parses unicode sharp", () => {
-        const original = "[F♯m7]";
-        const chord = ChordNotation.parse(original);
-
-        expect(chord.root).toBe("F");
-        expect(chord.accidental).toBe(Accidental.SHARP);
-        expect(chord.modifier).toBe("m7");
-        expect(chord.note).toBe("F♯");
-        expect(chord.chordType).toBe(ChordType.ALPHA);
-
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
-    });
-
-    it("can normalize chord representation when asked", () => {
-        const sharpChord = ChordNotation.parse("[F#m7]");
-        expect(sharpChord.toString(false)).toBe("[F#m7]");
-        expect(sharpChord.toString(true)).toBe("[F♯m7]");
-
-        const flatChord = ChordNotation.parse("[Bbmaj7]");
-        expect(flatChord.toString(false)).toBe("[Bbmaj7]");
-        expect(flatChord.toString(true)).toBe("[B♭maj7]");
-
-        const esChord = ChordNotation.parse("[Fes]");
-        expect(esChord.toString(false)).toBe("[Fes]");
-        expect(esChord.toString(true)).toBe("[F♭]");
-
-        const sChord = ChordNotation.parse("[As]");
-        expect(sChord.toString(false)).toBe("[As]");
-        expect(sChord.toString(true)).toBe("[A♭]");
-
-        const isChord = ChordNotation.parse("[Gis]");
-        expect(isChord.toString(false)).toBe("[Gis]");
-        expect(isChord.toString(true)).toBe("[G♯]");
-    });
-
-    it("preserves unicode accidentals when normalized", () => {
-        const unicodeSharp = ChordNotation.parse("[F♯m7]");
-        expect(unicodeSharp.toString(false)).toBe("[F♯m7]");
-        expect(unicodeSharp.toString(true)).toBe("[F♯m7]");
-
-        const unicodeFlat = ChordNotation.parse("[B♭maj7]");
-        expect(unicodeFlat.toString(false)).toBe("[B♭maj7]");
-        expect(unicodeFlat.toString(true)).toBe("[B♭maj7]");
-    });
-
-    it("normalizes complex chords with bass notes correctly", () => {
-        const complexChord = ChordNotation.parse("[F#m7/B]");
-        expect(complexChord.toString(false)).toBe("[F#m7/B]");
-        expect(complexChord.toString(true)).toBe("[F♯m7/B]");
-    });
-
-    it("accepts valid formats", () => {
-        expect(ChordNotation.test("[C]")).toBe(true);
-        expect(ChordNotation.test("[D]")).toBe(true);
-        expect(ChordNotation.test("[F#]")).toBe(true);
-        expect(ChordNotation.test("[Bb]")).toBe(true);
-        expect(ChordNotation.test("[G♯]")).toBe(true);
-        expect(ChordNotation.test("[A♭]")).toBe(true);
-        expect(ChordNotation.test("[Fes]")).toBe(true);
-        expect(ChordNotation.test("[Gis]")).toBe(true);
-        expect(ChordNotation.test("[Em]")).toBe(true);
-        expect(ChordNotation.test("[F#m7]")).toBe(true);
-        expect(ChordNotation.test("[C7]")).toBe(true);
-        expect(ChordNotation.test("[Dm7]")).toBe(true);
-        expect(ChordNotation.test("[F#m7/B]")).toBe(true);
-        expect(ChordNotation.test("[C/G]")).toBe(true);
-        expect(ChordNotation.test("[Bb/F]")).toBe(true);
-    });
-
-    it("rejects invalid formats", () => {
-        expect(ChordNotation.test("C")).toBe(false);
-        expect(ChordNotation.test("[H]")).toBe(false);
-        expect(ChordNotation.test("[C")).toBe(false);
-        expect(ChordNotation.test("C]")).toBe(false);
-        expect(ChordNotation.test("[]")).toBe(false);
-        expect(ChordNotation.test("[*Annotation]")).toBe(false);
-        expect(ChordNotation.test("(Instruction)")).toBe(false);
-        expect(ChordNotation.test("{capo: 2]")).toBe(false);
-        expect(ChordNotation.test("# Comment")).toBe(false);
-        expect(ChordNotation.test("")).toBe(false);
+            const unicodeFlat = MusicalNote.parse("B♭");
+            expect(unicodeFlat.toString(false)).toBe("B♭");
+            expect(unicodeFlat.toString(true)).toBe("B♭");
+        });
     });
 });
 
-describe("Nashville ChordNotation", () => {
-    it("parses a basic chord", () => {
-        const original = "[1]";
-        const chord = ChordNotation.parse(original);
-        expect(chord.root).toBe("1");
-        expect(chord.accidental).toBe(Accidental.NATURAL);
-        expect(chord.modifier).toBeUndefined();
-        expect(chord.bass).toBeUndefined();
-        expect(chord.note).toBe("1");
-        expect(chord.chordType).toBe(ChordType.NASHVILLE);
+describe("ChordNotation", () => {
+    const testCases = [
+        // Alpha notation
+        { input: "[C]", note: "C", modifier: undefined, bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[F#m7]", note: "F#", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", noteType: NoteType.ALPHA },
+        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", noteType: NoteType.ALPHA },
+        
+        // Nashville notation
+        { input: "[1]", note: "1", modifier: undefined, bass: undefined, noteType: NoteType.NASHVILLE },
+        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, noteType: NoteType.NASHVILLE },
+        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", noteType: NoteType.NASHVILLE },
+        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", noteType: NoteType.NASHVILLE },
+        
+        // Unicode accidentals
+        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", noteType: NoteType.NASHVILLE },
+    ];
 
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses $input correctly",
+            ({ input, note, modifier, bass, noteType }) => {
+                const chord = ChordNotation.parse(input);
+                
+                expect(chord.note.toString()).toBe(note);
+                expect(chord.note.noteType).toBe(noteType);
+                expect(chord.modifier).toBe(modifier);
+                expect(chord.bass?.toString()).toBe(bass);
+                
+                // round-trip test
+                expect(chord.toString()).toBe(input);
+            }
+        );
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = ChordNotation.parse(roundTrip);
-        expect(takeTwo.root).toBe(chord.root);
-        expect(takeTwo.accidental).toBe(chord.accidental);
-        expect(takeTwo.modifier).toBe(chord.modifier);
-        expect(takeTwo.bass).toBe(chord.bass);
+        it("throws error for invalid chord format", () => {
+            expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
+            expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
+        });
     });
 
-    it("parses a complex chord", () => {
-        const original = "[4b7/5]";
-        const chord = ChordNotation.parse(original);
-        expect(chord.root).toBe("4");
-        expect(chord.accidental).toBe(Accidental.FLAT);
-        expect(chord.modifier).toBe("7");
-        expect(chord.bass).toBe("5");
-        expect(chord.note).toBe("4b");
-        expect(chord.chordType).toBe(ChordType.NASHVILLE);
+    describe("normalization", () => {
+        const normalizationCases = [
+            { input: "[F#m7]", normalized: "[F♯m7]" },
+            { input: "[Bbmaj7]", normalized: "[B♭maj7]" },
+            { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
+            { input: "[2#m]", normalized: "[2♯m]" },
+            { input: "[4b7/5#]", normalized: "[4♭7/5♯]" },
+            { input: "[Fes]", normalized: "[F♭]" },
+            { input: "[Gis]", normalized: "[G♯]" },
+        ];
 
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
+        test.each(normalizationCases)(
+            "normalizes $input correctly",
+            ({ input, normalized }) => {
+                const chord = ChordNotation.parse(input);
+                expect(chord.toString()).toBe(input);
+                expect(chord.toString(false)).toBe(input);
+                expect(chord.toString(true)).toBe(normalized);
+            }
+        );
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = ChordNotation.parse(roundTrip);
-        expect(takeTwo.root).toBe(chord.root);
-        expect(takeTwo.accidental).toBe(chord.accidental);
-        expect(takeTwo.modifier).toBe(chord.modifier);
-        expect(takeTwo.bass).toBe(chord.bass);
+        it("preserves unicode accidentals when normalized", () => {
+            const unicodeSharp = ChordNotation.parse("[F♯m7]");
+            expect(unicodeSharp.toString(false)).toBe("[F♯m7]");
+            expect(unicodeSharp.toString(true)).toBe("[F♯m7]");
+
+            const unicodeFlat = ChordNotation.parse("[B♭maj7]");
+            expect(unicodeFlat.toString(false)).toBe("[B♭maj7]");
+            expect(unicodeFlat.toString(true)).toBe("[B♭maj7]");
+        });
     });
 
-    it("parses unicode flat", () => {
-        const original = "[4♭7/5]";
-        const chord = ChordNotation.parse(original);
-        expect(chord.root).toBe("4");
-        expect(chord.accidental).toBe(Accidental.FLAT);
-        expect(chord.note).toBe("4♭");
-        expect(chord.chordType).toBe(ChordType.NASHVILLE);
+    describe("validation", () => {
+        const validChords = [
+            // Alpha notation
+            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]", "[Fes]", "[Gis]",
+            "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[F#m7/B]", "[C/G]", "[Bb/F]",
+            
+            // Nashville notation
+            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
+            "[1#]", "[2b]", "[3♯]", "[4♭]", "[5es]", "[6is]",
+            "[1m]", "[2m7]", "[3maj7]", "[4b7/5]", "[1/3]", "[6m/4]"
+        ];
 
-        const roundTrip = chord.toString();
-        expect(roundTrip).toBe(original);
-    });
+        const invalidChords = [
+            // Missing brackets or malformed
+            "C", "[C", "C]", "[]",
+            
+            // Invalid note names
+            "[H]", "[0]", "[8]",
+            
+            // Other notation types
+            "[*Annotation]", "(Instruction)", "{capo: 2]", "# Comment", "",
+            
+            // Nashville specific invalid
+            "[*1]", "(1)"
+        ];
 
-    it("can normalize chord representation when asked", () => {
-        const sharpChord = ChordNotation.parse("[2#m]");
-        expect(sharpChord.toString(false)).toBe("[2#m]");
-        expect(sharpChord.toString(true)).toBe("[2♯m]");
+        test.each(validChords)("accepts valid chord %s", (chord) => {
+            expect(ChordNotation.test(chord)).toBe(true);
+        });
 
-        const flatChord = ChordNotation.parse("[3b7]");
-        expect(flatChord.toString(false)).toBe("[3b7]");
-        expect(flatChord.toString(true)).toBe("[3♭7]");
-
-        const complexChord = ChordNotation.parse("[4b7/5]");
-        expect(complexChord.toString(false)).toBe("[4b7/5]");
-        expect(complexChord.toString(true)).toBe("[4♭7/5]");
-    });
-
-    it("accepts valid formats", () => {
-        expect(ChordNotation.test("[1]")).toBe(true);
-        expect(ChordNotation.test("[2]")).toBe(true);
-        expect(ChordNotation.test("[3]")).toBe(true);
-        expect(ChordNotation.test("[4]")).toBe(true);
-        expect(ChordNotation.test("[5]")).toBe(true);
-        expect(ChordNotation.test("[6]")).toBe(true);
-        expect(ChordNotation.test("[7]")).toBe(true);
-        expect(ChordNotation.test("[1#]")).toBe(true);
-        expect(ChordNotation.test("[2b]")).toBe(true);
-        expect(ChordNotation.test("[3♯]")).toBe(true);
-        expect(ChordNotation.test("[4♭]")).toBe(true);
-        expect(ChordNotation.test("[5es]")).toBe(true);
-        expect(ChordNotation.test("[6is]")).toBe(true);
-        expect(ChordNotation.test("[1m]")).toBe(true);
-        expect(ChordNotation.test("[2m7]")).toBe(true);
-        expect(ChordNotation.test("[3maj7]")).toBe(true);
-        expect(ChordNotation.test("[4b7/5]")).toBe(true);
-        expect(ChordNotation.test("[1/3]")).toBe(true);
-        expect(ChordNotation.test("[6m/4]")).toBe(true);
-    });
-
-    it("rejects invalid formats", () => {
-        expect(ChordNotation.test("[0]")).toBe(false);
-        expect(ChordNotation.test("[8]")).toBe(false);
-        expect(ChordNotation.test("[1")).toBe(false);
-        expect(ChordNotation.test("1]")).toBe(false);
-        expect(ChordNotation.test("1")).toBe(false);
-        expect(ChordNotation.test("[*1]")).toBe(false);
-        expect(ChordNotation.test("(1)")).toBe(false);
+        test.each(invalidChords)("rejects invalid chord %s", (chord) => {
+            expect(ChordNotation.test(chord)).toBe(false);
+        });
     });
 });
 
@@ -260,25 +224,27 @@ describe("Annotation", () => {
         expect(takeTwo.content).toBe(annotation.content);
     });
 
-    it("accepts valid formats", () => {
-        expect(Annotation.test("[*Simple annotation]")).toBe(true);
-        expect(Annotation.test("[*Complex annotation with numbers 123]")).toBe(true);
-        expect(Annotation.test("[*Annotation with punctuation!@#$%]")).toBe(true);
-        expect(Annotation.test("[*Multi-word annotation with spaces]")).toBe(true);
-    });
+    describe("validation", () => {
+        const validAnnotations = [
+            "[*Simple annotation]",
+            "[*Complex annotation with numbers 123]",
+            "[*Annotation with punctuation!@#$%]",
+            "[*Multi-word annotation with spaces]"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(Annotation.test("[*]")).toBe(false);
-        expect(Annotation.test("Simple annotation")).toBe(false);
-        expect(Annotation.test("[Simple annotation]")).toBe(false);
-        expect(Annotation.test("*Simple annotation")).toBe(false);
-        expect(Annotation.test("[*Simple annotation")).toBe(false);
-        expect(Annotation.test("Simple annotation]")).toBe(false);
-        expect(Annotation.test("")).toBe(false);
-        expect(Annotation.test("[C]")).toBe(false);
-        expect(Annotation.test("(Instruction)")).toBe(false);
-        expect(Annotation.test("{title: Annotation}")).toBe(false);
-        expect(Annotation.test("# Comment")).toBe(false);
+        const invalidAnnotations = [
+            "[*]", "Simple annotation", "[Simple annotation]", "*Simple annotation",
+            "[*Simple annotation", "Simple annotation]", "", "[C]", "(Instruction)",
+            "{title: Annotation}", "# Comment"
+        ];
+
+        test.each(validAnnotations)("accepts valid annotation %s", (annotation) => {
+            expect(Annotation.test(annotation)).toBe(true);
+        });
+
+        test.each(invalidAnnotations)("rejects invalid annotation %s", (annotation) => {
+            expect(Annotation.test(annotation)).toBe(false);
+        });
     });
 });
 
@@ -316,17 +282,22 @@ describe("InstructionLine", () => {
         expect(roundTrip).toBe(original);
     });
 
-    it("accepts valid formats", () => {
-        expect(InstructionLine.test("(Intro)")).toBe(true);
-        expect(InstructionLine.test("(Verse 1)")).toBe(true);
-        expect(InstructionLine.test("(Bridge - repeat 2x)")).toBe(true);
-    });
+    describe("validation", () => {
+        const validInstructions = [
+            "(Intro)", "(Verse 1)", "(Bridge - repeat 2x)"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(InstructionLine.test("Intro")).toBe(false);
-        expect(InstructionLine.test("# Comment")).toBe(false);
-        expect(InstructionLine.test("{key: C}")).toBe(false);
-        expect(InstructionLine.test("")).toBe(false);
+        const invalidInstructions = [
+            "Intro", "# Comment", "{key: C}", ""
+        ];
+
+        test.each(validInstructions)("accepts valid instruction %s", (instruction) => {
+            expect(InstructionLine.test(instruction)).toBe(true);
+        });
+
+        test.each(invalidInstructions)("rejects invalid instruction %s", (instruction) => {
+            expect(InstructionLine.test(instruction)).toBe(false);
+        });
     });
 });
 
@@ -375,17 +346,22 @@ describe("CommentLine", () => {
         expect(roundTrip).toBe("# ");
     });
 
-    it("accepts valid formats", () => {
-        expect(CommentLine.test("# This is a comment")).toBe(true);
-        expect(CommentLine.test("## Another comment")).toBe(true);
-        expect(CommentLine.test("#")).toBe(true);
-        expect(CommentLine.test("#No space")).toBe(true);
-    });
+    describe("validation", () => {
+        const validComments = [
+            "# This is a comment", "## Another comment", "#", "#No space"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(CommentLine.test("This is not a comment")).toBe(false);
-        expect(CommentLine.test("(Instruction)")).toBe(false);
-        expect(CommentLine.test("")).toBe(false);
+        const invalidComments = [
+            "This is not a comment", "(Instruction)", ""
+        ];
+
+        test.each(validComments)("accepts valid comment %s", (comment) => {
+            expect(CommentLine.test(comment)).toBe(true);
+        });
+
+        test.each(invalidComments)("rejects invalid comment %s", (comment) => {
+            expect(CommentLine.test(comment)).toBe(false);
+        });
     });
 });
 
@@ -412,17 +388,22 @@ describe("EmptyLine", () => {
         expect(roundTrip).toBe("");
     });
 
-    it("accepts valid formats", () => {
-        expect(EmptyLine.test("")).toBe(true);
-        expect(EmptyLine.test("   ")).toBe(true);
-        expect(EmptyLine.test("\t")).toBe(true);
-    });
+    describe("validation", () => {
+        const validEmptyLines = [
+            "", "   ", "\t"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(EmptyLine.test("Not empty")).toBe(false);
-        expect(EmptyLine.test("# Comment")).toBe(false);
-        expect(EmptyLine.test("(Instruction)")).toBe(false);
-        expect(EmptyLine.test("  \n  ")).toBe(false);
+        const invalidEmptyLines = [
+            "Not empty", "# Comment", "(Instruction)", "  \n  "
+        ];
+
+        test.each(validEmptyLines)("accepts valid empty line '%s'", (line) => {
+            expect(EmptyLine.test(line)).toBe(true);
+        });
+
+        test.each(invalidEmptyLines)("rejects invalid empty line '%s'", (line) => {
+            expect(EmptyLine.test(line)).toBe(false);
+        });
     });
 
     it("throws errors for non-empty lines", () => {
@@ -480,46 +461,46 @@ describe("TextLine", () => {
         expect(takeTwo.content).toBe(textLine.content);
     });
 
-    it("accepts valid formats", () => {
-        expect(TextLine.test("Simple text")).toBe(true);
-        expect(TextLine.test("Text with numbers 123")).toBe(true);
-        expect(TextLine.test("Text with punctuation!")).toBe(true);
-        expect(TextLine.test("  Text with leading spaces")).toBe(true);
-        expect(TextLine.test("Text with trailing spaces  ")).toBe(true);
-        expect(TextLine.test("123")).toBe(true);
-        expect(TextLine.test("Special chars: àáâãäå")).toBe(true);
-    });
+    describe("validation", () => {
+        const validTextLines = [
+            "Simple text", "Text with numbers 123", "Text with punctuation!",
+            "  Text with leading spaces", "Text with trailing spaces  ", "123",
+            "Special chars: àáâãäå"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(TextLine.test("")).toBe(false);
-        expect(TextLine.test("   ")).toBe(false);
-        expect(TextLine.test("\t")).toBe(false);
-        expect(TextLine.test("  \n  ")).toBe(false);
+        const invalidTextLines = [
+            "", "   ", "\t", "  \n  "
+        ];
+
+        test.each(validTextLines)("accepts valid text line '%s'", (line) => {
+            expect(TextLine.test(line)).toBe(true);
+        });
+
+        test.each(invalidTextLines)("rejects invalid text line '%s'", (line) => {
+            expect(TextLine.test(line)).toBe(false);
+        });
     });
 });
 
 describe("DirectiveLine", () => {
-    it("accepts valid formats", () => {
-        expect(DirectiveLine.test("{title: My Song}")).toBe(true);
-        expect(DirectiveLine.test("{artist: Bob Dylan}")).toBe(true);
-        expect(DirectiveLine.test("{key: C}")).toBe(true);
-        expect(DirectiveLine.test("{capo: 2}")).toBe(true);
-        expect(DirectiveLine.test("{x_custom: value}")).toBe(true);
-        expect(DirectiveLine.test("{start_of_chorus}")).toBe(true);
-        expect(DirectiveLine.test("{soc}")).toBe(true);
-        expect(DirectiveLine.test("{no_value}")).toBe(true);
-    });
+    describe("validation", () => {
+        const validDirectives = [
+            "{title: My Song}", "{artist: Bob Dylan}", "{key: C}", "{capo: 2}",
+            "{x_custom: value}", "{start_of_chorus}", "{soc}", "{no_value}"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(DirectiveLine.test("title: My Song")).toBe(false);
-        expect(DirectiveLine.test("{incomplete")).toBe(false);
-        expect(DirectiveLine.test("incomplete}")).toBe(false);
-        expect(DirectiveLine.test("{}")).toBe(false);
-        expect(DirectiveLine.test("")).toBe(false);
-        expect(DirectiveLine.test("# Comment")).toBe(false);
-        expect(DirectiveLine.test("(Instruction)")).toBe(false);
-        expect(DirectiveLine.test("[C]")).toBe(false);
-        expect(DirectiveLine.test("Just text")).toBe(false);
+        const invalidDirectives = [
+            "title: My Song", "{incomplete", "incomplete}", "{}", "",
+            "# Comment", "(Instruction)", "[C]", "Just text"
+        ];
+
+        test.each(validDirectives)("accepts valid directive %s", (directive) => {
+            expect(DirectiveLine.test(directive)).toBe(true);
+        });
+
+        test.each(invalidDirectives)("rejects invalid directive %s", (directive) => {
+            expect(DirectiveLine.test(directive)).toBe(false);
+        });
     });
 
     it("parses to appropriate subclass", () => {
@@ -575,23 +556,23 @@ describe("CustomDirective", () => {
         expect(directive.toString()).toBe(original);
     });
 
-    it("accepts valid formats", () => {
-        expect(CustomDirective.test("{x_custom: value}")).toBe(true);
-        expect(CustomDirective.test("{x_trigger}")).toBe(true);
-        expect(CustomDirective.test("{x_my_directive: complex value}")).toBe(true);
-        expect(CustomDirective.test("{X_UPPERCASE: test}")).toBe(true);
-    });
+    describe("validation", () => {
+        const validCustomDirectives = [
+            "{x_custom: value}", "{x_trigger}", "{x_my_directive: complex value}", "{X_UPPERCASE: test}"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(CustomDirective.test("{title: My Song}")).toBe(false);
-        expect(CustomDirective.test("{artist: Bob Dylan}")).toBe(false);
-        expect(CustomDirective.test("{custom: value}")).toBe(false);
-        expect(CustomDirective.test("x_custom: value")).toBe(false);
-        expect(CustomDirective.test("{x_custom")).toBe(false);
-        expect(CustomDirective.test("x_custom}")).toBe(false);
-        expect(CustomDirective.test("")).toBe(false);
-        expect(CustomDirective.test("# Comment")).toBe(false);
-        expect(CustomDirective.test("(Instruction)")).toBe(false);
+        const invalidCustomDirectives = [
+            "{title: My Song}", "{artist: Bob Dylan}", "{custom: value}", "x_custom: value",
+            "{x_custom", "x_custom}", "", "# Comment", "(Instruction)"
+        ];
+
+        test.each(validCustomDirectives)("accepts valid custom directive %s", (directive) => {
+            expect(CustomDirective.test(directive)).toBe(true);
+        });
+
+        test.each(invalidCustomDirectives)("rejects invalid custom directive %s", (directive) => {
+            expect(CustomDirective.test(directive)).toBe(false);
+        });
     });
 });
 
@@ -664,24 +645,23 @@ describe("MetadataDirective", () => {
         expect(directive.value).toBe(original);
     });
 
-    it("accepts valid formats", () => {
-        expect(MetadataDirective.test("{title: My Song}")).toBe(true);
-        expect(MetadataDirective.test("{artist: Bob Dylan}")).toBe(true);
-        expect(MetadataDirective.test("{key: C}")).toBe(true);
-        expect(MetadataDirective.test("{capo: 2}")).toBe(true);
-        expect(MetadataDirective.test("{tempo: 120}")).toBe(true);
-    });
+    describe("validation", () => {
+        const validMetadataDirectives = [
+            "{title: My Song}", "{artist: Bob Dylan}", "{key: C}", "{capo: 2}", "{tempo: 120}"
+        ];
 
-    it("rejects invalid formats", () => {
-        expect(MetadataDirective.test("{x_custom: value}")).toBe(false);
-        expect(MetadataDirective.test("{X_CUSTOM: value}")).toBe(false);
-        expect(MetadataDirective.test("title: My Song")).toBe(false);
-        expect(MetadataDirective.test("{title")).toBe(false);
-        expect(MetadataDirective.test("title}")).toBe(false);
-        expect(MetadataDirective.test("")).toBe(false);
-        expect(MetadataDirective.test("# Comment")).toBe(false);
-        expect(MetadataDirective.test("(Instruction)")).toBe(false);
-        expect(MetadataDirective.test("[C]")).toBe(false);
+        const invalidMetadataDirectives = [
+            "{x_custom: value}", "{X_CUSTOM: value}", "title: My Song", "{title", "title}",
+            "", "# Comment", "(Instruction)", "[C]"
+        ];
+
+        test.each(validMetadataDirectives)("accepts valid metadata directive %s", (directive) => {
+            expect(MetadataDirective.test(directive)).toBe(true);
+        });
+
+        test.each(invalidMetadataDirectives)("rejects invalid metadata directive %s", (directive) => {
+            expect(MetadataDirective.test(directive)).toBe(false);
+        });
     });
 });
 
