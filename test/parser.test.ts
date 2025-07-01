@@ -634,7 +634,7 @@ describe("MetadataDirective", () => {
 
 describe("File Parsing", () => {
     test.each(
-        ["basic.md", "complex.md", "performance.md"])(
+        ["basic.md", "complex.md", "nashville.md", "performance.md", "special.md"])(
         "parses %s without errors",
         (fileName) => {
             const fs = require("fs");
