@@ -4,9 +4,12 @@ import {
     Annotation,
     TextSegment,
     ChoproFile,
+    InstructionLine,
+    CommentLine,
+    EmptyLine,
 } from "../src/parser";
 
-describe("Basic Alpha ChordNotation", () => {
+describe("Alpha ChordNotation", () => {
     it("parses a standard chord", () => {
         const original = "[C]";
 
@@ -28,9 +31,7 @@ describe("Basic Alpha ChordNotation", () => {
         expect(takeTwo.modifier).toBe(chord.modifier);
         expect(takeTwo.bass).toBe(chord.bass);
     });
-});
 
-describe("Complex Alpha ChordNotation", () => {
     it("parses a complex chord", () => {
         const original = "[F#m7/B]";
         const chord = ChordNotation.parse(original);
@@ -52,9 +53,54 @@ describe("Complex Alpha ChordNotation", () => {
         expect(takeTwo.modifier).toBe(chord.modifier);
         expect(takeTwo.bass).toBe(chord.bass);
     });
+
+    it("parses unicode sharp", () => {
+        const original = "[F♯m7]";
+        const chord = ChordNotation.parse(original);
+
+        expect(chord.root).toBe("F");
+        expect(chord.accidental).toBe("♯");
+        expect(chord.modifier).toBe("m7");
+        expect(chord.note).toBe("F♯");
+        expect(chord.chordType).toBe(ChordType.ALPHA);
+
+        const roundTrip = chord.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("accepts valid formats", () => {
+        expect(ChordNotation.test("[C]")).toBe(true);
+        expect(ChordNotation.test("[D]")).toBe(true);
+        expect(ChordNotation.test("[F#]")).toBe(true);
+        expect(ChordNotation.test("[Bb]")).toBe(true);
+        expect(ChordNotation.test("[G♯]")).toBe(true);
+        expect(ChordNotation.test("[A♭]")).toBe(true);
+        expect(ChordNotation.test("[Fes]")).toBe(true);
+        expect(ChordNotation.test("[Gis]")).toBe(true);
+        expect(ChordNotation.test("[Em]")).toBe(true);
+        expect(ChordNotation.test("[F#m7]")).toBe(true);
+        expect(ChordNotation.test("[C7]")).toBe(true);
+        expect(ChordNotation.test("[Dm7]")).toBe(true);
+        expect(ChordNotation.test("[F#m7/B]")).toBe(true);
+        expect(ChordNotation.test("[C/G]")).toBe(true);
+        expect(ChordNotation.test("[Bb/F]")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(ChordNotation.test("C")).toBe(false);
+        expect(ChordNotation.test("[H]")).toBe(false);
+        expect(ChordNotation.test("[C")).toBe(false);
+        expect(ChordNotation.test("C]")).toBe(false);
+        expect(ChordNotation.test("[]")).toBe(false);
+        expect(ChordNotation.test("[*Annotation]")).toBe(false);
+        expect(ChordNotation.test("(Instruction)")).toBe(false);
+        expect(ChordNotation.test("{capo: 2]")).toBe(false);
+        expect(ChordNotation.test("# Comment")).toBe(false);
+        expect(ChordNotation.test("")).toBe(false);
+    });
 });
 
-describe("Basic Nashville ChordNotation", () => {
+describe("Nashville ChordNotation", () => {
     it("parses a basic Nashville chord", () => {
         const original = "[1]";
         const chord = ChordNotation.parse(original);
@@ -75,9 +121,7 @@ describe("Basic Nashville ChordNotation", () => {
         expect(takeTwo.modifier).toBe(chord.modifier);
         expect(takeTwo.bass).toBe(chord.bass);
     });
-});
 
-describe("Complex Nashville ChordNotation", () => {
     it("parses a complex Nashville chord", () => {
         const original = "[4b7/5]";
         const chord = ChordNotation.parse(original);
@@ -98,9 +142,53 @@ describe("Complex Nashville ChordNotation", () => {
         expect(takeTwo.modifier).toBe(chord.modifier);
         expect(takeTwo.bass).toBe(chord.bass);
     });
+
+    it("parses unicode flat", () => {
+        const original = "[4♭7/5]";
+        const chord = ChordNotation.parse(original);
+        expect(chord.root).toBe("4");
+        expect(chord.accidental).toBe("♭");
+        expect(chord.note).toBe("4♭");
+        expect(chord.chordType).toBe(ChordType.NASHVILLE);
+
+        const roundTrip = chord.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("accepts valid formats", () => {
+        expect(ChordNotation.test("[1]")).toBe(true);
+        expect(ChordNotation.test("[2]")).toBe(true);
+        expect(ChordNotation.test("[3]")).toBe(true);
+        expect(ChordNotation.test("[4]")).toBe(true);
+        expect(ChordNotation.test("[5]")).toBe(true);
+        expect(ChordNotation.test("[6]")).toBe(true);
+        expect(ChordNotation.test("[7]")).toBe(true);
+        expect(ChordNotation.test("[1#]")).toBe(true);
+        expect(ChordNotation.test("[2b]")).toBe(true);
+        expect(ChordNotation.test("[3♯]")).toBe(true);
+        expect(ChordNotation.test("[4♭]")).toBe(true);
+        expect(ChordNotation.test("[5es]")).toBe(true);
+        expect(ChordNotation.test("[6is]")).toBe(true);
+        expect(ChordNotation.test("[1m]")).toBe(true);
+        expect(ChordNotation.test("[2m7]")).toBe(true);
+        expect(ChordNotation.test("[3maj7]")).toBe(true);
+        expect(ChordNotation.test("[4b7/5]")).toBe(true);
+        expect(ChordNotation.test("[1/3]")).toBe(true);
+        expect(ChordNotation.test("[6m/4]")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(ChordNotation.test("[0]")).toBe(false);
+        expect(ChordNotation.test("[8]")).toBe(false);
+        expect(ChordNotation.test("[1")).toBe(false);
+        expect(ChordNotation.test("1]")).toBe(false);
+        expect(ChordNotation.test("1")).toBe(false);
+        expect(ChordNotation.test("[*1]")).toBe(false);
+        expect(ChordNotation.test("(1)")).toBe(false);
+    });
 });
 
-describe("Basic Annotation", () => {
+describe("Annotation", () => {
     it("parses and stringifies correctly", () => {
         const original = "[*Basic Annotation]";
 
@@ -114,14 +202,175 @@ describe("Basic Annotation", () => {
         const takeTwo = Annotation.parse(roundTrip);
         expect(takeTwo.content).toBe(annotation.content);
     });
+
+    it("accepts valid formats", () => {
+        expect(Annotation.test("[*Simple annotation]")).toBe(true);
+        expect(Annotation.test("[*Complex annotation with numbers 123]")).toBe(true);
+        expect(Annotation.test("[*Annotation with punctuation!@#$%]")).toBe(true);
+        expect(Annotation.test("[*Multi-word annotation with spaces]")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(Annotation.test("[*]")).toBe(false);
+        expect(Annotation.test("Simple annotation")).toBe(false);
+        expect(Annotation.test("[Simple annotation]")).toBe(false);
+        expect(Annotation.test("*Simple annotation")).toBe(false);
+        expect(Annotation.test("[*Simple annotation")).toBe(false);
+        expect(Annotation.test("Simple annotation]")).toBe(false);
+        expect(Annotation.test("")).toBe(false);
+        expect(Annotation.test("[C]")).toBe(false);
+        expect(Annotation.test("(Instruction)")).toBe(false);
+        expect(Annotation.test("{title: Annotation}")).toBe(false);
+        expect(Annotation.test("# Comment")).toBe(false);
+    });
 });
 
-describe("Basic TextSegment", () => {
+describe("TextSegment", () => {
     it("stores and stringifies plain text", () => {
         const text = "Just some lyrics";
         const segment = new TextSegment(text);
         expect(segment.content).toBe(text);
         expect(segment.toString()).toBe(text);
+    });
+});
+
+describe("InstructionLine", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "(Intro)";
+
+        const instruction = InstructionLine.parse(original);
+        expect(instruction.content).toBe("Intro");
+
+        const roundTrip = instruction.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = InstructionLine.parse(roundTrip);
+        expect(takeTwo.content).toBe(instruction.content);
+    });
+
+    it("parses complex instruction content", () => {
+        const original = "(Verse 1 - slowly, with feeling)";
+
+        const instruction = InstructionLine.parse(original);
+        expect(instruction.content).toBe("Verse 1 - slowly, with feeling");
+
+        const roundTrip = instruction.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("accepts valid formats", () => {
+        expect(InstructionLine.test("(Intro)")).toBe(true);
+        expect(InstructionLine.test("(Verse 1)")).toBe(true);
+        expect(InstructionLine.test("(Bridge - repeat 2x)")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(InstructionLine.test("Intro")).toBe(false);
+        expect(InstructionLine.test("# Comment")).toBe(false);
+        expect(InstructionLine.test("{key: C}")).toBe(false);
+        expect(InstructionLine.test("")).toBe(false);
+    });
+});
+
+describe("CommentLine", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "# This is a comment";
+
+        const comment = CommentLine.parse(original);
+        expect(comment.content).toBe("This is a comment");
+
+        const roundTrip = comment.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = CommentLine.parse(roundTrip);
+        expect(takeTwo.content).toBe(comment.content);
+    });
+
+    it("parses multiple hash symbols", () => {
+        const original = "### Multiple hashes comment";
+
+        const comment = CommentLine.parse(original);
+        expect(comment.content).toBe("Multiple hashes comment");
+
+        const roundTrip = comment.toString();
+        expect(roundTrip).toBe("# Multiple hashes comment");
+    });
+
+    it("parses comment without space after hash", () => {
+        const original = "#No space comment";
+
+        const comment = CommentLine.parse(original);
+        expect(comment.content).toBe("No space comment");
+
+        const roundTrip = comment.toString();
+        expect(roundTrip).toBe("# No space comment");
+    });
+
+    it("parses empty comment", () => {
+        const original = "#";
+
+        const comment = CommentLine.parse(original);
+        expect(comment.content).toBe("");
+
+        const roundTrip = comment.toString();
+        expect(roundTrip).toBe("# ");
+    });
+
+    it("accepts valid formats", () => {
+        expect(CommentLine.test("# This is a comment")).toBe(true);
+        expect(CommentLine.test("## Another comment")).toBe(true);
+        expect(CommentLine.test("#")).toBe(true);
+        expect(CommentLine.test("#No space")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(CommentLine.test("This is not a comment")).toBe(false);
+        expect(CommentLine.test("(Instruction)")).toBe(false);
+        expect(CommentLine.test("")).toBe(false);
+    });
+});
+
+describe("EmptyLine", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "";
+
+        const emptyLine = EmptyLine.parse(original);
+
+        const roundTrip = emptyLine.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = EmptyLine.parse(roundTrip);
+        expect(takeTwo.toString()).toBe(emptyLine.toString());
+    });
+
+    it("parses whitespace-only lines", () => {
+        const original = "   ";
+
+        const emptyLine = EmptyLine.parse(original);
+
+        const roundTrip = emptyLine.toString();
+        expect(roundTrip).toBe("");
+    });
+
+    it("accepts valid formats", () => {
+        expect(EmptyLine.test("")).toBe(true);
+        expect(EmptyLine.test("   ")).toBe(true);
+        expect(EmptyLine.test("\t")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(EmptyLine.test("Not empty")).toBe(false);
+        expect(EmptyLine.test("# Comment")).toBe(false);
+        expect(EmptyLine.test("(Instruction)")).toBe(false);
+        expect(EmptyLine.test("  \n  ")).toBe(false);
+    });
+
+    it("throws errors for non-empty lines", () => {
+        expect(() => EmptyLine.parse("Not empty")).toThrow();
+        expect(() => EmptyLine.parse("# Comment")).toThrow();
     });
 });
 
