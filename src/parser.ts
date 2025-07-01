@@ -170,6 +170,9 @@ export class EmptyLine extends ChoproLine {
     }
 
     static test(line: string): boolean {
+        if (line.includes('\n')) {
+            return false;
+        }
         return line.trim() === '';
     }
 
