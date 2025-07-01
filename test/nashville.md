@@ -3,6 +3,7 @@
 Test cases for Nashville number chord notation.
 
 ## Basic Nashville Numbers
+_Test coverage: basic Nashville number system notation_
 ```chopro
 [1m] [3] [4] [6]
 [1m] [5] [1m] [5]
@@ -14,6 +15,7 @@ And [1m]God, I [5]know, I'm [1m]one [3] [4] [6] [1m] [5] [1m] [5]
 ```
 
 ## Extensions & Slash Chords
+_Test coverage: Nashville extensions, alterations, slash chords_
 ```chopro
 [1maj7]Major seven [2m7]minor seven [17]dominant
 [4]Sub [4/6]slash [1/3]inversions [5/7]bass notes
@@ -21,6 +23,7 @@ And [1m]God, I [5]know, I'm [1m]one [3] [4] [6] [1m] [5] [1m] [5]
 ```
 
 ## Mixed Notation
+_Test coverage: Nashville mixed with traditional chord notation_
 ```chopro
 Nashville: [1]When I [4]find my[5]self
 Traditional: [A]Speaking [D]words of [E]wisdom

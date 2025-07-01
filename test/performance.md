@@ -4,8 +4,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Intro
 
+_Test coverage: complex chord structures, extended harmonies, annotations_
 ```chopro
-# Test coverage: complex chord structures, extended harmonies, annotations
 [*Andante] [*pp] [Cmaj9#11]Lorem [Dm7add13]ipsum [G7alt]dolor [Am9]sit
 [Em11]Amet [F#m7b5]consectetur [B7alt]adipiscing [Em7]elit
 [Am7]Sed [Dm9]do [G13]eiusmod [Cmaj7/E]tempor [F6/9]incididunt
@@ -14,8 +14,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Verse 1
 
+_Test coverage: standard chord progressions, slash chords, dynamics_
 ```chopro
-# Test coverage: standard chord progressions, slash chords, dynamics
 [*Moderato] [C]Lorem [C/E]ipsum [F]dolor [F/A]sit [G]amet [G/B]consectetur
 [Am]Adipiscing [Am/C]elit [F]sed [Fmaj7]do [G]eiusmod [G7]tempor
 [C]Incididunt [C7]ut [F]labore [Fm]et [G]dolore [G7]magna [Am]aliqua
@@ -29,8 +29,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Chorus 1
 
+_Test coverage: consecutive chords, spacing edge cases, special characters_
 ```chopro
-# Test coverage: consecutive chords, spacing edge cases, special characters
 [*Forte] [C]Excepteur [Cmaj7]sint [F]occaecat [Fmaj7]cupidatat [G]non [G7]proident
 [Am]Sunt [Am7]in [F]culpa [F6]qui [G]officia [G7]deserunt [C]mollit
 [C7]Anim [F]id [F/A]est [G]laborum [G/B]sed [Am]ut [Am/C]perspiciatis
@@ -44,8 +44,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Verse 2
 
+_Test coverage: diminuendo dynamics, major 7th chords, chromatic movements_
 ```chopro
-# Test coverage: diminuendo dynamics, major 7th chords, chromatic movements
 [*Diminuendo] [Bbmaj7]Lorem [Am7]ipsum [Dm7]dolor [G7]sit
 [C]Amet [C/E]consectetur [F]adipiscing [F/A]elit [G]sed [G/B]do
 [Am]Eiusmod [Am/C]tempor [F]incididunt [Fmaj7]ut [G]labore [G7]et
@@ -59,8 +59,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Bridge
 
+_Test coverage: bridge section, sostenuto articulation, rallentando_
 ```chopro
-# Test coverage: bridge section, sostenuto articulation, rallentando
 [*Sostenuto] [*p] [Em]Lorem [Em7]ipsum [Am]dolor [Am7]sit [Dm]amet [Dm7]consectetur
 [G]Adipiscing [G7]elit [C]sed [Cmaj7]do [F]eiusmod [Fmaj7]tempor
 [Em]Incididunt [Em7]ut [Am]labore [Am7]et [Dm]dolore [Dm7]magna
@@ -74,8 +74,8 @@ Test cases for performance validation with large content and complex songs featu
 
 ## Verse 3
 
+_Test coverage: accelerando, complex extended chords, empty brackets, wide spacing_
 ```chopro
-# Test coverage: accelerando, complex extended chords, empty brackets, wide spacing
 [*Allegro] [*mf] [C]Lorem [Cmaj9]ipsum [F]dolor [Fadd9]sit [G]amet [G13]consectetur
 [Am9]Adipiscing [Em11]elit [F#m7b5]sed [B7alt]do [Em7]eiusmod
 [Am7]Tempor [Dm9]incididunt [G13]ut [Cmaj7/E]labore [F6/9]et [Bb7#11]dolore
@@ -90,8 +90,8 @@ Lorem ipsum dolor sit amet consectetur adipiscing elit
 
 ## Chorus 2
 
+_Test coverage: vivace tempo, chorus variations, crescendo builds_
 ```chopro
-# Test coverage: vivace tempo, chorus variations, crescendo builds
 [*Vivace] [C]Lorem [C/E]ipsum [F]dolor [F/A]sit [G]amet [G/B]consectetur
 [Am]Adipiscing [Am/C]elit [F]sed [Fmaj7]do [G]eiusmod [G7]tempor
 [C]Incididunt [C7]ut [F]labore [Fm]et [G]dolore [G7]magna [Am]aliqua
@@ -105,8 +105,8 @@ Lorem ipsum dolor sit amet consectetur adipiscing elit
 
 ## Outro
 
+_Test coverage: outro section, ritardando, fade effects, fine marking_
 ```chopro
-# Test coverage: outro section, ritardando, fade effects, fine marking
 [*Ritardando] [*Begin fade] [C]Lorem [Cmaj7]ipsum [F]dolor [Fmaj7]sit
 [G]Amet [G7]consectetur [Am]adipiscing [Am7]elit [F]sed [F6]do
 [G]Eiusmod [G7]tempor [C]incididunt [C7]ut [F]labore [F/A]et
