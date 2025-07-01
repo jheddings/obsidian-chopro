@@ -15,7 +15,7 @@ export enum Accidental {
 }
 
 export class MusicalNote {
-    public static  PATTERN = /^([A-G1-7])(#|♯|b|♭|[ei]s|s)?/i;
+    public static  PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
 
     constructor(public root: string, public postfix?: string) {
         this.root = root;
@@ -37,6 +37,7 @@ export class MusicalNote {
             case 's':
                 return Accidental.FLAT;
         }
+
         return Accidental.NATURAL;
     }
 
@@ -83,6 +84,9 @@ export class MusicalNote {
         if (this.postfix) {
             if (normalize) {
                 switch (this.accidental) {
+                    case Accidental.NATURAL:
+                        // no postfix for natural notes
+                        break;
                     case Accidental.SHARP:
                         noteString += '♯';
                         break;

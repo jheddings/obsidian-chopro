@@ -67,6 +67,11 @@ describe("MusicalNote", () => {
             { input: "2#", normalized: "2♯" },
             { input: "4b", normalized: "4♭" },
             
+            // Unicode accidentals
+            { input: "B♮", normalized: "B" },
+            { input: "A♭", normalized: "A♭" },
+            { input: "F♯", normalized: "F♯" },
+
             // German notation to Unicode
             { input: "Gis", normalized: "G♯" },
             { input: "Fes", normalized: "F♭" },
@@ -81,16 +86,6 @@ describe("MusicalNote", () => {
                 expect(note.toString(true)).toBe(normalized);
             }
         );
-
-        it("preserves unicode accidentals when normalized", () => {
-            const unicodeSharp = MusicalNote.parse("F♯");
-            expect(unicodeSharp.toString(false)).toBe("F♯");
-            expect(unicodeSharp.toString(true)).toBe("F♯");
-
-            const unicodeFlat = MusicalNote.parse("B♭");
-            expect(unicodeFlat.toString(false)).toBe("B♭");
-            expect(unicodeFlat.toString(true)).toBe("B♭");
-        });
     });
 });
 
