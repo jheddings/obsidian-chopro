@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "npm run build",
+    "test": "jest test/*.test.ts",
     "release": "npm run test && git push origin v$npm_package_version",
     "version": "node version.mjs && git add manifest.json versions.json"
   },
@@ -20,13 +20,16 @@
   "author": "Jason Heddings",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^16.11.6",
     "@types/yaml": "^1.9.6",
     "@typescript-eslint/eslint-plugin": "5.29.0",
     "@typescript-eslint/parser": "5.29.0",
     "builtin-modules": "3.3.0",
     "esbuild": "0.17.3",
+    "jest": "^30.0.3",
     "obsidian": "latest",
+    "ts-jest": "^29.4.0",
     "tslib": "2.4.0",
     "typescript": "4.7.4"
   },
