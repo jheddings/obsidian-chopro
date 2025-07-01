@@ -7,6 +7,7 @@ import {
     InstructionLine,
     CommentLine,
     EmptyLine,
+    TextLine,
 } from "../src/parser";
 
 describe("Alpha ChordNotation", () => {
@@ -371,6 +372,73 @@ describe("EmptyLine", () => {
     it("throws errors for non-empty lines", () => {
         expect(() => EmptyLine.parse("Not empty")).toThrow();
         expect(() => EmptyLine.parse("# Comment")).toThrow();
+    });
+});
+
+describe("TextLine", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "This is a line of lyrics";
+
+        const textLine = TextLine.parse(original);
+        expect(textLine.content).toBe(original);
+
+        const roundTrip = textLine.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = TextLine.parse(roundTrip);
+        expect(takeTwo.content).toBe(textLine.content);
+    });
+
+    it("parses lines with whitespace", () => {
+        const original = "  Text with spaces  ";
+
+        const textLine = TextLine.parse(original);
+        expect(textLine.content).toBe(original);
+
+        const roundTrip = textLine.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("parses lines with special characters", () => {
+        const original = "Special chars: !@#$%^&*()";
+
+        const textLine = TextLine.parse(original);
+        expect(textLine.content).toBe(original);
+
+        const roundTrip = textLine.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("parses lines with unicode characters", () => {
+        const original = "𝐔𝗇𝗂𝖼𝗈𝖽𝖾: ñ 中文 🎵 ♯♭";
+
+        const textLine = TextLine.parse(original);
+        expect(textLine.content).toBe(original);
+
+        const roundTrip = textLine.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = TextLine.parse(roundTrip);
+        expect(takeTwo.content).toBe(textLine.content);
+    });
+
+    it("accepts valid formats", () => {
+        expect(TextLine.test("Simple text")).toBe(true);
+        expect(TextLine.test("Text with numbers 123")).toBe(true);
+        expect(TextLine.test("Text with punctuation!")).toBe(true);
+        expect(TextLine.test("  Text with leading spaces")).toBe(true);
+        expect(TextLine.test("Text with trailing spaces  ")).toBe(true);
+        expect(TextLine.test("123")).toBe(true);
+        expect(TextLine.test("Special chars: àáâãäå")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(TextLine.test("")).toBe(false);
+        expect(TextLine.test("   ")).toBe(false);
+        expect(TextLine.test("\t")).toBe(false);
+        expect(TextLine.test("  \n  ")).toBe(false);
     });
 });
 
