@@ -8,6 +8,9 @@ import {
     CommentLine,
     EmptyLine,
     TextLine,
+    DirectiveLine,
+    CustomDirective,
+    MetadataDirective,
 } from "../src/parser";
 
 describe("Alpha ChordNotation", () => {
@@ -439,6 +442,193 @@ describe("TextLine", () => {
         expect(TextLine.test("   ")).toBe(false);
         expect(TextLine.test("\t")).toBe(false);
         expect(TextLine.test("  \n  ")).toBe(false);
+    });
+});
+
+describe("DirectiveLine", () => {
+    it("accepts valid formats", () => {
+        expect(DirectiveLine.test("{title: My Song}")).toBe(true);
+        expect(DirectiveLine.test("{artist: Bob Dylan}")).toBe(true);
+        expect(DirectiveLine.test("{key: C}")).toBe(true);
+        expect(DirectiveLine.test("{capo: 2}")).toBe(true);
+        expect(DirectiveLine.test("{x_custom: value}")).toBe(true);
+        expect(DirectiveLine.test("{start_of_chorus}")).toBe(true);
+        expect(DirectiveLine.test("{soc}")).toBe(true);
+        expect(DirectiveLine.test("{no_value}")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(DirectiveLine.test("title: My Song")).toBe(false);
+        expect(DirectiveLine.test("{incomplete")).toBe(false);
+        expect(DirectiveLine.test("incomplete}")).toBe(false);
+        expect(DirectiveLine.test("{}")).toBe(false);
+        expect(DirectiveLine.test("")).toBe(false);
+        expect(DirectiveLine.test("# Comment")).toBe(false);
+        expect(DirectiveLine.test("(Instruction)")).toBe(false);
+        expect(DirectiveLine.test("[C]")).toBe(false);
+        expect(DirectiveLine.test("Just text")).toBe(false);
+    });
+
+    it("parses to appropriate subclass", () => {
+        const customDirective = DirectiveLine.parse("{x_custom: value}");
+        expect(customDirective).toBeInstanceOf(CustomDirective);
+        expect(customDirective.name).toBe("custom");
+        expect(customDirective.value).toBe("value");
+
+        const metadataDirective = DirectiveLine.parse("{title: My Song}");
+        expect(metadataDirective).toBeInstanceOf(MetadataDirective);
+        expect(metadataDirective.name).toBe("title");
+        expect(metadataDirective.value).toBe("My Song");
+    });
+
+    it("throws error for unknown directive format", () => {
+        expect(() => DirectiveLine.parse("not a directive")).toThrow("Unknown directive");
+        expect(() => DirectiveLine.parse("{invalid format")).toThrow("Unknown directive");
+    });
+});
+
+describe("CustomDirective", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "{x_custom: value}";
+
+        const directive = CustomDirective.parse(original);
+        expect(directive.name).toBe("custom");
+        expect(directive.value).toBe("value");
+
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = CustomDirective.parse(original);
+        expect(takeTwo.name).toBe(directive.name);
+        expect(takeTwo.value).toBe(directive.value);
+    });
+
+    it("parses custom directive without value", () => {
+        const original = "{x_trigger}";
+
+        const directive = CustomDirective.parse(original);
+        expect(directive.name).toBe("trigger");
+        expect(directive.value).toBeUndefined();
+        expect(directive.toString()).toBe(original);
+    });
+
+    it("parses custom directive with spaces", () => {
+        const original = "{x_my_custom: complex value with spaces}";
+
+        const directive = CustomDirective.parse(original);
+        expect(directive.name).toBe("my_custom");
+        expect(directive.value).toBe("complex value with spaces");
+        expect(directive.toString()).toBe(original);
+    });
+
+    it("accepts valid formats", () => {
+        expect(CustomDirective.test("{x_custom: value}")).toBe(true);
+        expect(CustomDirective.test("{x_trigger}")).toBe(true);
+        expect(CustomDirective.test("{x_my_directive: complex value}")).toBe(true);
+        expect(CustomDirective.test("{X_UPPERCASE: test}")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(CustomDirective.test("{title: My Song}")).toBe(false);
+        expect(CustomDirective.test("{artist: Bob Dylan}")).toBe(false);
+        expect(CustomDirective.test("{custom: value}")).toBe(false);
+        expect(CustomDirective.test("x_custom: value")).toBe(false);
+        expect(CustomDirective.test("{x_custom")).toBe(false);
+        expect(CustomDirective.test("x_custom}")).toBe(false);
+        expect(CustomDirective.test("")).toBe(false);
+        expect(CustomDirective.test("# Comment")).toBe(false);
+        expect(CustomDirective.test("(Instruction)")).toBe(false);
+    });
+});
+
+describe("MetadataDirective", () => {
+    it("parses and stringifies correctly", () => {
+        const original = "{title: My Song}";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("title");
+        expect(directive.value).toBe("My Song");
+
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe(original);
+
+        // parse again to ensure round-trip compatibility
+        const takeTwo = MetadataDirective.parse(roundTrip);
+        expect(takeTwo.name).toBe(directive.name);
+        expect(takeTwo.value).toBe(directive.value);
+    });
+
+    it("parses directive without value", () => {
+        const original = "{copyright}";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("copyright");
+        expect(directive.value).toBeUndefined();
+
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("parses directive with complex value", () => {
+        const original = "{subtitle: A Song About Love and Loss}";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("subtitle");
+        expect(directive.value).toBe("A Song About Love and Loss");
+
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("parses directive with numeric value", () => {
+        const original = "{capo: 3}";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("capo");
+        expect(directive.value).toBe("3");
+        
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe(original);
+    });
+
+    it("normalizes directive name to lowercase", () => {
+        const original = "{TITLE: My Song}";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("title");
+        expect(directive.value).toBe("My Song");
+
+        const roundTrip = directive.toString();
+        expect(roundTrip).toBe("{title: My Song}");
+    });
+
+    it("handles malformed directive gracefully", () => {
+        const original = "malformed directive";
+
+        const directive = MetadataDirective.parse(original);
+        expect(directive.name).toBe("unknown");
+        expect(directive.value).toBe(original);
+    });
+
+    it("accepts valid formats", () => {
+        expect(MetadataDirective.test("{title: My Song}")).toBe(true);
+        expect(MetadataDirective.test("{artist: Bob Dylan}")).toBe(true);
+        expect(MetadataDirective.test("{key: C}")).toBe(true);
+        expect(MetadataDirective.test("{capo: 2}")).toBe(true);
+        expect(MetadataDirective.test("{tempo: 120}")).toBe(true);
+    });
+
+    it("rejects invalid formats", () => {
+        expect(MetadataDirective.test("{x_custom: value}")).toBe(false);
+        expect(MetadataDirective.test("{X_CUSTOM: value}")).toBe(false);
+        expect(MetadataDirective.test("title: My Song")).toBe(false);
+        expect(MetadataDirective.test("{title")).toBe(false);
+        expect(MetadataDirective.test("title}")).toBe(false);
+        expect(MetadataDirective.test("")).toBe(false);
+        expect(MetadataDirective.test("# Comment")).toBe(false);
+        expect(MetadataDirective.test("(Instruction)")).toBe(false);
+        expect(MetadataDirective.test("[C]")).toBe(false);
     });
 });
 
