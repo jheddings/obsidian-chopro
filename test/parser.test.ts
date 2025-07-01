@@ -140,7 +140,7 @@ describe("ChordNotation", () => {
     describe("normalization", () => {
         const normalizationCases = [
             { input: "[F#m7]", normalized: "[F♯m7]" },
-            { input: "[Bbmaj7]", normalized: "[B♭maj7]" },
+            { input: "[BbMAJ7]", normalized: "[B♭maj7]" },
             { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
             { input: "[2#m]", normalized: "[2♯m]" },
             { input: "[4b7/5#]", normalized: "[4♭7/5♯]" },
