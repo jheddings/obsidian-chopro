@@ -159,7 +159,7 @@ class ChoproSettingTab extends PluginSettingTab {
         const preview = previewContent.createDiv();
         
         const choproPreview = `
-            [F]Amazing [F7]grace, how [Bb]sweet the [F]sound, that [Dm]saved a [F]wretch like [C]me
+            [F]Amazing [F7]grace, how [Bb]sweet the [F]sound, that [Dm]saved a [FMAJ7]wretch like [C]me
             I [F]once was [F7]lost but [Bb]now I'm [F]found, was [Dm]blind but [C]now I [F]see [*Rit.]
         `;
         

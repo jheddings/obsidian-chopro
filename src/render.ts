@@ -186,7 +186,7 @@ export class ChoproRenderer {
     }
 
     /**
-     * Apply chord decorations and calculate total width
+     * Apply chord decorations and calculate total width of the notation.
      */
     private applyChordDecorations(container: HTMLElement, segment: ChordNotation): number {
         let totalChordLength = 0;
@@ -197,27 +197,24 @@ export class ChoproRenderer {
             totalChordLength += prefix.length;
         }
 
-        // add the base chord (root + accidental)
-        const noteText = this.settings.normalizedChordDisplay ? 
-            segment.note.toString(true) : 
-            segment.note.toString(false);
-        container.createSpan({ text: noteText });
-        totalChordLength += noteText.length;
+        const note = segment.note.toString(this.settings.normalizedChordDisplay);
+        container.createSpan({ text: note });
+        totalChordLength += note.length;
 
         if (segment.modifier) {
-            container.createSpan({ 
-                text: segment.modifier.toLowerCase(), 
-                cls: 'chopro-chord-modifier' 
-            });
-            totalChordLength += segment.modifier.length;
+            const mod = this.settings.normalizedChordDisplay ?
+                segment.modifier.toLowerCase() :
+                segment.modifier;
+
+            container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
+
+            totalChordLength += mod.length;
         }
 
         if (segment.bass) {
-            const bassText = this.settings.normalizedChordDisplay ? 
-                segment.bass.toString(true) : 
-                segment.bass.toString(false);
-            container.createSpan({ text: `/${bassText}` });
-            totalChordLength += 1 + bassText.length; // +1 for the slash
+            const bass = segment.bass.toString(this.settings.normalizedChordDisplay);
+            container.createSpan({ text: `/${bass}` });
+            totalChordLength += 1 + bass.length; // +1 for the slash
         }
 
         if (suffix && suffix.length > 0) {
