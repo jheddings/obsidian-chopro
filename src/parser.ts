@@ -606,4 +606,104 @@ export class ChoproBlock extends ContentBlock {
         const content = this.lines.map(line => line.toString()).join('\n');
         return '```chopro\n' + content + '\n```';
     }
+
+}
+
+/**
+ * Represents a complete ChoPro file containing frontmatter and content blocks.
+ */
+export class ChoproFile {
+    private static readonly FRONTMATTER_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+
+    public frontmatter?: Frontmatter;
+    public blocks: ContentBlock[] = [];
+
+    constructor(frontmatter?: Frontmatter, blocks: ContentBlock[] = []) {
+        this.frontmatter = frontmatter;
+        this.blocks = blocks;
+    }
+
+    /**
+     * Get the key from the file properties, or undefined if none exists.
+     */
+    get key(): string | undefined {
+        return this.frontmatter?.get('key');
+    }
+
+    /**
+     * Parse a complete ChoPro file from source text.
+     */
+    static parse(source: string): ChoproFile {
+        let frontmatter: Frontmatter | undefined;
+        let remainingContent = source;
+
+        const frontmatterMatch = source.match(ChoproFile.FRONTMATTER_PATTERN);
+
+        if (frontmatterMatch) {
+            frontmatter = Frontmatter.parse(frontmatterMatch[1]);
+            remainingContent = source.substring(frontmatterMatch[0].length);
+        }
+
+        const blocks = ChoproFile.parseContentBlocks(remainingContent);
+
+        return new ChoproFile(frontmatter, blocks);
+    }
+
+    /**
+     * Parse content blocks from the given content.
+     */
+    private static parseContentBlocks(content: string): ContentBlock[] {
+        const blocks: ContentBlock[] = [];
+        const blocksPattern = new RegExp(ChoproBlock.BLOCK_PATTERN.source, 'g');
+        
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        const addMarkdownBlock = (content: string) => {
+            if (content) {
+                blocks.push(MarkdownBlock.parse(content));
+            }
+        };
+
+        const addChoproBlock = (content: string) => {
+            if (content) {
+                blocks.push(ChoproBlock.parse(content));
+            }
+        };
+
+        while ((match = blocksPattern.exec(content)) !== null) {
+            // add any markdown content before this chopro block
+            if (match.index > lastIndex) {
+                const markdown = content.substring(lastIndex, match.index);
+                addMarkdownBlock(markdown);
+            }
+
+            addChoproBlock(match[1]);
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // add any remaining markdown content after the last chopro block
+        if (lastIndex < content.length) {
+            const markdown = content.substring(lastIndex);
+            addMarkdownBlock(markdown);
+        }
+
+        return blocks;
+    }
+
+    /**
+     * Convert the file to its string representation.
+     */
+    toString(): string {
+        let result = '';
+        
+        if (this.frontmatter) {
+            result += this.frontmatter.toString() + '\n\n';
+        }
+        
+        result += this.blocks.map(block => block.toString()).join('\n');
+        
+        return result;
+    }
 }
