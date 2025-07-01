@@ -198,8 +198,11 @@ export class ChoproRenderer {
         }
 
         // add the base chord (root + accidental)
-        container.createSpan({ text: segment.note });
-        totalChordLength += segment.note.length;
+        const noteText = this.settings.normalizedChordDisplay ? 
+            segment.note.toString(true) : 
+            segment.note.toString(false);
+        container.createSpan({ text: noteText });
+        totalChordLength += noteText.length;
 
         if (segment.modifier) {
             container.createSpan({ 
@@ -210,8 +213,11 @@ export class ChoproRenderer {
         }
 
         if (segment.bass) {
-            container.createSpan({ text: `/${segment.bass}` });
-            totalChordLength += 1 + segment.bass.length; // +1 for the slash
+            const bassText = this.settings.normalizedChordDisplay ? 
+                segment.bass.toString(true) : 
+                segment.bass.toString(false);
+            container.createSpan({ text: `/${bassText}` });
+            totalChordLength += 1 + bassText.length; // +1 for the slash
         }
 
         if (suffix && suffix.length > 0) {
