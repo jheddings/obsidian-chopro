@@ -10,6 +10,7 @@ export interface ChoproPluginSettings {
     chordSize: number;
     superscriptChordMods: boolean;
     chordDecorations: string;
+    normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
 }
 
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordSize: 1.0,
     superscriptChordMods: false,
     chordDecorations: 'none',
+    normalizedChordDisplay: false,
     italicAnnotations: true
 };
 
@@ -130,6 +132,16 @@ class ChoproSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
+            .setName('Normalized Chord Display')
+            .setDesc('Use normalized chord representations (F# → F♯, Bb → B♭)')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.normalizedChordDisplay)
+                .onChange(async (value) => {
+                    this.plugin.settings.normalizedChordDisplay = value;
+                    updatePreview();
+                }));
+
+        new Setting(containerEl)
             .setName('Italic Annotations')
             .setDesc('Display inline annotations in italics')
             .addToggle(toggle => toggle
@@ -147,8 +159,8 @@ class ChoproSettingTab extends PluginSettingTab {
         const preview = previewContent.createDiv();
         
         const choproPreview = `
-            [C]Amazing [C7]grace, how [F]sweet the [C]sound, that [Am]saved a [C]wretch like [G]me
-            I [C]once was [C7]lost but [F]now I'm [C]found, was [Am]blind but [G]now I [C]see [*Rit.]
+            [F]Amazing [F7]grace, how [Bb]sweet the [F]sound, that [Dm]saved a [FMAJ7]wretch like [C]me
+            I [F]once was [F7]lost but [Bb]now I'm [F]found, was [Dm]blind but [C]now I [F]see [*Rit.]
         `;
         
         // Update preview content based on current settings

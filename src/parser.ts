@@ -2,10 +2,105 @@
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
-export enum ChordType {
+export enum NoteType {
     ALPHA = 'alpha',
     NASHVILLE = 'nashville',
     UNKNOWN = 'unknown'
+}
+
+export enum Accidental {
+    SHARP = '♯',
+    FLAT = '♭',
+    NATURAL = '♮'
+}
+
+export class MusicalNote {
+    public static  PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
+
+    constructor(public root: string, public postfix?: string) {
+        this.root = root;
+        this.postfix = postfix;
+    }
+
+    /**
+     * Get the accidental type based on the postfix.
+     */
+    get accidental(): Accidental {
+        switch (this.postfix) {
+            case '#':
+            case '♯':
+            case 'is':
+                return Accidental.SHARP;
+            case 'b':
+            case '♭':
+            case 'es':
+            case 's':
+                return Accidental.FLAT;
+        }
+
+        return Accidental.NATURAL;
+    }
+
+    /**
+     * Determine the type of note notation (alpha, nashville, or unknown).
+     */
+    get noteType(): NoteType {
+        // Check if root is a letter (A-G) - alpha notation
+        if (/^[A-G]$/i.test(this.root)) {
+            return NoteType.ALPHA;
+        }
+        
+        // Check if root is a number (1-7) - nashville notation
+        if (/^[1-7]$/.test(this.root)) {
+            return NoteType.NASHVILLE;
+        }
+        
+        return NoteType.UNKNOWN;
+    }
+
+    /**
+     * Parse a note string into a MusicalNote instance.
+     */
+    static parse(noteString: string): MusicalNote {
+        const match = noteString.match(MusicalNote.PATTERN);
+        
+        if (!match) {
+            throw new Error('Invalid note format');
+        }
+
+        const root = match[1].toUpperCase();
+        const postfix = match[2] ? match[2].toLowerCase() : undefined;
+
+        return new MusicalNote(root, postfix);
+    }
+
+    /**
+     * Convert the note to its string representation.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     */
+    toString(normalize: boolean = false): string {
+        let noteString = this.root;
+        
+        if (this.postfix) {
+            if (normalize) {
+                switch (this.accidental) {
+                    case Accidental.NATURAL:
+                        // no postfix for natural notes
+                        break;
+                    case Accidental.SHARP:
+                        noteString += '♯';
+                        break;
+                    case Accidental.FLAT:
+                        noteString += '♭';
+                        break;
+                }
+            } else {
+                noteString += this.postfix;
+            }
+        }
+        
+        return noteString;
+    }
 }
 
 export abstract class LineSegment {
@@ -13,48 +108,14 @@ export abstract class LineSegment {
 }
 
 export class ChordNotation extends LineSegment {
-    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?\]$/i;
-
-    public readonly root: string;
-    public readonly accidental?: string;
-    public readonly modifier?: string;
-    public readonly bass?: string;
+    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s|s)?([^\/]+)?(\/(.+))?\]$/i;
 
     constructor(
-        root: string,
-        accidental?: string,
-        modifier?: string,
-        bass?: string
+        public note: MusicalNote,
+        public modifier?: string,
+        public bass?: MusicalNote
     ) {
-        super(root + (accidental || ''));
-        this.root = root;
-        this.accidental = accidental;
-        this.modifier = modifier;
-        this.bass = bass;
-    }
-
-    /**
-     * Get the base chord (root + accidental).
-     */
-    get note(): string {
-        return this.root + (this.accidental || '');
-    }
-
-    /**
-     * Determine the type of chord notation (alpha, nashville, or unknown).
-     */
-    get chordType(): ChordType {
-        // Check if root is a letter (A-G) - alpha notation
-        if (/^[A-G]$/i.test(this.root)) {
-            return ChordType.ALPHA;
-        }
-        
-        // Check if root is a number (1-7) - nashville notation
-        if (/^[1-7]$/.test(this.root)) {
-            return ChordType.NASHVILLE;
-        }
-        
-        return ChordType.UNKNOWN;
+        super(note + (modifier || '') + (bass || ''));
     }
 
     static test(content: string): boolean {
@@ -71,18 +132,30 @@ export class ChordNotation extends LineSegment {
         const root = match[1].toUpperCase();
         const accidental = match[2] ? match[2].toLowerCase() : undefined;
         const modifier = match[3] ? match[3].trim() : undefined;
-        const bass = match[5] ? match[5].trim() : undefined;
+        const bassString = match[5] ? match[5].trim() : undefined;
 
-        return new ChordNotation(root, accidental, modifier, bass);
+        const primaryNote = new MusicalNote(root, accidental);
+        const bassNote = bassString ? MusicalNote.parse(bassString) : undefined;
+
+        return new ChordNotation(primaryNote, modifier, bassNote);
     }
 
     /**
-     * Convert the chord notation to its normalized ChoPro representation.
+     * Convert the chord notation to its ChoPro representation.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
-    toString(): string {
-        const modPart = this.modifier ? this.modifier.toLowerCase() : '';
-        const slashPart = this.bass ? `/${this.bass}` : '';
-        return `[${this.note + modPart + slashPart}]`;
+    toString(normalize: boolean = false): string {
+        let chordString = this.note.toString(normalize);
+        
+        if (this.modifier) {
+            chordString += normalize ? this.modifier.toLowerCase() : this.modifier;
+        }
+
+        if (this.bass) {
+            chordString += `/${this.bass.toString(normalize)}`;
+        }
+
+        return `[${chordString}]`;
     }
 }
 

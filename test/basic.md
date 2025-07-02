@@ -16,7 +16,7 @@ _Test coverage: plain text lines mixed with chord lines_
 ```chopro
 This line has no chords at all
 Another plain text line
-Mixed with [C]chord [F]lines
+Mixed with [Ab]chord [F#]lines
 Back to plain text
 ```
 

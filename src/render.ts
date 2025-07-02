@@ -186,7 +186,7 @@ export class ChoproRenderer {
     }
 
     /**
-     * Apply chord decorations and calculate total width
+     * Apply chord decorations and calculate total width of the notation.
      */
     private applyChordDecorations(container: HTMLElement, segment: ChordNotation): number {
         let totalChordLength = 0;
@@ -197,21 +197,24 @@ export class ChoproRenderer {
             totalChordLength += prefix.length;
         }
 
-        // add the base chord (root + accidental)
-        container.createSpan({ text: segment.note });
-        totalChordLength += segment.note.length;
+        const note = segment.note.toString(this.settings.normalizedChordDisplay);
+        container.createSpan({ text: note });
+        totalChordLength += note.length;
 
         if (segment.modifier) {
-            container.createSpan({ 
-                text: segment.modifier.toLowerCase(), 
-                cls: 'chopro-chord-modifier' 
-            });
-            totalChordLength += segment.modifier.length;
+            const mod = this.settings.normalizedChordDisplay ?
+                segment.modifier.toLowerCase() :
+                segment.modifier;
+
+            container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
+
+            totalChordLength += mod.length;
         }
 
         if (segment.bass) {
-            container.createSpan({ text: `/${segment.bass}` });
-            totalChordLength += 1 + segment.bass.length; // +1 for the slash
+            const bass = segment.bass.toString(this.settings.normalizedChordDisplay);
+            container.createSpan({ text: `/${bass}` });
+            totalChordLength += 1 + bass.length; // +1 for the slash
         }
 
         if (suffix && suffix.length > 0) {
