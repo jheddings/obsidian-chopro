@@ -78,14 +78,14 @@ _Test coverage: accelerando, complex extended chords, empty brackets, wide spaci
 ```chopro
 [*Allegro] [*mf] [C]Lorem [Cmaj9]ipsum [F]dolor [Fadd9]sit [G]amet [G13]consectetur
 [Am9]Adipiscing [Em11]elit [F#m7b5]sed [B7alt]do [Em7]eiusmod
-[Am7]Tempor [Dm9]incididunt [G13]ut [Cmaj7/E]labore [F6/9]et [Bb7#11]dolore
+[Am7]Tempor [Dm9]incididunt [G13]ut [Cmaj7/E]labore [F6add9]et [Bb7#11]dolore
 [Am7]Magna [Dm7]aliqua [G7sus4]ut [C]enim [*Accelerando]
 
 [] [F] [G] Lorem ipsum empty brackets
 [Em] [Am] [Dm] [G] ipsum dolor sit
 [C]                                                            [F]lorem ipsum
 Lorem ipsum dolor sit amet consectetur adipiscing elit
-[Cmaj7#5]Lorem [Dm6/9]ipsum [G7#9b13]dolor [Am7add11]sit [*Fortissimo]
+[Cmaj7#5]Lorem [Dm6add9]ipsum [G7#9b13]dolor [Am7add11]sit [*Fortissimo]
 ```
 
 ## Chorus 2
