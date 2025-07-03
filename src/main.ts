@@ -1,7 +1,7 @@
 // main - ChoPro Obsidian Plugin
 
 import { Plugin, PluginSettingTab, Setting, App, Notice, MarkdownView, Modal, ButtonComponent, Editor } from 'obsidian';
-import { ChordType } from './parser';
+import { NoteType } from './parser';
 import { ChoproRenderer } from './render';
 import { ChoproBlock } from './parser';
 import { ChoproStyleManager } from './styles';
@@ -216,7 +216,7 @@ class ChoproSettingTab extends PluginSettingTab {
 class TransposeModal extends Modal {
     private fromKey: string | null = null;
     private toKey: string = 'C';
-    private chordType: ChordType = ChordType.ALPHA;
+    private chordType: NoteType = NoteType.ALPHA;
     private onConfirm: (options: TransposeOptions) => void;
 
     constructor(app: App, currentKey: string | null, onConfirm: (options: TransposeOptions) => void) {
@@ -249,12 +249,12 @@ class TransposeModal extends Modal {
             .setName('Chord Type')
             .setDesc('Choose output format for chords')
             .addDropdown(dropdown => dropdown
-                .addOption(ChordType.ALPHA, 'Alpha (C, G, Am, etc.)')
-                .addOption(ChordType.NASHVILLE, 'Nashville Numbers (1, 5, 6m, etc.)')
+                .addOption(NoteType.ALPHA, 'Alpha (C, G, Am, etc.)')
+                .addOption(NoteType.NASHVILLE, 'Nashville Numbers (1, 5, 6m, etc.)')
                 .setValue(this.chordType)
                 .onChange(value => {
-                    this.chordType = value as ChordType;
-                    if (value === ChordType.NASHVILLE) {
+                    this.chordType = value as NoteType;
+                    if (value === NoteType.NASHVILLE) {
                         this.toKey = '##';
                         targetKeyDropdown.setDisabled(true);
                         targetKeySetting.setDesc('Not applicable for the selected chord type');
@@ -278,7 +278,7 @@ class TransposeModal extends Modal {
                 });
             });
 
-        if (this.chordType !== ChordType.ALPHA) {
+        if (this.chordType !== NoteType.ALPHA) {
             targetKeyDropdown.setDisabled(true);
             targetKeySetting.setDesc('Not applicable for the selected chord type');
         }
@@ -293,15 +293,14 @@ class TransposeModal extends Modal {
             .setButtonText('Transpose')
             .setCta()
             .onClick(() => {
-                if (this.chordType === ChordType.ALPHA && !this.fromKey) {
+                if (this.chordType === NoteType.ALPHA && !this.fromKey) {
                     new Notice('Cannot transpose without the current key.');
                     return;
                 }
                 
                 this.onConfirm({
                     fromKey: this.fromKey || undefined,
-                    toKey: this.toKey,
-                    chordType: this.chordType
+                    toKey: this.toKey
                 });
                 this.close();
             });
