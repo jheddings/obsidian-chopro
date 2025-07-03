@@ -2,10 +2,105 @@
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
-export enum ChordType {
+export enum NoteType {
     ALPHA = 'alpha',
     NASHVILLE = 'nashville',
     UNKNOWN = 'unknown'
+}
+
+export enum Accidental {
+    SHARP = '♯',
+    FLAT = '♭',
+    NATURAL = '♮'
+}
+
+export class MusicalNote {
+    public static  PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
+
+    constructor(public root: string, public postfix?: string) {
+        this.root = root;
+        this.postfix = postfix;
+    }
+
+    /**
+     * Get the accidental type based on the postfix.
+     */
+    get accidental(): Accidental {
+        switch (this.postfix) {
+            case '#':
+            case '♯':
+            case 'is':
+                return Accidental.SHARP;
+            case 'b':
+            case '♭':
+            case 'es':
+            case 's':
+                return Accidental.FLAT;
+        }
+
+        return Accidental.NATURAL;
+    }
+
+    /**
+     * Determine the type of note notation (alpha, nashville, or unknown).
+     */
+    get noteType(): NoteType {
+        // Check if root is a letter (A-G) - alpha notation
+        if (/^[A-G]$/i.test(this.root)) {
+            return NoteType.ALPHA;
+        }
+        
+        // Check if root is a number (1-7) - nashville notation
+        if (/^[1-7]$/.test(this.root)) {
+            return NoteType.NASHVILLE;
+        }
+        
+        return NoteType.UNKNOWN;
+    }
+
+    /**
+     * Parse a note string into a MusicalNote instance.
+     */
+    static parse(noteString: string): MusicalNote {
+        const match = noteString.match(MusicalNote.PATTERN);
+        
+        if (!match) {
+            throw new Error('Invalid note format');
+        }
+
+        const root = match[1].toUpperCase();
+        const postfix = match[2] ? match[2].toLowerCase() : undefined;
+
+        return new MusicalNote(root, postfix);
+    }
+
+    /**
+     * Convert the note to its string representation.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     */
+    toString(normalize: boolean = false): string {
+        let noteString = this.root;
+        
+        if (this.postfix) {
+            if (normalize) {
+                switch (this.accidental) {
+                    case Accidental.NATURAL:
+                        // no postfix for natural notes
+                        break;
+                    case Accidental.SHARP:
+                        noteString += '♯';
+                        break;
+                    case Accidental.FLAT:
+                        noteString += '♭';
+                        break;
+                }
+            } else {
+                noteString += this.postfix;
+            }
+        }
+        
+        return noteString;
+    }
 }
 
 export abstract class LineSegment {
@@ -13,61 +108,76 @@ export abstract class LineSegment {
 }
 
 export class ChordNotation extends LineSegment {
-    public readonly root: string;
-    public readonly accidental?: string;
-    public readonly modifier?: string;
-    public readonly bass?: string;
+    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s|s)?([^\/]+)?(\/(.+))?\]$/i;
 
     constructor(
-        root: string,
-        accidental?: string,
-        modifier?: string,
-        bass?: string
+        public note: MusicalNote,
+        public modifier?: string,
+        public bass?: MusicalNote
     ) {
-        super(root + (accidental || ''));
-        this.root = root;
-        this.accidental = accidental;
-        this.modifier = modifier;
-        this.bass = bass;
+        super(note + (modifier || '') + (bass || ''));
     }
 
-    /**
-     * Get the base chord (root + accidental).
-     */
-    get note(): string {
-        return this.root + (this.accidental || '');
+    static test(content: string): boolean {
+        return ChordNotation.PATTERN.test(content);
     }
 
-    /**
-     * Determine the type of chord notation (alpha, nashville, or unknown).
-     */
-    get chordType(): ChordType {
-        // Check if root is a letter (A-G) - alpha notation
-        if (/^[A-G]$/i.test(this.root)) {
-            return ChordType.ALPHA;
+    static parse(content: string): ChordNotation {
+        const match = content.match(ChordNotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid chord notation format');
         }
-        
-        // Check if root is a number (1-7) - nashville notation
-        if (/^[1-7]$/.test(this.root)) {
-            return ChordType.NASHVILLE;
-        }
-        
-        return ChordType.UNKNOWN;
+
+        const root = match[1].toUpperCase();
+        const accidental = match[2] ? match[2].toLowerCase() : undefined;
+        const modifier = match[3] ? match[3].trim() : undefined;
+        const bassString = match[5] ? match[5].trim() : undefined;
+
+        const primaryNote = new MusicalNote(root, accidental);
+        const bassNote = bassString ? MusicalNote.parse(bassString) : undefined;
+
+        return new ChordNotation(primaryNote, modifier, bassNote);
     }
 
     /**
-     * Convert the chord notation to its normalized ChoPro representation.
+     * Convert the chord notation to its ChoPro representation.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
-    toString(): string {
-        const modPart = this.modifier ? this.modifier.toLowerCase() : '';
-        const slashPart = this.bass ? `/${this.bass}` : '';
-        return `[${this.note + modPart + slashPart}]`;
+    toString(normalize: boolean = false): string {
+        let chordString = this.note.toString(normalize);
+        
+        if (this.modifier) {
+            chordString += normalize ? this.modifier.toLowerCase() : this.modifier;
+        }
+
+        if (this.bass) {
+            chordString += `/${this.bass.toString(normalize)}`;
+        }
+
+        return `[${chordString}]`;
     }
 }
 
 export class Annotation extends LineSegment {
+    public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
+
     constructor(content: string) {
         super(content);
+    }
+
+    static test(content: string): boolean {
+        return Annotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): Annotation {
+        const match = content.match(Annotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid annotation format');
+        }
+
+        return new Annotation(match[1]);
     }
 
     /**
@@ -95,7 +205,7 @@ export abstract class ChoproLine {
     constructor() {}
 
     /**
-     * Static factory method to parse a line into the appropriate ChoproLine subclass
+     * Factory method to parse a line into the appropriate subclass
      */
     static parse(line: string): ChoproLine | null {
         if (EmptyLine.test(line)) {
@@ -104,14 +214,6 @@ export abstract class ChoproLine {
 
         if (CommentLine.test(line)) {
             return CommentLine.parse(line);
-        }
-
-        if (MetadataLine.test(line)) {
-            return MetadataLine.parse(line);
-        }
-
-        if (InstructionLine.test(line)) {
-            return InstructionLine.parse(line);
         }
 
         if (InstrumentalLine.test(line)) {
@@ -133,6 +235,9 @@ export class EmptyLine extends ChoproLine {
     }
 
     static test(line: string): boolean {
+        if (line.includes('\n')) {
+            return false;
+        }
         return line.trim() === '';
     }
 
@@ -148,44 +253,6 @@ export class EmptyLine extends ChoproLine {
      */
     toString(): string {
         return '';
-    }
-}
-
-export class MetadataLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^\{([^:]+):?\s*(.*)\}$/;
-
-    constructor(public name: string, public value?: string ) {
-        super();
-    }
-
-    static test(line: string): boolean {
-        return MetadataLine.LINE_PATTERN.test(line);
-    }
-
-    static parse(line: string): MetadataLine {
-        const match = line.match(MetadataLine.LINE_PATTERN);
-        if (!match) {
-            return new MetadataLine('unknown', line);
-        }
-
-        let name = match[1].trim().toLowerCase();
-        const value = match[2] ? match[2].trim() : undefined;
-
-        // handle custom meta fields (start with x_)
-        if (name.startsWith('x_')) {
-            name = name.substring(2).replace(/_/g, ' ');
-        }
-
-        return new MetadataLine(name, value);
-    }
-
-    /**
-     * Convert the metadata line to its normalized ChoPro representation.
-     */
-    toString(): string {
-        const colonSeparator = this.value ? ':' : '';
-        const valueString = this.value ? ` ${this.value}` : '';
-        return `{${this.name}${colonSeparator}${valueString}}`;
     }
 }
 
@@ -235,34 +302,8 @@ export class CommentLine extends ChoproLine {
     }
 }
 
-export class InstructionLine extends ChoproLine {
-    public static readonly LINE_PATTERN = /^\((.+)\)$/;
-
-    constructor(public content: string) {
-        super();
-    }
-
-    static test(line: string): boolean {
-        return InstructionLine.LINE_PATTERN.test(line);
-    }
-
-    static parse(line: string): InstructionLine {
-        const match = line.match(InstructionLine.LINE_PATTERN);
-        const content = match ? match[1] : line;
-        return new InstructionLine(content);
-    }
-
-    /**
-     * Convert the instruction line to its normalized ChoPro representation.
-     */
-    toString(): string {
-        return `(${this.content})`;
-    }
-}
-
 export abstract class SegmentedLine extends ChoproLine {
     public static readonly INLINE_MARKER_PATTERN = /\[([^\]]+)\]/;
-    public static readonly CHORD_PATTERN = /^([A-G1-7])(#|♯|b|♭|[ei]s)?([^\/]+)?(\/(.+))?$/i;
 
     constructor(public content: string, public segments: LineSegment[]) {
         super();
@@ -282,8 +323,7 @@ export abstract class SegmentedLine extends ChoproLine {
             // Add text before the chord (if any)
             SegmentedLine.addTextSegmentIfNotEmpty(segments, line, lastIndex, match.index);
 
-            const content = match[1];
-            const segment = SegmentedLine.parseLineSegment(content);
+            const segment = SegmentedLine.parseLineSegment(match[0]);
             segments.push(segment);
 
             lastIndex = match.index + match[0].length;
@@ -296,19 +336,12 @@ export abstract class SegmentedLine extends ChoproLine {
     }
 
     protected static parseLineSegment(marker: string): LineSegment {
-        if (marker.startsWith('*')) {
-            return new Annotation(marker.substring(1));
+        if (Annotation.test(marker)) {
+            return Annotation.parse(marker);
         }
 
-        const chordMatch = marker.match(SegmentedLine.CHORD_PATTERN);
-
-        if (chordMatch) {
-            return new ChordNotation(
-                chordMatch[1],       // Root note
-                chordMatch[2] || '', // Accidental (sharp/flat)
-                chordMatch[3] || '', // Modifier (e.g. 7, maj7, etc.)
-                chordMatch[5] || ''  // Bass note (e.g. /C)
-            );
+        if (ChordNotation.test(marker)) {
+            return ChordNotation.parse(marker);
         }
 
         return new TextSegment(marker);
@@ -347,6 +380,10 @@ export class ChordLyricsLine extends SegmentedLine {
 
 export class InstrumentalLine extends SegmentedLine {
     static test(line: string): boolean {
+        if (!SegmentedLine.test(line)) {
+            return false;
+        }
+
         const allMarkers = new RegExp(SegmentedLine.INLINE_MARKER_PATTERN.source, 'g');
         const withoutChords = line.replace(allMarkers, '');
         return withoutChords.trim() === '';
@@ -490,23 +527,111 @@ export class ChoproBlock extends ContentBlock {
     }
 
     /**
-     * Get the key from metadata lines, or undefined if none exist.
-     */
-    get key(): string | undefined {
-        for (const line of this.lines) {
-            if (line instanceof MetadataLine && line.name === 'key') {
-                return line.value;
-            }
-        }
-        return undefined;
-    }
-
-    /**
      * Convert the block to its normalized ChoPro representation.
      */
     toString(): string {
         const content = this.lines.map(line => line.toString()).join('\n');
         return '```chopro\n' + content + '\n```';
+    }
+
+}
+
+/**
+ * Represents a complete ChoPro file containing frontmatter and content blocks.
+ */
+export class ChoproFile {
+    private static readonly FRONTMATTER_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+
+    public frontmatter?: Frontmatter;
+    public blocks: ContentBlock[] = [];
+
+    constructor(frontmatter?: Frontmatter, blocks: ContentBlock[] = []) {
+        this.frontmatter = frontmatter;
+        this.blocks = blocks;
+    }
+
+    /**
+     * Get the key from the file properties, or undefined if none exists.
+     */
+    get key(): string | undefined {
+        return this.frontmatter?.get('key');
+    }
+
+    /**
+     * Parse a complete ChoPro file from source text.
+     */
+    static parse(source: string): ChoproFile {
+        let frontmatter: Frontmatter | undefined;
+        let remainingContent = source;
+
+        const frontmatterMatch = source.match(ChoproFile.FRONTMATTER_PATTERN);
+
+        if (frontmatterMatch) {
+            frontmatter = Frontmatter.parse(frontmatterMatch[1]);
+            remainingContent = source.substring(frontmatterMatch[0].length);
+        }
+
+        const blocks = ChoproFile.parseContentBlocks(remainingContent);
+
+        return new ChoproFile(frontmatter, blocks);
+    }
+
+    /**
+     * Parse content blocks from the given content.
+     */
+    private static parseContentBlocks(content: string): ContentBlock[] {
+        const blocks: ContentBlock[] = [];
+        const blocksPattern = new RegExp(ChoproBlock.BLOCK_PATTERN.source, 'g');
+        
+        let lastIndex = 0;
+        let match: RegExpExecArray | null;
+
+        const addMarkdownBlock = (content: string) => {
+            if (content) {
+                blocks.push(MarkdownBlock.parse(content));
+            }
+        };
+
+        const addChoproBlock = (content: string) => {
+            if (content) {
+                blocks.push(ChoproBlock.parse(content));
+            }
+        };
+
+        while ((match = blocksPattern.exec(content)) !== null) {
+            // add any markdown content before this chopro block
+            if (match.index > lastIndex) {
+                const markdown = content.substring(lastIndex, match.index);
+                addMarkdownBlock(markdown);
+            }
+
+            addChoproBlock(match[1]);
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        // add any remaining markdown content after the last chopro block
+        if (lastIndex < content.length) {
+            const markdown = content.substring(lastIndex);
+            addMarkdownBlock(markdown);
+        }
+
+        return blocks;
+    }
+
+    /**
+     * Convert the file to its string representation.
+     */
+    toString(): string {
+        let result = '';
+        
+        if (this.frontmatter) {
+            result += this.frontmatter.toString() + '\n\n';
+        }
+        
+        result += this.blocks.map(block => block.toString()).join('\n');
+        
+        return result;
     }
 }
 

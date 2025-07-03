@@ -2,15 +2,13 @@
 
 import { ChoproPluginSettings } from './main';
 import {
-    LineSegment,
     ChordNotation,
     Annotation,
     TextSegment,
     ChoproLine,
     EmptyLine,
-    MetadataLine,
     TextLine,
-    InstructionLine,
+    LineSegment,
     ChordLyricsLine,
     InstrumentalLine,
     ChoproBlock,
@@ -37,12 +35,6 @@ export class ChoproRenderer {
     private renderLine(container: HTMLElement, line: ChoproLine): void {
         if (line instanceof EmptyLine) {
             container.createEl('br');
-        } else if (line instanceof MetadataLine) {
-            if (this.settings.showDirectives) {
-                this.renderMetadata(container, line);
-            }
-        } else if (line instanceof InstructionLine) {
-            this.renderInstruction(container, line.content);
         } else if (line instanceof ChordLyricsLine) {
             this.renderChordLine(container, line.segments);
         } else if (line instanceof InstrumentalLine) {
@@ -52,26 +44,6 @@ export class ChoproRenderer {
         }
 
         // NOTE - CommentLine's are ignored when rendering
-    }
-
-    /**
-     * Render metadata.
-     */
-    private renderMetadata(container: HTMLElement, meta: MetadataLine): void {
-        const directiveEl = container.createDiv({ cls: 'chopro-metadata' });
-        directiveEl.createSpan({ text: meta.name, cls: 'chopro-metadata-name' });
-
-        if (meta.value) {
-            directiveEl.createSpan({ text: ': ' + meta.value, cls: 'chopro-metadata-value' });
-        }
-    }
-
-    /**
-     * Render an instruction line
-     */
-    private renderInstruction(container: HTMLElement, content: string): void {
-        const instructionDiv = container.createDiv({ cls: 'chopro-instruction' });
-        instructionDiv.createSpan({ text: content });
     }
 
     /**
@@ -214,7 +186,7 @@ export class ChoproRenderer {
     }
 
     /**
-     * Apply chord decorations and calculate total width
+     * Apply chord decorations and calculate total width of the notation.
      */
     private applyChordDecorations(container: HTMLElement, segment: ChordNotation): number {
         let totalChordLength = 0;
@@ -225,21 +197,24 @@ export class ChoproRenderer {
             totalChordLength += prefix.length;
         }
 
-        // add the base chord (root + accidental)
-        container.createSpan({ text: segment.note });
-        totalChordLength += segment.note.length;
+        const note = segment.note.toString(this.settings.normalizedChordDisplay);
+        container.createSpan({ text: note });
+        totalChordLength += note.length;
 
         if (segment.modifier) {
-            container.createSpan({ 
-                text: segment.modifier.toLowerCase(), 
-                cls: 'chopro-chord-modifier' 
-            });
-            totalChordLength += segment.modifier.length;
+            const mod = this.settings.normalizedChordDisplay ?
+                segment.modifier.toLowerCase() :
+                segment.modifier;
+
+            container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
+
+            totalChordLength += mod.length;
         }
 
         if (segment.bass) {
-            container.createSpan({ text: `/${segment.bass}` });
-            totalChordLength += 1 + segment.bass.length; // +1 for the slash
+            const bass = segment.bass.toString(this.settings.normalizedChordDisplay);
+            container.createSpan({ text: `/${bass}` });
+            totalChordLength += 1 + bass.length; // +1 for the slash
         }
 
         if (suffix && suffix.length > 0) {
