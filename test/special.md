@@ -3,7 +3,9 @@
 Test cases for error handling, malformed input, and special cases.
 
 ## Error Handling
+
 _Test coverage: malformed input, error recovery, invalid notation_
+
 ```chopro
 [C]Normal [F]chord []Empty bracket [G]recovery
 [C]Good [invalid chord notation]Bad [G]Good again
@@ -13,7 +15,9 @@ _Test coverage: malformed input, error recovery, invalid notation_
 ```
 
 ## Special Cases
+
 _Test coverage: edge cases, spacing, consecutive chords_
+
 ```chopro
 [C]Start of line
 End of line [G]
@@ -26,7 +30,9 @@ Final [C]chord [F]line
 ```
 
 ## Comment Handling
+
 _Test coverage: hash comments, mixed with chord notation_
+
 ```chopro
 # This is a single hash comment
 ## Double hash comment
