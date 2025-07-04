@@ -11,6 +11,7 @@ import {
     Accidental,
     LineSegment,
     ContentBlock,
+    ChoproLine,
 } from "./parser";
 
 export interface TransposeOptions {
@@ -52,42 +53,25 @@ export interface TransposeResult {
  * Music theory constants and utilities
  */
 export class MusicTheory {
-    // Chromatic scale with enharmonic equivalents
+    // chromatic scale with enharmonic equivalents
     public static readonly CHROMATIC_NOTES = [
-        ["C"], // 0
+        ["C"],        // 0
         ["C#", "Db"], // 1
-        ["D"], // 2
+        ["D"],        // 2
         ["D#", "Eb"], // 3
-        ["E"], // 4
-        ["F"], // 5
+        ["E"],        // 4
+        ["F"],        // 5
         ["F#", "Gb"], // 6
-        ["G"], // 7
+        ["G"],        // 7
         ["G#", "Ab"], // 8
-        ["A"], // 9
+        ["A"],        // 9
         ["A#", "Bb"], // 10
-        ["B"], // 11
+        ["B"],        // 11
     ];
 
     // circle of fifths for determining preferred accidentals
-    public static readonly SHARP_KEYS = [
-        "C",
-        "G",
-        "D",
-        "A",
-        "E",
-        "B",
-        "F#",
-        "C#",
-    ];
-    public static readonly FLAT_KEYS = [
-        "F",
-        "Bb",
-        "Eb",
-        "Ab",
-        "Db",
-        "Gb",
-        "Cb",
-    ];
+    public static readonly SHARP_KEYS = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
+    public static readonly FLAT_KEYS = ["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
 
     // scale intervals (semitone distances)
     public static readonly MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
@@ -160,25 +144,21 @@ export class MusicTheory {
     }
 
     /**
-     * Determine preferred accidental for a key
+     * Determine preferred accidental for a key.
      */
     static getPreferredAccidental(keyRoot: string): Accidental {
-        // If the key itself contains an accidental, prefer that type
         if (keyRoot.includes("#") || keyRoot.includes("♯")) {
             return Accidental.SHARP;
         } else if (keyRoot.includes("b") || keyRoot.includes("♭")) {
             return Accidental.FLAT;
         }
         
-        // For natural keys, only F major clearly prefers flats due to its Bb
-        // All other natural keys default to natural accidental preference
         const naturalRoot = keyRoot.replace(/[#♯b♭]/g, '');
         
-        if (naturalRoot === 'F') { // F major has 1 flat (Bb)
+        if (naturalRoot === 'F') {
             return Accidental.FLAT;
         }
         
-        // All other natural keys (C, D, E, F, G, A, B) default to natural
         return Accidental.NATURAL;
     }
 
@@ -230,8 +210,9 @@ export class MusicTheory {
  * Handles transposition of individual notes and chords
  */
 export class NoteTransposer {
+
     /**
-     * Transpose a note in place by a given interval
+     * Transpose a note by a given interval.
      */
     static transposeNote(
         note: MusicalNote,
@@ -251,7 +232,7 @@ export class NoteTransposer {
     }
 
     /**
-     * Transpose a chord notation in place
+     * Transpose a full chord notation.
      */
     static transposeChord(
         chord: ChordNotation,
@@ -270,16 +251,14 @@ export class NoteTransposer {
 }
 
 /**
- * Handles Nashville number system transposition
+ * Handles Nashville number system transposition.
  */
 export class NashvilleTransposer {
+
     /**
-     * Convert Nashville number to chord notation in place
+     * Convert Nashville number to chord notation.
      */
-    static nashvilleToChord(
-        nashvilleChord: ChordNotation,
-        sourceKey: Key
-    ): void {
+    static nashvilleToChord(nashvilleChord: ChordNotation, sourceKey: Key): void {
         if (nashvilleChord.note.noteType !== NoteType.NASHVILLE) {
             throw new Error("Chord is not in Nashville notation");
         }
@@ -306,7 +285,6 @@ export class NashvilleTransposer {
         nashvilleChord.note.root = targetNote.root;
         nashvilleChord.note.postfix = targetNote.postfix;
 
-        // Handle bass note if present
         if (nashvilleChord.bass) {
             const bassDegree = parseInt(nashvilleChord.bass.root) - 1;
             if (bassDegree >= 0 && bassDegree <= 6) {
@@ -324,12 +302,9 @@ export class NashvilleTransposer {
     }
 
     /**
-     * Convert chord notation to Nashville number in place
+     * Convert chord notation to Nashville number.
      */
-    static chordToNashville(
-        chord: ChordNotation,
-        targetKey: Key
-    ): void {
+    static chordToNashville(chord: ChordNotation, targetKey: Key): void {
         if (chord.note.noteType !== NoteType.ALPHA) {
             throw new Error("Chord is not in alphabetic notation");
         }
@@ -346,7 +321,6 @@ export class NashvilleTransposer {
             if (expectedIndex === chordIndex) {
                 const nashvilleRoot = (i + 1).toString();
                 chord.note.root = nashvilleRoot;
-                chord.note.postfix = chord.note.postfix; // Keep the original postfix for now
                 return;
             }
         }
@@ -405,19 +379,22 @@ export class ChoproTransposer {
      * Transpose a content block in place.
      */
     private transposeBlock(block: ContentBlock): void {
-        // only transpose Chopro blocks
         if (block instanceof ChoproBlock) {
             block.lines.forEach((line) => this.transposeLine(line));
         }
+
+        // other block types (e.g., MarkdownBlock) are not transposed
     }
 
     /**
-     * Transpose a line in place
+     * Transpose a line in place.
      */
-    private transposeLine(line: any): void {
+    private transposeLine(line: ChoproLine): void {
         if (line instanceof SegmentedLine) {
             line.segments.forEach((segment) => this.transposeSegment(segment));
         }
+
+        // other line types (e.g., EmptyLine, CommentLine) are not transposed
     }
 
     /**
@@ -489,7 +466,7 @@ export class ChoproTransposer {
     }
 
     /**
-     * Transpose frontmatter key property in place
+     * Transpose frontmatter key property in place.
      */
     private transposeFrontmatter(frontmatter?: Frontmatter): void {
         if (!frontmatter || !this.options.toKey) {
@@ -502,7 +479,7 @@ export class ChoproTransposer {
     }
 
     /**
-     * Validate transpose options
+     * Validate transpose options.
      */
     private validateOptions(): void {
         const { fromKey, toKey, nashvilleSourceKey } = this.options;
@@ -531,7 +508,7 @@ export class ChoproTransposer {
 }
 
 /**
- * Utility functions for the transpose modal
+ * Utility functions for the transpose modal.
  */
 export class TransposeUtils {
     /**
@@ -540,7 +517,6 @@ export class TransposeUtils {
     static getAllKeys(): string[] {
         const keys: string[] = [];
 
-        // Major keys
         for (const note of [
             "C",
             "C#",
@@ -561,28 +537,6 @@ export class TransposeUtils {
             "B",
         ]) {
             keys.push(note);
-        }
-
-        // Minor keys
-        for (const note of [
-            "C",
-            "C#",
-            "Db",
-            "D",
-            "D#",
-            "Eb",
-            "E",
-            "F",
-            "F#",
-            "Gb",
-            "G",
-            "G#",
-            "Ab",
-            "A",
-            "A#",
-            "Bb",
-            "B",
-        ]) {
             keys.push(note + "m");
         }
 
@@ -590,10 +544,9 @@ export class TransposeUtils {
     }
 
     /**
-     * Detect the key from a ChoPro file
+     * Detect the key from a ChoPro file.
      */
     static detectKey(file: ChoproFile): string | undefined {
-        // First check frontmatter
         if (file.frontmatter?.has("key")) {
             return file.frontmatter.get("key");
         }
@@ -605,7 +558,7 @@ export class TransposeUtils {
     }
 
     /**
-     * Validate if a string is a valid key
+     * Validate if a string is a valid key.
      */
     static isValidKey(keyString: string): boolean {
         try {
