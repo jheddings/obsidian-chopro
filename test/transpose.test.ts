@@ -1,13 +1,8 @@
 import { 
     ChordNotation, 
     MusicalNote, 
-    NoteType, 
     Accidental,
     ChoproFile,
-    ChoproBlock,
-    ChordLyricsLine,
-    TextSegment,
-    Frontmatter
 } from "../src/parser";
 
 import {
@@ -17,89 +12,95 @@ import {
     ChoproTransposer,
     TransposeUtils,
     KeyQuality,
-    TransposeOptions
+    MusicalKey,
 } from "../src/transpose";
 
-describe('MusicTheory', () => {
-    describe('getNoteIndex', () => {
+describe("MusicTheory", () => {
+    describe("getNoteIndex", () => {
         const noteIndexTestCases = [
-            { pitch: 'C', accidental: undefined, expectedIndex: 0 },
-            { pitch: 'C', accidental: '#', expectedIndex: 1 },
-            { pitch: 'D', accidental: 'b', expectedIndex: 1 },
-            { pitch: 'D', accidental: undefined, expectedIndex: 2 },
-            { pitch: 'F', accidental: '#', expectedIndex: 6 },
-            { pitch: 'G', accidental: 'b', expectedIndex: 6 },
-            { pitch: 'B', accidental: undefined, expectedIndex: 11 },
+            { pitch: "C", accidental: undefined, expectedIndex: 0 },
+            { pitch: "C", accidental: "#", expectedIndex: 1 },
+            { pitch: "D", accidental: "b", expectedIndex: 1 },
+            { pitch: "D", accidental: undefined, expectedIndex: 2 },
+            { pitch: "F", accidental: "#", expectedIndex: 6 },
+            { pitch: "G", accidental: "b", expectedIndex: 6 },
+            { pitch: "B", accidental: undefined, expectedIndex: 11 },
         ];
 
         test.each(noteIndexTestCases)(
-            'should return chromatic index $expectedIndex for $pitch$accidental',
+            "should return chromatic index $expectedIndex for $pitch$accidental",
             ({ pitch, accidental, expectedIndex }) => {
-                expect(MusicTheory.getNoteIndex(new MusicalNote(pitch, accidental))).toBe(expectedIndex);
+                expect(
+                    MusicTheory.getNoteIndex(new MusicalNote(pitch, accidental))
+                ).toBe(expectedIndex);
             }
         );
     });
 
-    describe('getPreferredNoteName', () => {
+    describe("getPreferredNoteName", () => {
         const preferredNoteTestCases = [
             // Natural notes (single options)
-            { index: 0, preference: undefined, expected: 'C' },
-            { index: 2, preference: undefined, expected: 'D' },
-            { index: 4, preference: undefined, expected: 'E' },
-            { index: 5, preference: undefined, expected: 'F' },
-            { index: 7, preference: undefined, expected: 'G' },
-            { index: 9, preference: undefined, expected: 'A' },
-            { index: 11, preference: undefined, expected: 'B' },
-            
+            { index: 0, preference: undefined, expected: "C" },
+            { index: 2, preference: undefined, expected: "D" },
+            { index: 4, preference: undefined, expected: "E" },
+            { index: 5, preference: undefined, expected: "F" },
+            { index: 7, preference: undefined, expected: "G" },
+            { index: 9, preference: undefined, expected: "A" },
+            { index: 11, preference: undefined, expected: "B" },
+
             // Sharp preference
-            { index: 1, preference: Accidental.SHARP, expected: 'C#' },
-            { index: 3, preference: Accidental.SHARP, expected: 'D#' },
-            { index: 6, preference: Accidental.SHARP, expected: 'F#' },
-            { index: 8, preference: Accidental.SHARP, expected: 'G#' },
-            { index: 10, preference: Accidental.SHARP, expected: 'A#' },
-            
+            { index: 1, preference: Accidental.SHARP, expected: "C#" },
+            { index: 3, preference: Accidental.SHARP, expected: "D#" },
+            { index: 6, preference: Accidental.SHARP, expected: "F#" },
+            { index: 8, preference: Accidental.SHARP, expected: "G#" },
+            { index: 10, preference: Accidental.SHARP, expected: "A#" },
+
             // Flat preference
-            { index: 1, preference: Accidental.FLAT, expected: 'Db' },
-            { index: 3, preference: Accidental.FLAT, expected: 'Eb' },
-            { index: 6, preference: Accidental.FLAT, expected: 'Gb' },
-            { index: 8, preference: Accidental.FLAT, expected: 'Ab' },
-            { index: 10, preference: Accidental.FLAT, expected: 'Bb' },
+            { index: 1, preference: Accidental.FLAT, expected: "Db" },
+            { index: 3, preference: Accidental.FLAT, expected: "Eb" },
+            { index: 6, preference: Accidental.FLAT, expected: "Gb" },
+            { index: 8, preference: Accidental.FLAT, expected: "Ab" },
+            { index: 10, preference: Accidental.FLAT, expected: "Bb" },
         ];
 
         test.each(preferredNoteTestCases)(
-            'should return $expected for index $index with preference $preference',
+            "should return $expected for index $index with preference $preference",
             ({ index, preference, expected }) => {
-                expect(MusicTheory.getPreferredNoteName(index, preference)).toBe(expected);
+                expect(
+                    MusicTheory.getPreferredNoteName(index, preference)
+                ).toBe(expected);
             }
         );
     });
+});
 
-    describe('parseKey', () => {
+describe('MusicalKey', () => {
+    describe('parse', () => {
         const validKeyTestCases = [
             // Major keys
-            { input: 'C', root: 'C', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.NATURAL },
-            { input: 'G', root: 'G', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.NATURAL },
-            { input: 'F#', root: 'F#', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.SHARP },
-            { input: 'Bb', root: 'Bb', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.FLAT },
-            { input: 'Db', root: 'Db', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.FLAT },
-            { input: 'C#', root: 'C#', quality: KeyQuality.MAJOR, preferredAccidental: Accidental.SHARP },
+            { input: 'C', root: 'C', quality: KeyQuality.MAJOR, accidental: Accidental.NATURAL },
+            { input: 'G', root: 'G', quality: KeyQuality.MAJOR, accidental: Accidental.NATURAL },
+            { input: 'F#', root: 'F#', quality: KeyQuality.MAJOR, accidental: Accidental.SHARP },
+            { input: 'Bb', root: 'Bb', quality: KeyQuality.MAJOR, accidental: Accidental.FLAT },
+            { input: 'Db', root: 'Db', quality: KeyQuality.MAJOR, accidental: Accidental.FLAT },
+            { input: 'C#', root: 'C#', quality: KeyQuality.MAJOR, accidental: Accidental.SHARP },
             
             // Minor keys
-            { input: 'Am', root: 'A', quality: KeyQuality.MINOR, preferredAccidental: Accidental.NATURAL },
-            { input: 'Em', root: 'E', quality: KeyQuality.MINOR, preferredAccidental: Accidental.NATURAL },
-            { input: 'F#m', root: 'F#', quality: KeyQuality.MINOR, preferredAccidental: Accidental.SHARP },
-            { input: 'Bbm', root: 'Bb', quality: KeyQuality.MINOR, preferredAccidental: Accidental.FLAT },
-            { input: 'C#m', root: 'C#', quality: KeyQuality.MINOR, preferredAccidental: Accidental.SHARP },
-            { input: 'Ebm', root: 'Eb', quality: KeyQuality.MINOR, preferredAccidental: Accidental.FLAT },
+            { input: 'Am', root: 'A', quality: KeyQuality.MINOR, accidental: Accidental.NATURAL },
+            { input: 'Em', root: 'E', quality: KeyQuality.MINOR, accidental: Accidental.NATURAL },
+            { input: 'F#m', root: 'F#', quality: KeyQuality.MINOR, accidental: Accidental.SHARP },
+            { input: 'Bbm', root: 'Bb', quality: KeyQuality.MINOR, accidental: Accidental.FLAT },
+            { input: 'C#m', root: 'C#', quality: KeyQuality.MINOR, accidental: Accidental.SHARP },
+            { input: 'Ebm', root: 'Eb', quality: KeyQuality.MINOR, accidental: Accidental.FLAT },
         ];
 
         test.each(validKeyTestCases)(
             'should parse $input correctly',
-            ({ input, root, quality, preferredAccidental }) => {
-                const key = MusicTheory.parseKey(input);
+            ({ input, root, quality, accidental }) => {
+                const key = MusicalKey.parse(input);
                 expect(key.root).toBe(root);
                 expect(key.quality).toBe(quality);
-                expect(key.preferredAccidental).toBe(preferredAccidental);
+                expect(key.accidental).toBe(accidental);
             }
         );
 
@@ -116,7 +117,7 @@ describe('MusicTheory', () => {
         test.each(invalidKeyTestCases)(
             'should throw on invalid key %s',
             (invalidKey) => {
-                expect(() => MusicTheory.parseKey(invalidKey)).toThrow('Invalid key format');
+                expect(() => MusicalKey.parse(invalidKey)).toThrow('Invalid key format');
             }
         );
     });
@@ -144,25 +145,21 @@ describe('MusicTheory', () => {
 
 describe('NoteTransposer', () => {
     describe('transposeNote', () => {
-        test('should transpose up by semitones', () => {
-            const C = new MusicalNote('C');
-            NoteTransposer.transposeNote(C, 2);
-            expect(C.root).toBe('D');
-            expect(C.postfix).toBeUndefined();
-        });
+        const testCases = [
+            { note: 'C', interval: 2, expected: 'D', postfix: undefined },
+            { note: 'C', interval: 1, expected: 'C', postfix: '#' },
+            { note: 'B', interval: 1, expected: 'C', postfix: undefined },
+        ];
 
-        test('should transpose with accidentals', () => {
-            const C = new MusicalNote('C');
-            NoteTransposer.transposeNote(C, 1, Accidental.SHARP);
-            expect(C.root).toBe('C');
-            expect(C.postfix).toBe('#');
-        });
-
-        test('should handle wraparound', () => {
-            const B = new MusicalNote('B');
-            NoteTransposer.transposeNote(B, 1);
-            expect(B.root).toBe('C');
-        });
+        test.each(testCases)(
+            'should transpose $note by $interval semitones to $expected',
+            ({ note, interval, expected, postfix }) => {
+                const musicalNote = new MusicalNote(note);
+                NoteTransposer.transposeNote(musicalNote, interval);
+                expect(musicalNote.root).toBe(expected);
+                expect(musicalNote.postfix).toBe(postfix);
+            }
+        );
 
         test('should respect enharmonic preferences', () => {
             const C1 = new MusicalNote('C');
@@ -207,7 +204,7 @@ describe('NashvilleTransposer', () => {
     describe('nashvilleToChord', () => {
         test('should convert Nashville to chord in C major', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('1'));
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
             
             expect(nashvilleChord.note.root).toBe('C');
@@ -215,7 +212,7 @@ describe('NashvilleTransposer', () => {
 
         test('should convert Nashville to chord in G major', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('5'));
-            const key = MusicTheory.parseKey('G');
+            const key = MusicalKey.parse('G');
             NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
             
             expect(nashvilleChord.note.root).toBe('D');
@@ -223,7 +220,7 @@ describe('NashvilleTransposer', () => {
 
         test('should convert Nashville to chord in F major', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('4'));
-            const key = MusicTheory.parseKey('F');
+            const key = MusicalKey.parse('F');
             NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
             
             // Should be Bb in F major (4th degree)
@@ -233,7 +230,7 @@ describe('NashvilleTransposer', () => {
 
         test('should handle Nashville chord with modifier', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('2'), 'm7');
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
             
             expect(nashvilleChord.note.root).toBe('D');
@@ -246,7 +243,7 @@ describe('NashvilleTransposer', () => {
                 undefined, 
                 new MusicalNote('5')
             );
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
             
             expect(nashvilleChord.note.root).toBe('C');
@@ -255,7 +252,7 @@ describe('NashvilleTransposer', () => {
 
         test('should throw on non-Nashville chord', () => {
             const alphaChord = new ChordNotation(new MusicalNote('C'));
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             
             expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key))
                 .toThrow('Chord is not in Nashville notation');
@@ -265,7 +262,7 @@ describe('NashvilleTransposer', () => {
     describe('chordToNashville', () => {
         test('should convert chord to Nashville in C major', () => {
             const chord = new ChordNotation(new MusicalNote('G'));
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             NashvilleTransposer.chordToNashville(chord, key);
             
             expect(chord.note.root).toBe('5');
@@ -273,7 +270,7 @@ describe('NashvilleTransposer', () => {
 
         test('should convert chord to Nashville in G major', () => {
             const chord = new ChordNotation(new MusicalNote('D'));
-            const key = MusicTheory.parseKey('G');
+            const key = MusicalKey.parse('G');
             NashvilleTransposer.chordToNashville(chord, key);
             
             expect(chord.note.root).toBe('5');
@@ -281,7 +278,7 @@ describe('NashvilleTransposer', () => {
 
         test('should throw on non-alphabetic chord', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('1'));
-            const key = MusicTheory.parseKey('C');
+            const key = MusicalKey.parse('C');
             
             expect(() => NashvilleTransposer.chordToNashville(nashvilleChord, key))
                 .toThrow('Chord is not in alphabetic notation');

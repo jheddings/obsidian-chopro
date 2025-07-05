@@ -69,6 +69,7 @@ export default class ChoproPlugin extends Plugin {
 
     private async openTransposeModal(activeView: MarkdownView) {
         const file = activeView.file;
+
         if (!file) {
             new Notice("No file is currently open");
             return;
@@ -89,6 +90,8 @@ export default class ChoproPlugin extends Plugin {
 
                 try {
                     transposer.transposeFile(song);
+                    const transposedContent = song.toString();
+                    await this.app.vault.modify(file, transposedContent);
                     new Notice("File transposed successfully");
                 } catch (error) {
                     console.error("Transpose error:", error);
@@ -369,11 +372,6 @@ class TransposeModal extends Modal {
                     fromKey: this.fromKey || undefined,
                     toKey: this.toKey,
                 };
-
-                // Add Nashville-specific options if needed
-                if (this.chordType === "nashville" && this.fromKey) {
-                    options.nashvilleSourceKey = this.fromKey;
-                }
 
                 this.onConfirm(options);
                 this.close();

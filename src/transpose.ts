@@ -17,7 +17,6 @@ import {
 export interface TransposeOptions {
     fromKey?: string;
     toKey?: string;
-    nashvilleSourceKey?: string; // Required for Nashville notation
 }
 
 export enum KeyQuality {
@@ -37,16 +36,57 @@ export enum ScaleType {
     LOCRIAN = "locrian",
 }
 
-export interface Key {
-    root: string;
-    quality: KeyQuality;
-    preferredAccidental?: Accidental;
-}
-
 export interface TransposeResult {
     success: boolean;
     song: ChoproFile | undefined;
     errors?: string[];
+}
+
+export class MusicalKey {
+    constructor(
+        public root: string,
+        public quality: KeyQuality,
+        public accidental?: Accidental
+    ) {}
+
+    /**
+     * Parse a key string (e.g., "C", "Am", "F#m") into a MusicalKey object
+     */
+    static parse(keyString: string): MusicalKey {
+        const match = keyString.match(/^([A-G])(#|♯|b|♭)?(m|min|minor)?$/);
+        if (!match) {
+            throw new Error(`Invalid key format: ${keyString}`);
+        }
+
+        const root = match[1].toUpperCase();
+        const accidental = match[2] || "";
+        const quality = match[3] ? KeyQuality.MINOR : KeyQuality.MAJOR;
+
+        let fullRoot = root;
+        if (accidental) {
+            fullRoot += accidental === "#" || accidental === "♯" ? "#" : "b";
+        }
+
+        const preferredAccidental = MusicTheory.getPreferredAccidental(fullRoot);
+
+        return new MusicalKey(fullRoot, quality, preferredAccidental);
+    }
+
+    /**
+     * Get scale degrees for this key
+     */
+    getScaleDegrees(): number[] {
+        return this.quality === KeyQuality.MAJOR
+            ? MusicTheory.MAJOR_SCALE_INTERVALS
+            : MusicTheory.MINOR_SCALE_INTERVALS;
+    }
+
+    /**
+     * Get string representation of the key
+     */
+    toString(): string {
+        return this.root + (this.quality === KeyQuality.MINOR ? 'm' : '');
+    }
 }
 
 /**
@@ -131,13 +171,9 @@ export class MusicTheory {
         }
 
         if (preferredAccidental === Accidental.SHARP) {
-            return (
-                noteOptions.find((note) => note.includes("#")) || noteOptions[0]
-            );
+            return noteOptions.find((note) => note.includes("#")) || noteOptions[0];
         } else if (preferredAccidental === Accidental.FLAT) {
-            return (
-                noteOptions.find((note) => note.includes("b")) || noteOptions[0]
-            );
+            return noteOptions.find((note) => note.includes("b")) || noteOptions[0];
         }
 
         return noteOptions[0];
@@ -160,40 +196,6 @@ export class MusicTheory {
         }
         
         return Accidental.NATURAL;
-    }
-
-    /**
-     * Parse a key string (e.g., "C", "Am", "F#m") into a Key object
-     */
-    static parseKey(keyString: string): Key {
-        const match = keyString.match(/^([A-G])(#|♯|b|♭)?(m|min|minor)?$/);
-        if (!match) {
-            throw new Error(`Invalid key format: ${keyString}`);
-        }
-
-        const root = match[1].toUpperCase();
-        const accidental = match[2] || "";
-        const quality = match[3] ? KeyQuality.MINOR : KeyQuality.MAJOR;
-
-        let fullRoot = root;
-        if (accidental) {
-            fullRoot += accidental === "#" || accidental === "♯" ? "#" : "b";
-        }
-
-        return {
-            root: fullRoot,
-            quality,
-            preferredAccidental: this.getPreferredAccidental(fullRoot),
-        };
-    }
-
-    /**
-     * Get scale degrees for a key
-     */
-    static getScaleDegrees(key: Key): number[] {
-        return key.quality === KeyQuality.MAJOR
-            ? this.MAJOR_SCALE_INTERVALS
-            : this.MINOR_SCALE_INTERVALS;
     }
 
     /**
@@ -221,10 +223,7 @@ export class NoteTransposer {
     ): void {
         const originalIndex = MusicTheory.getNoteIndex(note);
         const newIndex = (originalIndex + interval + 12) % 12;
-        const newNoteName = MusicTheory.getPreferredNoteName(
-            newIndex,
-            preferredAccidental
-        );
+        const newNoteName = MusicTheory.getPreferredNoteName(newIndex, preferredAccidental);
 
         const newNote = MusicalNote.parse(newNoteName);
         note.root = newNote.root;
@@ -232,18 +231,14 @@ export class NoteTransposer {
     }
 
     /**
-     * Transpose a full chord notation.
+     * Transpose all notes in a chord notation.
      */
     static transposeChord(
         chord: ChordNotation,
         interval: number,
         preferredAccidental?: Accidental
     ): void {
-        this.transposeNote(
-            chord.note,
-            interval,
-            preferredAccidental
-        );
+        this.transposeNote(chord.note, interval, preferredAccidental);
         if (chord.bass) {
             this.transposeNote(chord.bass, interval, preferredAccidental);
         }
@@ -258,7 +253,7 @@ export class NashvilleTransposer {
     /**
      * Convert Nashville number to chord notation.
      */
-    static nashvilleToChord(nashvilleChord: ChordNotation, sourceKey: Key): void {
+    static nashvilleToChord(nashvilleChord: ChordNotation, targetKey: MusicalKey): void {
         if (nashvilleChord.note.noteType !== NoteType.NASHVILLE) {
             throw new Error("Chord is not in Nashville notation");
         }
@@ -270,18 +265,18 @@ export class NashvilleTransposer {
             );
         }
 
-        const scaleDegrees = MusicTheory.getScaleDegrees(sourceKey);
-        const sourceKeyNote = MusicalNote.parse(sourceKey.root);
-        const sourceKeyIndex = MusicTheory.getNoteIndex(sourceKeyNote);
+        const scaleDegrees = targetKey.getScaleDegrees();
+        const targetKeyNote = MusicalNote.parse(targetKey.root);
+        const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
 
-        const targetIndex = (sourceKeyIndex + scaleDegrees[degree]) % 12;
+        const targetNoteIndex = (targetKeyIndex + scaleDegrees[degree]) % 12;
         const targetNoteName = MusicTheory.getPreferredNoteName(
-            targetIndex,
-            sourceKey.preferredAccidental
+            targetNoteIndex,
+            targetKey.accidental
         );
         const targetNote = MusicalNote.parse(targetNoteName);
 
-        // Update the note in place
+        // update the note in place
         nashvilleChord.note.root = targetNote.root;
         nashvilleChord.note.postfix = targetNote.postfix;
 
@@ -289,10 +284,10 @@ export class NashvilleTransposer {
             const bassDegree = parseInt(nashvilleChord.bass.root) - 1;
             if (bassDegree >= 0 && bassDegree <= 6) {
                 const bassIndex =
-                    (sourceKeyIndex + scaleDegrees[bassDegree]) % 12;
+                    (targetKeyIndex + scaleDegrees[bassDegree]) % 12;
                 const bassNoteName = MusicTheory.getPreferredNoteName(
                     bassIndex,
-                    sourceKey.preferredAccidental
+                    targetKey.accidental
                 );
                 const newBass = MusicalNote.parse(bassNoteName);
                 nashvilleChord.bass.root = newBass.root;
@@ -304,16 +299,15 @@ export class NashvilleTransposer {
     /**
      * Convert chord notation to Nashville number.
      */
-    static chordToNashville(chord: ChordNotation, targetKey: Key): void {
+    static chordToNashville(chord: ChordNotation, sourceKey: MusicalKey): void {
         if (chord.note.noteType !== NoteType.ALPHA) {
             throw new Error("Chord is not in alphabetic notation");
         }
 
-        const targetKeyNote = MusicalNote.parse(targetKey.root);
+        const targetKeyNote = MusicalNote.parse(sourceKey.root);
         const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
         const chordIndex = MusicTheory.getNoteIndex(chord.note);
-
-        const scaleDegrees = MusicTheory.getScaleDegrees(targetKey);
+        const scaleDegrees = sourceKey.getScaleDegrees();
 
         // Find the scale degree
         for (let i = 0; i < scaleDegrees.length; i++) {
@@ -326,9 +320,7 @@ export class NashvilleTransposer {
         }
 
         throw new Error(
-            `Cannot convert ${chord.note.toString()} to Nashville number in key of ${
-                targetKey.root
-            }`
+            `Cannot convert ${chord.note.toString()} to Nashville number in key of ${sourceKey.root}`
         );
     }
 }
@@ -337,10 +329,8 @@ export class NashvilleTransposer {
  * Main transposer class that handles complete file transposition
  */
 export class ChoproTransposer {
-    private options: TransposeOptions;
 
-    constructor(options: TransposeOptions) {
-        this.options = options;
+    constructor(private options: TransposeOptions) {
         this.validateOptions();
     }
 
@@ -410,59 +400,51 @@ export class ChoproTransposer {
      * Transpose a chord segment in place
      */
     private transposeChordSegment(chord: ChordNotation): void {
-        const { fromKey, toKey, nashvilleSourceKey } = this.options;
 
-        // Handle Nashville notation
-        if (chord.note.noteType === NoteType.NASHVILLE) {
-            if (!nashvilleSourceKey) {
-                throw new Error(
-                    "Nashville source key required for Nashville notation"
-                );
-            }
-
-            const sourceKey = MusicTheory.parseKey(nashvilleSourceKey);
-            NashvilleTransposer.nashvilleToChord(chord, sourceKey);
-
-            if (toKey && toKey !== nashvilleSourceKey) {
-                const targetKey = MusicTheory.parseKey(toKey);
-                const interval = MusicTheory.getInterval(
-                    MusicalNote.parse(sourceKey.root),
-                    MusicalNote.parse(targetKey.root)
-                );
-                NoteTransposer.transposeChord(
-                    chord,
-                    interval,
-                    targetKey.preferredAccidental
-                );
-            }
-            return;
-        }
-
-        // Handle alphabetic notation
         if (chord.note.noteType === NoteType.ALPHA) {
-            if (!fromKey || !toKey) {
-                throw new Error(
-                    "Both fromKey and toKey required for alphabetic notation"
-                );
-            }
+            this.transposeAlphaChordSegment(chord);
 
-            const sourceKey = MusicTheory.parseKey(fromKey);
-            const targetKey = MusicTheory.parseKey(toKey);
+        } else if (chord.note.noteType === NoteType.NASHVILLE) {
+            this.transposeNashvilleChordSegment(chord);
 
-            const interval = MusicTheory.getInterval(
-                MusicalNote.parse(sourceKey.root),
-                MusicalNote.parse(targetKey.root)
-            );
+        } else {
+            throw new Error(`Unsupported note type: ${chord.note.noteType}`);
+        }
+    }
 
-            NoteTransposer.transposeChord(
-                chord,
-                interval,
-                targetKey.preferredAccidental
-            );
-            return;
+    /**
+     * Transpose an Alpha chord segment in place.
+     */
+    private transposeAlphaChordSegment(chord: ChordNotation): void {
+        if (!this.options.fromKey || !this.options.toKey) {
+            throw new Error("source and target keys required for alphabetic notation");
         }
 
-        throw new Error(`Unsupported note type: ${chord.note.noteType}`);
+        const sourceKey = MusicalKey.parse(this.options.fromKey);
+        const targetKey = MusicalKey.parse(this.options.toKey);
+
+        const interval = MusicTheory.getInterval(
+            MusicalNote.parse(sourceKey.root),
+            MusicalNote.parse(targetKey.root)
+        );
+
+        NoteTransposer.transposeChord(
+            chord,
+            interval,
+            targetKey.accidental
+        );
+    }
+
+    /**
+     * Transpose a Nashville chord segment in place.
+     */
+    private transposeNashvilleChordSegment(chord: ChordNotation): void {
+        if (!this.options.toKey) {
+            throw new Error("target key required for Nashville notation");
+        }
+
+        // TODO
+        throw new Error("not yet implemented");
     }
 
     /**
@@ -482,26 +464,19 @@ export class ChoproTransposer {
      * Validate transpose options.
      */
     private validateOptions(): void {
-        const { fromKey, toKey, nashvilleSourceKey } = this.options;
-
-        if (!fromKey && !toKey && !nashvilleSourceKey) {
-            throw new Error("At least one key must be specified");
-        }
-
-        if (fromKey && toKey) {
+        if (this.options.fromKey) {
             try {
-                MusicTheory.parseKey(fromKey);
-                MusicTheory.parseKey(toKey);
+                MusicalKey.parse(this.options.fromKey);
             } catch (error) {
-                throw new Error(`Invalid key format: ${error}`);
+                throw new Error(`Invalid 'from' key format: ${error}`);
             }
         }
 
-        if (nashvilleSourceKey) {
+        if (this.options.toKey) {
             try {
-                MusicTheory.parseKey(nashvilleSourceKey);
+                MusicalKey.parse(this.options.toKey);
             } catch (error) {
-                throw new Error(`Invalid Nashville source key: ${error}`);
+                throw new Error(`Invalid 'to' key format: ${error}`);
             }
         }
     }
@@ -562,7 +537,7 @@ export class TransposeUtils {
      */
     static isValidKey(keyString: string): boolean {
         try {
-            MusicTheory.parseKey(keyString);
+            MusicalKey.parse(keyString);
             return true;
         } catch {
             return false;
