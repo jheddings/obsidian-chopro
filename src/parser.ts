@@ -411,6 +411,8 @@ export abstract class ContentBlock {
  * Represents a frontmatter block containing properties serialized as YAML.
  */
 export class Frontmatter extends ContentBlock {
+    public static readonly BLOCK_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+
     constructor(public properties: Record<string, any> = {}) {
         super();
     }
@@ -475,29 +477,6 @@ export class Frontmatter extends ContentBlock {
 }
 
 /**
- * Represents a block of generic markdown content.
- */
-export class MarkdownBlock extends ContentBlock {
-    constructor(public content: string) {
-        super();
-    }
-
-    /**
-     * Create a MarkdownBlock from content.
-     */
-    static parse(content: string): MarkdownBlock {
-        return new MarkdownBlock(content.trim());
-    }
-
-    /**
-     * Convert the markdown block to its string representation.
-     */
-    toString(): string {
-        return this.content;
-    }
-}
-
-/**
  * Represents a block of ChoPro content, containing multiple lines.
  */
 export class ChoproBlock extends ContentBlock {
@@ -511,8 +490,15 @@ export class ChoproBlock extends ContentBlock {
      * Create a ChoproBlock by parsing the content.
      */
     static parse(content: string): ChoproBlock {
-        const lines = content.trim().split('\n');
+        const trimmedContent = content.trim();
         const choproLines: ChoproLine[] = [];
+
+        // Handle empty content
+        if (!trimmedContent) {
+            return new ChoproBlock(choproLines);
+        }
+
+        const lines = trimmedContent.split('\n');
 
         for (const line of lines) {
             const trimmedLine = line.trim();
@@ -537,11 +523,32 @@ export class ChoproBlock extends ContentBlock {
 }
 
 /**
+ * Represents a block of generic markdown content.
+ */
+export class MarkdownBlock extends ContentBlock {
+    constructor(public content: string) {
+        super();
+    }
+
+    /**
+     * Create a MarkdownBlock from content.
+     */
+    static parse(content: string): MarkdownBlock {
+        return new MarkdownBlock(content.trim());
+    }
+
+    /**
+     * Convert the markdown block to its string representation.
+     */
+    toString(): string {
+        return this.content;
+    }
+}
+
+/**
  * Represents a complete ChoPro file containing frontmatter and content blocks.
  */
 export class ChoproFile {
-    private static readonly FRONTMATTER_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
-
     public frontmatter?: Frontmatter;
     public blocks: ContentBlock[] = [];
 
@@ -564,7 +571,7 @@ export class ChoproFile {
         let frontmatter: Frontmatter | undefined;
         let remainingContent = source;
 
-        const frontmatterMatch = source.match(ChoproFile.FRONTMATTER_PATTERN);
+        const frontmatterMatch = source.match(Frontmatter.BLOCK_PATTERN);
 
         if (frontmatterMatch) {
             frontmatter = Frontmatter.parse(frontmatterMatch[1]);
@@ -581,41 +588,51 @@ export class ChoproFile {
      */
     private static parseContentBlocks(content: string): ContentBlock[] {
         const blocks: ContentBlock[] = [];
-        const blocksPattern = new RegExp(ChoproBlock.BLOCK_PATTERN.source, 'g');
+        const lines = content.split('\n');
         
-        let lastIndex = 0;
-        let match: RegExpExecArray | null;
+        let currentMarkdownLines: string[] = [];
+        let currentChoproLines: string[] = [];
+        let blockMarker: string | undefined = undefined;
 
-        const addMarkdownBlock = (content: string) => {
-            if (content) {
-                blocks.push(MarkdownBlock.parse(content));
+        const flushMarkdownBlock = () => {
+            if (currentMarkdownLines.length > 0) {
+                const markdownContent = currentMarkdownLines.join('\n');
+                const block = MarkdownBlock.parse(markdownContent);
+                blocks.push(block);
+                currentMarkdownLines = [];
             }
         };
-
-        const addChoproBlock = (content: string) => {
-            if (content) {
-                blocks.push(ChoproBlock.parse(content));
-            }
+        
+        const flushChoproBlock = () => {
+            const choproContent = currentChoproLines.join('\n');
+            const block = ChoproBlock.parse(choproContent);
+            blocks.push(block);
+            currentChoproLines = [];
         };
+        
+        for (const line of lines) {
+            if (blockMarker) {
+                if (line.trim() === blockMarker) {
+                    flushChoproBlock();
+                    blockMarker = undefined;
+                } else {
+                    currentChoproLines.push(line);
+                }
+            } else if (line === '```chopro') {
+                flushMarkdownBlock();
+                blockMarker = '```';
 
-        while ((match = blocksPattern.exec(content)) !== null) {
-            // add any markdown content before this chopro block
-            if (match.index > lastIndex) {
-                const markdown = content.substring(lastIndex, match.index);
-                addMarkdownBlock(markdown);
+            } else {
+                currentMarkdownLines.push(line);
             }
-
-            addChoproBlock(match[1]);
-
-            lastIndex = match.index + match[0].length;
         }
-
-        // add any remaining markdown content after the last chopro block
-        if (lastIndex < content.length) {
-            const markdown = content.substring(lastIndex);
-            addMarkdownBlock(markdown);
+        
+        if (blockMarker) {
+            flushChoproBlock();
+        } else {
+            flushMarkdownBlock();
         }
-
+        
         return blocks;
     }
 

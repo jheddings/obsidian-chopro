@@ -3,7 +3,9 @@
 Test cases for ChoPro annotations (performance markings).
 
 ## Annotations
+
 _Test coverage: performance markings mixed with chords_
+
 ```chopro
 [C]Basic [*Rit.] and [F]mixed [*Begin softly] annotations
 [G]Performance [*Crescendo] marks [Am]with [*Forte] dynamics
@@ -11,7 +13,9 @@ _Test coverage: performance markings mixed with chords_
 ```
 
 ## Annotations Without Chords
+
 _Test coverage: standalone performance markings in lyrics_
+
 ```chopro
 This line has [*Andante] tempo marking
 Performance with [*Forte] dynamics only
