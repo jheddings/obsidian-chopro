@@ -9,6 +9,8 @@ import {
     EmptyLine,
     TextLine,
     Accidental,
+    ChoproBlock,
+    MarkdownBlock,
 } from "../src/parser";
 
 describe("MusicalNote", () => {
@@ -93,7 +95,7 @@ describe("ChordNotation", () => {
     const testCases = [
         // Alpha notation
         { input: "[C]", note: "C", modifier: undefined, bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[F#m7]", note: "F#", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", noteType: NoteType.ALPHA },
         { input: "[C/G]", note: "C", modifier: undefined, bass: "G", noteType: NoteType.ALPHA },
@@ -108,9 +110,15 @@ describe("ChordNotation", () => {
         { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", noteType: NoteType.NASHVILLE },
+
+        // Complex modifiers
+        { input: "[C#dim]", note: "C#", modifier: "dim", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, noteType: NoteType.ALPHA },
     ];
 
-    describe("parsing", () => {
+    describe("parses valid chord notation", () => {
         test.each(testCases)(
             "parses $input correctly",
             ({ input, note, modifier, bass, noteType }) => {
@@ -126,11 +134,13 @@ describe("ChordNotation", () => {
             }
         );
 
-        it("throws error for invalid chord format", () => {
-            expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
-            expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
-        });
     });
+
+    it("throws error for invalid chord format", () => {
+        expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
+        expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
+    });
+
 
     describe("normalization", () => {
         const normalizationCases = [
@@ -429,6 +439,137 @@ describe("TextLine", () => {
     });
 });
 
+describe("ChoproFile", () => {
+    describe("parsing", () => {
+        test("parses file with frontmatter and single ChoPro block", () => {
+            const source = `---
+key: C
+title: Test Song
+---
+
+# Test Song
+
+This is some markdown content before the ChoPro block.
+
+\`\`\`chopro
+[C]Amazing [F]grace how [G]sweet the sound
+That [C]saved a [Am]wretch like [F]me[G]
+\`\`\`
+
+And this is markdown content after the ChoPro block.`;
+
+            const file = ChoproFile.parse(source);
+
+            // Check frontmatter
+            expect(file.frontmatter).toBeDefined();
+            expect(file.frontmatter?.get('key')).toBe('C');
+            expect(file.frontmatter?.get('title')).toBe('Test Song');
+
+            // Check blocks
+            expect(file.blocks).toHaveLength(3);
+            
+            // First block should be markdown
+            expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[0].toString()).toContain('# Test Song');
+            
+            // Second block should be ChoPro
+            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+            const choproBlock = file.blocks[1] as ChoproBlock;
+            expect(choproBlock.lines).toHaveLength(2);
+            
+            // Third block should be markdown
+            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[2].toString()).toContain('And this is markdown content');
+        });
+
+        test("parses file with multiple ChoPro blocks", () => {
+            const source = `# Multiple Blocks Test
+
+First markdown section.
+
+\`\`\`chopro
+[C]First [F]block
+\`\`\`
+
+Middle markdown section.
+
+\`\`\`chopro
+[G]Second [Am]block
+\`\`\`
+
+Final markdown section.`;
+
+            const file = ChoproFile.parse(source);
+
+            // Should have 5 blocks: markdown, chopro, markdown, chopro, markdown
+            expect(file.blocks).toHaveLength(5);
+            
+            expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+            
+            // Check ChoPro block contents
+            const firstChoproBlock = file.blocks[1] as ChoproBlock;
+            expect(firstChoproBlock.lines).toHaveLength(1);
+            
+            const secondChoproBlock = file.blocks[3] as ChoproBlock;
+            expect(secondChoproBlock.lines).toHaveLength(1);
+        });
+
+        test("parses file with only ChoPro blocks (no markdown)", () => {
+            const source = `\`\`\`chopro
+[C]First verse
+\`\`\`
+\`\`\`chopro
+[F]Second verse
+\`\`\``;
+
+            const file = ChoproFile.parse(source);
+
+            expect(file.blocks).toHaveLength(2);
+            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+        });
+
+        test("handles empty ChoPro blocks", () => {
+            const source = `\`\`\`chopro
+\`\`\``;
+
+            const file = ChoproFile.parse(source);
+
+            expect(file.blocks).toHaveLength(1);
+            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
+            const choproBlock = file.blocks[0] as ChoproBlock;
+            expect(choproBlock.lines).toHaveLength(0);
+        });
+
+        test("toString() round trip", () => {
+            const source = `---
+key: G
+---
+
+# Test
+
+\`\`\`chopro
+[G]Test [C]song
+\`\`\`
+
+End.`;
+
+            const file = ChoproFile.parse(source);
+            const reconstructed = file.toString();
+
+            // Parse the reconstructed version
+            const reparsedFile = ChoproFile.parse(reconstructed);
+            
+            expect(reparsedFile.frontmatter?.get('key')).toBe('G');
+            expect(reparsedFile.blocks).toHaveLength(file.blocks.length);
+        });
+    });
+});
+
 describe("File Parsing", () => {
     test.each(
         ["basic.md", "complex.md", "nashville.md", "performance.md", "special.md"])(
@@ -441,4 +582,50 @@ describe("File Parsing", () => {
             expect(() => ChoproFile.parse(content)).not.toThrow();
         }
     );
+
+    it("parses mixed markdown and ChoPro content correctly", () => {
+        const input = `# Title
+
+Some introduction text.
+
+\`\`\`chopro
+[C]Amazing [F]grace
+\`\`\`
+
+## Section 1
+
+Content for section 1.
+
+\`\`\`chopro
+[G]How [Am]sweet the [F]sound[C]
+\`\`\`
+
+# Another Title
+
+More content under another title.`;
+
+        const file = ChoproFile.parse(input);
+
+        expect(file).toBeInstanceOf(ChoproFile);
+
+        // Should have 5 blocks: markdown, chopro, markdown, chopro, markdown
+        expect(file.blocks).toHaveLength(5);
+
+        expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+        expect(file.blocks[0].toString()).toContain("# Title");
+        
+        expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+        const firstChopro = file.blocks[1] as ChoproBlock;
+        expect(firstChopro.lines).toHaveLength(1);
+        
+        expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+        expect(file.blocks[2].toString()).toContain("## Section 1");
+        
+        expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+        const secondChopro = file.blocks[3] as ChoproBlock;
+        expect(secondChopro.lines).toHaveLength(1);
+        
+        expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+        expect(file.blocks[4].toString()).toContain("# Another Title");
+    });
 });

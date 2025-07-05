@@ -9,7 +9,7 @@ _Test coverage: complex chord structures, extended harmonies, annotations_
 ```chopro
 [*Andante] [*pp] [Cmaj9#11]Lorem [Dm7add13]ipsum [G7alt]dolor [Am9]sit
 [Em11]Amet [F#m7b5]consectetur [B7alt]adipiscing [Em7]elit
-[Am7]Sed [Dm9]do [G13]eiusmod [Cmaj7/E]tempor [F6/9]incididunt
+[Am7]Sed [Dm9]do [G13]eiusmod [Cmaj7/E]tempor [Fadd6]incididunt
 [Bb7#11]Ut [Am7]labore [Dm7]et [G7sus4]dolore [C]magna [*Crescendo]
 ```
 
