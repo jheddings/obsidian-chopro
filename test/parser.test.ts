@@ -259,48 +259,29 @@ describe("TextSegment", () => {
 });
 
 describe("CommentLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "# This is a comment";
+    const testCases = [
+        { input: "# This is a comment", content: "This is a comment", output: "# This is a comment" },
+        { input: "### Multiple hashes comment", content: "Multiple hashes comment", output: "# Multiple hashes comment" },
+        { input: "#No space comment", content: "No space comment", output: "# No space comment" },
+        { input: "#", content: "", output: "# " },
+        { input: "## Another comment", content: "Another comment", output: "# Another comment" },
+    ];
 
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("This is a comment");
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses $input correctly",
+            ({ input, content, output }) => {
+                const comment = CommentLine.parse(input);
+                expect(comment.content).toBe(content);
 
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = comment.toString();
+                expect(roundTrip).toBe(output);
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = CommentLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(comment.content);
-    });
-
-    it("parses multiple hash symbols", () => {
-        const original = "### Multiple hashes comment";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("Multiple hashes comment");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# Multiple hashes comment");
-    });
-
-    it("parses comment without space after hash", () => {
-        const original = "#No space comment";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("No space comment");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# No space comment");
-    });
-
-    it("parses empty comment", () => {
-        const original = "#";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# ");
+                // parse again to ensure round-trip compatibility
+                const takeTwo = CommentLine.parse(roundTrip);
+                expect(takeTwo.content).toBe(comment.content);
+            }
+        );
     });
 
     describe("validation", () => {
@@ -323,26 +304,35 @@ describe("CommentLine", () => {
 });
 
 describe("EmptyLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "";
+    const testCases = [
+        { input: "" },
+        { input: "   " },
+        { input: "\t" },
+        { input: " \t " },
+    ];
 
-        const emptyLine = EmptyLine.parse(original);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses '$input' correctly",
+            ({ input }) => {
+                const emptyLine = EmptyLine.parse(input);
 
-        const roundTrip = emptyLine.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = emptyLine.toString();
+                expect(roundTrip).toBe("");
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = EmptyLine.parse(roundTrip);
-        expect(takeTwo.toString()).toBe(emptyLine.toString());
-    });
+                // parse again to ensure round-trip compatibility
+                const takeTwo = EmptyLine.parse(roundTrip);
+                expect(takeTwo.toString()).toBe(emptyLine.toString());
+            }
+        );
 
-    it("parses whitespace-only lines", () => {
-        const original = "   ";
+        const invalidCases = [
+            "Not empty", "# Comment", "(Instruction)"
+        ];
 
-        const emptyLine = EmptyLine.parse(original);
-
-        const roundTrip = emptyLine.toString();
-        expect(roundTrip).toBe("");
+        test.each(invalidCases)("throws errors for non-empty line '%s'", (input) => {
+            expect(() => EmptyLine.parse(input)).toThrow();
+        });
     });
 
     describe("validation", () => {
@@ -362,60 +352,37 @@ describe("EmptyLine", () => {
             expect(EmptyLine.test(line)).toBe(false);
         });
     });
-
-    it("throws errors for non-empty lines", () => {
-        expect(() => EmptyLine.parse("Not empty")).toThrow();
-        expect(() => EmptyLine.parse("# Comment")).toThrow();
-    });
 });
 
 describe("TextLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "This is a line of lyrics";
+    const testCases = [
+        { input: "This is a line of lyrics" },
+        { input: "  Text with spaces  " },
+        { input: "Special chars: !@#$%^&*()" },
+        { input: "𝐔𝗇𝗂𝖼𝗈𝖽𝖾: ñ 中文 🎵 ♯♭" },
+        { input: "Text with numbers 123" },
+        { input: "Text with punctuation!" },
+        { input: "  Text with leading spaces" },
+        { input: "Text with trailing spaces  " },
+        { input: "123" },
+        { input: "Special chars: àáâãäå" },
+    ];
 
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses '$input' correctly",
+            ({ input }) => {
+                const textLine = TextLine.parse(input);
+                expect(textLine.content).toBe(input);
 
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = textLine.toString();
+                expect(roundTrip).toBe(input);
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = TextLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(textLine.content);
-    });
-
-    it("parses lines with whitespace", () => {
-        const original = "  Text with spaces  ";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-    });
-
-    it("parses lines with special characters", () => {
-        const original = "Special chars: !@#$%^&*()";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-    });
-
-    it("parses lines with unicode characters", () => {
-        const original = "𝐔𝗇𝗂𝖼𝗈𝖽𝖾: ñ 中文 🎵 ♯♭";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-
-        // parse again to ensure round-trip compatibility
-        const takeTwo = TextLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(textLine.content);
+                // parse again to ensure round-trip compatibility
+                const takeTwo = TextLine.parse(roundTrip);
+                expect(takeTwo.content).toBe(textLine.content);
+            }
+        );
     });
 
     describe("validation", () => {
@@ -440,14 +407,43 @@ describe("TextLine", () => {
 });
 
 describe("ChoproFile", () => {
-    describe("parsing", () => {
-        test("parses file with frontmatter and single ChoPro block", () => {
+    describe("frontmatter parsing", () => {
+        test("parses frontmatter with key and title", () => {
             const source = `---
 key: C
 title: Test Song
 ---
 
 # Test Song
+
+\`\`\`chopro
+[C]Amazing [F]grace
+\`\`\``;
+
+            const file = ChoproFile.parse(source);
+
+            expect(file.frontmatter).toBeDefined();
+            expect(file.frontmatter?.get('key')).toBe('C');
+            expect(file.frontmatter?.get('title')).toBe('Test Song');
+        });
+
+        test("handles files without frontmatter", () => {
+            const source = `# Test Song
+
+\`\`\`chopro
+[C]Amazing [F]grace
+\`\`\``;
+
+            const file = ChoproFile.parse(source);
+
+            expect(file.frontmatter).toBeUndefined();
+            expect(file.blocks).toHaveLength(2);
+        });
+    });
+
+    describe("content block parsing", () => {
+        test("parses mixed markdown and ChoPro content", () => {
+            const source = `# Test Song
 
 This is some markdown content before the ChoPro block.
 
@@ -460,12 +456,6 @@ And this is markdown content after the ChoPro block.`;
 
             const file = ChoproFile.parse(source);
 
-            // Check frontmatter
-            expect(file.frontmatter).toBeDefined();
-            expect(file.frontmatter?.get('key')).toBe('C');
-            expect(file.frontmatter?.get('title')).toBe('Test Song');
-
-            // Check blocks
             expect(file.blocks).toHaveLength(3);
             
             // First block should be markdown
@@ -482,7 +472,7 @@ And this is markdown content after the ChoPro block.`;
             expect(file.blocks[2].toString()).toContain('And this is markdown content');
         });
 
-        test("parses file with multiple ChoPro blocks", () => {
+        test("handles multiple ChoPro blocks with markdown between them", () => {
             const source = `# Multiple Blocks Test
 
 First markdown section.
@@ -501,16 +491,14 @@ Final markdown section.`;
 
             const file = ChoproFile.parse(source);
 
-            // Should have 5 blocks: markdown, chopro, markdown, chopro, markdown
             expect(file.blocks).toHaveLength(5);
-            
             expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
             expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
             expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
             expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
             expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
             
-            // Check ChoPro block contents
+            // Verify ChoPro block contents
             const firstChoproBlock = file.blocks[1] as ChoproBlock;
             expect(firstChoproBlock.lines).toHaveLength(1);
             
@@ -518,7 +506,7 @@ Final markdown section.`;
             expect(secondChoproBlock.lines).toHaveLength(1);
         });
 
-        test("parses file with only ChoPro blocks (no markdown)", () => {
+        test("handles consecutive ChoPro blocks without markdown", () => {
             const source = `\`\`\`chopro
 [C]First verse
 \`\`\`
@@ -544,8 +532,10 @@ Final markdown section.`;
             const choproBlock = file.blocks[0] as ChoproBlock;
             expect(choproBlock.lines).toHaveLength(0);
         });
+    });
 
-        test("toString() round trip", () => {
+    describe("serialization and round-trip", () => {
+        test("basic toString() round-trip maintains structure", () => {
             const source = `---
 key: G
 ---
@@ -560,12 +550,51 @@ End.`;
 
             const file = ChoproFile.parse(source);
             const reconstructed = file.toString();
-
-            // Parse the reconstructed version
             const reparsedFile = ChoproFile.parse(reconstructed);
             
             expect(reparsedFile.frontmatter?.get('key')).toBe('G');
             expect(reparsedFile.blocks).toHaveLength(file.blocks.length);
+        });
+
+        test("preserves whitespace and visual spacing in round-trip", () => {
+            const source = `# Header
+
+Some text before the song.
+
+
+\`\`\`chopro
+[C]Amazing [F]grace how [G]sweet the sound
+That [C]saved a [Am]wretch like [F]me[G]
+\`\`\`
+
+
+And some text after with multiple blank lines.
+
+
+
+\`\`\`chopro
+[C]I [F]once was [G]lost but [C]now am [F]found
+Was [C]blind but [G]now I [C]see
+\`\`\`
+
+
+
+Final paragraph with trailing spaces.`;
+
+            const file = ChoproFile.parse(source);
+            const reconstructed = file.toString();
+            const reparsedFile = ChoproFile.parse(reconstructed);
+            
+            // Verify structure is preserved
+            expect(reparsedFile.blocks).toHaveLength(file.blocks.length);
+            expect(reparsedFile.blocks[0]).toBeInstanceOf(MarkdownBlock);
+            expect(reparsedFile.blocks[1]).toBeInstanceOf(ChoproBlock);
+            expect(reparsedFile.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            expect(reparsedFile.blocks[3]).toBeInstanceOf(ChoproBlock);
+            expect(reparsedFile.blocks[4]).toBeInstanceOf(MarkdownBlock);
+            
+            // Verify whitespace preservation
+            expect(reconstructed).toContain('\n\n\n'); // Multiple blank lines preserved
         });
     });
 });

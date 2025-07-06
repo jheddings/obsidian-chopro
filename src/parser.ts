@@ -534,7 +534,7 @@ export class MarkdownBlock extends ContentBlock {
      * Create a MarkdownBlock from content.
      */
     static parse(content: string): MarkdownBlock {
-        return new MarkdownBlock(content.trim());
+        return new MarkdownBlock(content);
     }
 
     /**
@@ -590,24 +590,25 @@ export class ChoproFile {
         const blocks: ContentBlock[] = [];
         const lines = content.split('\n');
         
-        let currentMarkdownLines: string[] = [];
-        let currentChoproLines: string[] = [];
+        let blockContent: string[] = [];
         let blockMarker: string | undefined = undefined;
 
         const flushMarkdownBlock = () => {
-            if (currentMarkdownLines.length > 0) {
-                const markdownContent = currentMarkdownLines.join('\n');
+            const markdownContent = blockContent.join('\n');
+            // Only check if the trimmed content is empty to avoid creating empty blocks
+            // but preserve the original whitespace structure for non-empty blocks
+            if (markdownContent.trim().length > 0) {
                 const block = MarkdownBlock.parse(markdownContent);
                 blocks.push(block);
-                currentMarkdownLines = [];
             }
+            blockContent = [];
         };
         
         const flushChoproBlock = () => {
-            const choproContent = currentChoproLines.join('\n');
+            const choproContent = blockContent.join('\n');
             const block = ChoproBlock.parse(choproContent);
             blocks.push(block);
-            currentChoproLines = [];
+            blockContent = [];
         };
         
         for (const line of lines) {
@@ -616,14 +617,14 @@ export class ChoproFile {
                     flushChoproBlock();
                     blockMarker = undefined;
                 } else {
-                    currentChoproLines.push(line);
+                    blockContent.push(line);
                 }
             } else if (line === '```chopro') {
                 flushMarkdownBlock();
                 blockMarker = '```';
 
             } else {
-                currentMarkdownLines.push(line);
+                blockContent.push(line);
             }
         }
         

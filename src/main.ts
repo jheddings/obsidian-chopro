@@ -306,10 +306,7 @@ class TransposeModal extends Modal {
             .addDropdown((dropdown) =>
                 dropdown
                     .addOption("alpha", "Alpha (C, G, Am, etc.)")
-                    .addOption(
-                        "nashville",
-                        "Nashville Numbers (1, 5, 6m, etc.)"
-                    )
+                    .addOption("nashville", "Nashville Numbers (1, 5, 6m, etc.)")
                     .setValue(this.chordType)
                     .onChange((value) => {
                         this.chordType = value;
