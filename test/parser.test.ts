@@ -582,19 +582,65 @@ Was [C]blind but [G]now I [C]see
 Final paragraph with trailing spaces.`;
 
             const file = ChoproFile.parse(source);
-            const reconstructed = file.toString();
-            const reparsedFile = ChoproFile.parse(reconstructed);
+            const roundTrip = file.toString();
+            const takeTwo = ChoproFile.parse(roundTrip);
             
-            // Verify structure is preserved
-            expect(reparsedFile.blocks).toHaveLength(file.blocks.length);
-            expect(reparsedFile.blocks[0]).toBeInstanceOf(MarkdownBlock);
-            expect(reparsedFile.blocks[1]).toBeInstanceOf(ChoproBlock);
-            expect(reparsedFile.blocks[2]).toBeInstanceOf(MarkdownBlock);
-            expect(reparsedFile.blocks[3]).toBeInstanceOf(ChoproBlock);
-            expect(reparsedFile.blocks[4]).toBeInstanceOf(MarkdownBlock);
+            expect(takeTwo.blocks).toHaveLength(file.blocks.length);
+            expect(takeTwo.blocks[0]).toBeInstanceOf(MarkdownBlock);
+            expect(takeTwo.blocks[1]).toBeInstanceOf(ChoproBlock);
+            expect(takeTwo.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            expect(takeTwo.blocks[3]).toBeInstanceOf(ChoproBlock);
+            expect(takeTwo.blocks[4]).toBeInstanceOf(MarkdownBlock);
             
-            // Verify whitespace preservation
-            expect(reconstructed).toContain('\n\n\n'); // Multiple blank lines preserved
+            expect(roundTrip).toBe(source);
+        });
+
+        test("preserves varying whitespace between consecutive ChoPro blocks", () => {
+            const source = `\`\`\`chopro
+[C]Verse 1 line 1
+[F]Verse 1 line 2
+\`\`\`
+\`\`\`chopro
+[G]Verse 2 line 1
+[Am]Verse 2 line 2
+\`\`\`
+
+\`\`\`chopro
+[C]Verse 3 line 1
+[F]Verse 3 line 2
+\`\`\`
+
+
+\`\`\`chopro
+[G]Verse 4 line 1
+[Am]Verse 4 line 2
+\`\`\`
+
+
+
+\`\`\`chopro
+[C]Verse 5 line 1
+[F]Verse 5 line 2
+\`\`\``;
+
+            const file = ChoproFile.parse(source);
+            
+            expect(file.blocks).toHaveLength(8);
+
+            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+            expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+            expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+
+            const roundTrip = file.toString();
+            expect(roundTrip).toBe(source);
+
+            const takeTwo = ChoproFile.parse(roundTrip);
+            expect(takeTwo.blocks).toHaveLength(8);
         });
     });
 });

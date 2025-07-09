@@ -594,10 +594,8 @@ export class ChoproFile {
         let blockMarker: string | undefined = undefined;
 
         const flushMarkdownBlock = () => {
-            const markdownContent = blockContent.join('\n');
-            // Only check if the trimmed content is empty to avoid creating empty blocks
-            // but preserve the original whitespace structure for non-empty blocks
-            if (markdownContent.trim().length > 0) {
+            if (blockContent.length > 0) {
+                const markdownContent = blockContent.join('\n');
                 const block = MarkdownBlock.parse(markdownContent);
                 blocks.push(block);
             }
@@ -619,7 +617,8 @@ export class ChoproFile {
                 } else {
                     blockContent.push(line);
                 }
-            } else if (line === '```chopro') {
+
+            } else if (line.startsWith('```chopro')) {
                 flushMarkdownBlock();
                 blockMarker = '```';
 
