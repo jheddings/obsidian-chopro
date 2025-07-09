@@ -286,16 +286,20 @@ describe("CommentLine", () => {
 
     describe("validation", () => {
         const validComments = [
-            "# This is a comment", "## Another comment", "#", "#No space"
-        ];
-
-        const invalidComments = [
-            "This is not a comment", "(Instruction)", ""
+            "# This is a comment",
+            "## Another comment",
+            "#",
+            "#No space",
         ];
 
         test.each(validComments)("accepts valid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(true);
         });
+
+        const invalidComments = [
+            "This is not a comment",
+            "(Instruction)", ""
+        ];
 
         test.each(invalidComments)("rejects invalid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(false);
@@ -407,73 +411,40 @@ describe("TextLine", () => {
 });
 
 describe("ChoproFile", () => {
-    describe("frontmatter parsing", () => {
-        test("parses frontmatter with key and title", () => {
-            const source = `---
-key: C
-title: Test Song
----
-
-# Test Song
-
-\`\`\`chopro
-[C]Amazing [F]grace
-\`\`\``;
-
-            const file = ChoproFile.parse(source);
-
-            expect(file.frontmatter).toBeDefined();
-            expect(file.frontmatter?.get('key')).toBe('C');
-            expect(file.frontmatter?.get('title')).toBe('Test Song');
-        });
-
-        test("handles files without frontmatter", () => {
-            const source = `# Test Song
-
-\`\`\`chopro
-[C]Amazing [F]grace
-\`\`\``;
-
-            const file = ChoproFile.parse(source);
-
-            expect(file.frontmatter).toBeUndefined();
-            expect(file.blocks).toHaveLength(2);
-        });
-    });
-
     describe("content block parsing", () => {
-        test("parses mixed markdown and ChoPro content", () => {
-            const source = `# Test Song
+        const contentParsingCases = [
+            {
+                name: "mixed markdown and ChoPro content",
+                source: `# Title
 
-This is some markdown content before the ChoPro block.
+Some introduction text.
 
 \`\`\`chopro
-[C]Amazing [F]grace how [G]sweet the sound
-That [C]saved a [Am]wretch like [F]me[G]
+[C]Amazing [F]grace
 \`\`\`
 
-And this is markdown content after the ChoPro block.`;
+## Section 1
 
-            const file = ChoproFile.parse(source);
+Content for section 1.
 
-            expect(file.blocks).toHaveLength(3);
-            
-            // First block should be markdown
-            expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[0].toString()).toContain('# Test Song');
-            
-            // Second block should be ChoPro
-            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-            const choproBlock = file.blocks[1] as ChoproBlock;
-            expect(choproBlock.lines).toHaveLength(2);
-            
-            // Third block should be markdown
-            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[2].toString()).toContain('And this is markdown content');
-        });
+\`\`\`chopro
+[G]How [Am]sweet the [F]sound[C]
+\`\`\`
 
-        test("handles multiple ChoPro blocks with markdown between them", () => {
-            const source = `# Multiple Blocks Test
+# Another Title
+
+More content under another title.`,
+                expectedBlocks: [
+                    { type: MarkdownBlock, contains: "# Title" },
+                    { type: ChoproBlock, lineCount: 1 },
+                    { type: MarkdownBlock, contains: "## Section 1" },
+                    { type: ChoproBlock, lineCount: 1 },
+                    { type: MarkdownBlock, contains: "# Another Title" }
+                ]
+            },
+            {
+                name: "multiple ChoPro blocks with markdown between them",
+                source: `# Multiple Blocks Test
 
 First markdown section.
 
@@ -487,77 +458,97 @@ Middle markdown section.
 [G]Second [Am]block
 \`\`\`
 
-Final markdown section.`;
-
-            const file = ChoproFile.parse(source);
-
-            expect(file.blocks).toHaveLength(5);
-            expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-            
-            // Verify ChoPro block contents
-            const firstChoproBlock = file.blocks[1] as ChoproBlock;
-            expect(firstChoproBlock.lines).toHaveLength(1);
-            
-            const secondChoproBlock = file.blocks[3] as ChoproBlock;
-            expect(secondChoproBlock.lines).toHaveLength(1);
-        });
-
-        test("handles consecutive ChoPro blocks without markdown", () => {
-            const source = `\`\`\`chopro
+Final markdown section.`,
+                expectedBlocks: [
+                    { type: MarkdownBlock, contains: "Multiple Blocks Test" },
+                    { type: ChoproBlock, lineCount: 1 },
+                    { type: MarkdownBlock, contains: "Middle markdown section" },
+                    { type: ChoproBlock, lineCount: 1 },
+                    { type: MarkdownBlock, contains: "Final markdown section" }
+                ]
+            },
+            {
+                name: "consecutive ChoPro blocks",
+                source: `\`\`\`chopro
 [C]First verse
 \`\`\`
 \`\`\`chopro
 [F]Second verse
-\`\`\``;
+\`\`\``,
+                expectedBlocks: [
+                    { type: ChoproBlock, lineCount: 1 },
+                    { type: ChoproBlock, lineCount: 1 }
+                ]
+            },
+            {
+                name: "empty ChoPro blocks",
+                source: `\`\`\`chopro\n\`\`\``,
+                expectedBlocks: [
+                    { type: ChoproBlock, lineCount: 0 }
+                ]
+            }
+        ];
 
-            const file = ChoproFile.parse(source);
+        test.each(contentParsingCases)(
+            "handles $name",
+            ({ source, expectedBlocks }) => {
+                const file = ChoproFile.parse(source);
 
-            expect(file.blocks).toHaveLength(2);
-            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-        });
+                expect(file).toBeInstanceOf(ChoproFile);
+                expect(file.blocks).toHaveLength(expectedBlocks.length);
 
-        test("handles empty ChoPro blocks", () => {
-            const source = `\`\`\`chopro
-\`\`\``;
-
-            const file = ChoproFile.parse(source);
-
-            expect(file.blocks).toHaveLength(1);
-            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
-            const choproBlock = file.blocks[0] as ChoproBlock;
-            expect(choproBlock.lines).toHaveLength(0);
-        });
+                expectedBlocks.forEach((expected, index) => {
+                    const block = file.blocks[index];
+                    expect(block).toBeInstanceOf(expected.type);
+                    
+                    if (expected.contains) {
+                        expect(block.toString()).toContain(expected.contains);
+                    }
+                    
+                    if (expected.lineCount !== undefined && block instanceof ChoproBlock) {
+                        expect(block.lines).toHaveLength(expected.lineCount);
+                    }
+                });
+            }
+        );
     });
 
     describe("serialization and round-trip", () => {
-        test("basic toString() round-trip maintains structure", () => {
-            const source = `---
-key: G
+        const roundTripCases = [
+            {
+                name: "parses frontmatter and maintains structure",
+                source: `---
+key: C
+title: Test Song
 ---
 
-# Test
+# Test Song
 
 \`\`\`chopro
-[G]Test [C]song
-\`\`\`
+[C]Amazing [F]grace
+\`\`\``,
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.frontmatter).toBeDefined();
+                    expect(file.frontmatter?.get('key')).toBe('C');
+                    expect(file.frontmatter?.get('title')).toBe('Test Song');
+                    expect(file.blocks).toHaveLength(2);
+                }
+            },
+            {
+                name: "handles files without frontmatter",
+                source: `# Test Song
 
-End.`;
-
-            const file = ChoproFile.parse(source);
-            const reconstructed = file.toString();
-            const reparsedFile = ChoproFile.parse(reconstructed);
-            
-            expect(reparsedFile.frontmatter?.get('key')).toBe('G');
-            expect(reparsedFile.blocks).toHaveLength(file.blocks.length);
-        });
-
-        test("preserves whitespace and visual spacing in round-trip", () => {
-            const source = `# Header
+\`\`\`chopro
+[C]Amazing [F]grace
+\`\`\``,
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.frontmatter).toBeUndefined();
+                    expect(file.blocks).toHaveLength(2);
+                }
+            },
+            {
+                name: "preserves whitespace and visual spacing",
+                source: `# Header
 
 Some text before the song.
 
@@ -579,24 +570,19 @@ Was [C]blind but [G]now I [C]see
 
 
 
-Final paragraph with trailing spaces.`;
-
-            const file = ChoproFile.parse(source);
-            const roundTrip = file.toString();
-            const takeTwo = ChoproFile.parse(roundTrip);
-            
-            expect(takeTwo.blocks).toHaveLength(file.blocks.length);
-            expect(takeTwo.blocks[0]).toBeInstanceOf(MarkdownBlock);
-            expect(takeTwo.blocks[1]).toBeInstanceOf(ChoproBlock);
-            expect(takeTwo.blocks[2]).toBeInstanceOf(MarkdownBlock);
-            expect(takeTwo.blocks[3]).toBeInstanceOf(ChoproBlock);
-            expect(takeTwo.blocks[4]).toBeInstanceOf(MarkdownBlock);
-            
-            expect(roundTrip).toBe(source);
-        });
-
-        test("preserves varying whitespace between consecutive ChoPro blocks", () => {
-            const source = `\`\`\`chopro
+Final paragraph with trailing spaces.`,
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.blocks).toHaveLength(5);
+                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                }
+            },
+            {
+                name: "preserves varying whitespace between consecutive ChoPro blocks",
+                source: `\`\`\`chopro
 [C]Verse 1 line 1
 [F]Verse 1 line 2
 \`\`\`
@@ -621,86 +607,57 @@ Final paragraph with trailing spaces.`;
 \`\`\`chopro
 [C]Verse 5 line 1
 [F]Verse 5 line 2
-\`\`\``;
+\`\`\``,
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.blocks).toHaveLength(8);
+                    expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                }
+            }
+        ];
 
-            const file = ChoproFile.parse(source);
-            
-            expect(file.blocks).toHaveLength(8);
+        test.each(roundTripCases)(
+            "$name",
+            ({ source, verifyBlocks }) => {
+                const file = ChoproFile.parse(source);
+                
+                const roundTrip = file.toString();
+                const takeTwo = ChoproFile.parse(roundTrip);
 
-            expect(file.blocks[0]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
-            expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
-
-            const roundTrip = file.toString();
-            expect(roundTrip).toBe(source);
-
-            const takeTwo = ChoproFile.parse(roundTrip);
-            expect(takeTwo.blocks).toHaveLength(8);
-        });
+                expect(roundTrip).toBe(source);
+                expect(takeTwo.blocks).toHaveLength(file.blocks.length);
+                
+                if (verifyBlocks) {
+                    verifyBlocks(takeTwo);
+                }
+            }
+        );
     });
-});
 
-describe("File Parsing", () => {
-    test.each(
-        ["basic.md", "complex.md", "nashville.md", "performance.md", "special.md"])(
-        "parses %s without errors",
-        (fileName) => {
+    describe("integration tests with real files", () => {
+        test.each([
+            "basic.md", 
+            "complex.md", 
+            "nashville.md", 
+            "performance.md", 
+            "special.md"
+        ])("parses %s without errors", (fileName) => {
             const fs = require("fs");
             const path = require("path");
             const filePath = path.join(__dirname, fileName);
             const content = fs.readFileSync(filePath, "utf8");
+            
             expect(() => ChoproFile.parse(content)).not.toThrow();
-        }
-    );
-
-    it("parses mixed markdown and ChoPro content correctly", () => {
-        const input = `# Title
-
-Some introduction text.
-
-\`\`\`chopro
-[C]Amazing [F]grace
-\`\`\`
-
-## Section 1
-
-Content for section 1.
-
-\`\`\`chopro
-[G]How [Am]sweet the [F]sound[C]
-\`\`\`
-
-# Another Title
-
-More content under another title.`;
-
-        const file = ChoproFile.parse(input);
-
-        expect(file).toBeInstanceOf(ChoproFile);
-
-        // Should have 5 blocks: markdown, chopro, markdown, chopro, markdown
-        expect(file.blocks).toHaveLength(5);
-
-        expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-        expect(file.blocks[0].toString()).toContain("# Title");
-        
-        expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-        const firstChopro = file.blocks[1] as ChoproBlock;
-        expect(firstChopro.lines).toHaveLength(1);
-        
-        expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-        expect(file.blocks[2].toString()).toContain("## Section 1");
-        
-        expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-        const secondChopro = file.blocks[3] as ChoproBlock;
-        expect(secondChopro.lines).toHaveLength(1);
-        
-        expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-        expect(file.blocks[4].toString()).toContain("# Another Title");
+            
+            // FIXME - this is failing due to an issue with CommentLine.toString()
+            // const file = ChoproFile.parse(content);
+            // expect(file.toString()).toBe(content);
+        });
     });
 });
