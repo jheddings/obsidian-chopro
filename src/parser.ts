@@ -166,14 +166,14 @@ export class ChordNotation extends LineSegment {
         
         // Delta (Δ) to maj
         normalized = normalized.replace(/Δ/g, 'maj');
-        
-        // Circle (o) to dim
+
+        // Full-diminished (o) to dim
         normalized = normalized.replace(/(?<!ø)o(?!f)/g, 'dim');
         
         // Half-diminished (ø) to m7b5
         normalized = normalized.replace(/ø7?/g, 'm7b5');
         
-        // Plus (+) to aug - but preserve existing + if already used
+        // Plus (+) to aug (but preserve existing +)
         normalized = normalized.replace(/\+(?!.*aug)/g, 'aug');
         
         // Normalize accidentals within chord modifiers
