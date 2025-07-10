@@ -249,6 +249,87 @@ export class NoteTransposer {
  * Handles Nashville number system transposition.
  */
 export class NashvilleTransposer {
+    private static readonly MIN_SCALE_DEGREE = 1;
+    private static readonly MAX_SCALE_DEGREE = 7;
+
+    /**
+     * Validate Nashville number and return 0-based degree.
+     */
+    private static validateAndParseNashvilleDegree(nashvilleNumber: string): number {
+        const degree = parseInt(nashvilleNumber);
+        if (isNaN(degree) || degree < this.MIN_SCALE_DEGREE || degree > this.MAX_SCALE_DEGREE) {
+            throw new Error(`Invalid Nashville number: ${nashvilleNumber}`);
+        }
+        return degree - 1; // Convert to 0-based
+    }
+
+    /**
+     * Convert a Nashville degree to a chromatic note index.
+     */
+    private static nashvilleDegreeToNoteIndex(
+        degree: number,
+        keyIndex: number,
+        scaleDegrees: number[]
+    ): number {
+        return (keyIndex + scaleDegrees[degree]) % 12;
+    }
+
+    /**
+     * Convert a chromatic note index to Nashville degree.
+     * Returns -1 if the note is not in the scale.
+     */
+    private static noteIndexToNashvilleDegree(
+        noteIndex: number,
+        keyIndex: number,
+        scaleDegrees: number[]
+    ): number {
+        for (let i = 0; i < scaleDegrees.length; i++) {
+            const expectedIndex = (keyIndex + scaleDegrees[i]) % 12;
+            if (expectedIndex === noteIndex) {
+                return i;
+            }
+        }
+        return -1; // Not found in scale
+    }
+
+    /**
+     * Convert a note to alphabetic notation and update in place.
+     */
+    private static convertNoteToAlpha(
+        note: MusicalNote,
+        degree: number,
+        keyIndex: number,
+        scaleDegrees: number[],
+        preferredAccidental?: Accidental
+    ): void {
+        const noteIndex = this.nashvilleDegreeToNoteIndex(degree, keyIndex, scaleDegrees);
+        const noteName = MusicTheory.getPreferredNoteName(noteIndex, preferredAccidental);
+        const parsedNote = MusicalNote.parse(noteName);
+        
+        note.root = parsedNote.root;
+        note.postfix = parsedNote.postfix;
+    }
+
+    /**
+     * Convert a note to Nashville notation and update in place.
+     */
+    private static convertNoteToNashville(
+        note: MusicalNote,
+        keyIndex: number,
+        scaleDegrees: number[]
+    ): void {
+        const noteIndex = MusicTheory.getNoteIndex(note);
+        const degree = this.noteIndexToNashvilleDegree(noteIndex, keyIndex, scaleDegrees);
+        
+        if (degree === -1) {
+            throw new Error(
+                `Cannot convert note ${note.toString()} to Nashville number - not in scale`
+            );
+        }
+        
+        note.root = (degree + 1).toString(); // Convert to 1-based
+        note.postfix = undefined; // Clear accidentals for diatonic notes
+    }
 
     /**
      * Convert Nashville number to chord notation.
@@ -258,41 +339,31 @@ export class NashvilleTransposer {
             throw new Error("Chord is not in Nashville notation");
         }
 
-        const degree = parseInt(nashvilleChord.note.root) - 1; // Convert to 0-based
-        if (degree < 0 || degree > 6) {
-            throw new Error(
-                `Invalid Nashville number: ${nashvilleChord.note.root}`
-            );
-        }
-
+        // Pre-calculate key information
         const scaleDegrees = targetKey.getScaleDegrees();
         const targetKeyNote = MusicalNote.parse(targetKey.root);
         const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
 
-        const targetNoteIndex = (targetKeyIndex + scaleDegrees[degree]) % 12;
-        const targetNoteName = MusicTheory.getPreferredNoteName(
-            targetNoteIndex,
+        // Convert main note
+        const degree = this.validateAndParseNashvilleDegree(nashvilleChord.note.root);
+        this.convertNoteToAlpha(
+            nashvilleChord.note,
+            degree,
+            targetKeyIndex,
+            scaleDegrees,
             targetKey.accidental
         );
-        const targetNote = MusicalNote.parse(targetNoteName);
 
-        // update the note in place
-        nashvilleChord.note.root = targetNote.root;
-        nashvilleChord.note.postfix = targetNote.postfix;
-
+        // Convert bass note if present
         if (nashvilleChord.bass) {
-            const bassDegree = parseInt(nashvilleChord.bass.root) - 1;
-            if (bassDegree >= 0 && bassDegree <= 6) {
-                const bassIndex =
-                    (targetKeyIndex + scaleDegrees[bassDegree]) % 12;
-                const bassNoteName = MusicTheory.getPreferredNoteName(
-                    bassIndex,
-                    targetKey.accidental
-                );
-                const newBass = MusicalNote.parse(bassNoteName);
-                nashvilleChord.bass.root = newBass.root;
-                nashvilleChord.bass.postfix = newBass.postfix;
-            }
+            const bassDegree = this.validateAndParseNashvilleDegree(nashvilleChord.bass.root);
+            this.convertNoteToAlpha(
+                nashvilleChord.bass,
+                bassDegree,
+                targetKeyIndex,
+                scaleDegrees,
+                targetKey.accidental
+            );
         }
     }
 
@@ -304,41 +375,17 @@ export class NashvilleTransposer {
             throw new Error("Chord is not in alphabetic notation");
         }
 
-        const targetKeyNote = MusicalNote.parse(sourceKey.root);
-        const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
-        const chordIndex = MusicTheory.getNoteIndex(chord.note);
+        // Pre-calculate key information
         const scaleDegrees = sourceKey.getScaleDegrees();
+        const keyNote = MusicalNote.parse(sourceKey.root);
+        const keyIndex = MusicTheory.getNoteIndex(keyNote);
 
-        // Find the scale degree for the main chord note
-        for (let i = 0; i < scaleDegrees.length; i++) {
-            const expectedIndex = (targetKeyIndex + scaleDegrees[i]) % 12;
-            if (expectedIndex === chordIndex) {
-                const nashvilleRoot = (i + 1).toString();
-                chord.note.root = nashvilleRoot;
-                chord.note.postfix = undefined; // Clear any accidental since it's diatonic
-                break;
-            }
-        }
+        // Convert main note
+        this.convertNoteToNashville(chord.note, keyIndex, scaleDegrees);
 
-        // Handle bass note conversion if present
+        // Convert bass note if present
         if (chord.bass) {
-            const bassIndex = MusicTheory.getNoteIndex(chord.bass);
-            
-            // Find the scale degree for the bass note
-            for (let i = 0; i < scaleDegrees.length; i++) {
-                const expectedIndex = (targetKeyIndex + scaleDegrees[i]) % 12;
-                if (expectedIndex === bassIndex) {
-                    const nashvilleBass = (i + 1).toString();
-                    chord.bass.root = nashvilleBass;
-                    chord.bass.postfix = undefined; // Clear any accidental since it's diatonic
-                    return;
-                }
-            }
-            
-            // If bass note is not in the scale, throw an error for now
-            throw new Error(
-                `Cannot convert bass note ${chord.bass.toString()} to Nashville number in key of ${sourceKey.root}`
-            );
+            this.convertNoteToNashville(chord.bass, keyIndex, scaleDegrees);
         }
     }
 }
