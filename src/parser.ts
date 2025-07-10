@@ -84,14 +84,15 @@ export class MusicalNote {
         if (this.postfix) {
             if (normalize) {
                 switch (this.accidental) {
-                    case Accidental.NATURAL:
-                        // no postfix for natural notes
-                        break;
                     case Accidental.SHARP:
                         noteString += '♯';
                         break;
                     case Accidental.FLAT:
                         noteString += '♭';
+                        break;
+                    case Accidental.NATURAL:
+                    default:
+                        // no postfix for natural notes
                         break;
                 }
             } else {
@@ -100,6 +101,21 @@ export class MusicalNote {
         }
         
         return noteString;
+    }
+
+    /**
+     * Check if this note is musically equal to another note.
+     */
+    equals(other: MusicalNote): boolean {
+        if (this.root !== other.root) {
+            return false;
+        }
+
+        if (this.accidental !== other.accidental) {
+            return false;
+        }
+
+        return true
     }
 }
 
@@ -156,6 +172,13 @@ export class ChordNotation extends LineSegment {
         }
 
         return `[${chordString}]`;
+    }
+
+    /**
+     * Check if this chord notation is equal to another chord notation.
+     */
+    equals(other: ChordNotation): boolean {
+        return this.toString(true) === other.toString(true);
     }
 }
 

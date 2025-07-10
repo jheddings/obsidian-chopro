@@ -309,19 +309,37 @@ export class NashvilleTransposer {
         const chordIndex = MusicTheory.getNoteIndex(chord.note);
         const scaleDegrees = sourceKey.getScaleDegrees();
 
-        // Find the scale degree
+        // Find the scale degree for the main chord note
         for (let i = 0; i < scaleDegrees.length; i++) {
             const expectedIndex = (targetKeyIndex + scaleDegrees[i]) % 12;
             if (expectedIndex === chordIndex) {
                 const nashvilleRoot = (i + 1).toString();
                 chord.note.root = nashvilleRoot;
-                return;
+                chord.note.postfix = undefined; // Clear any accidental since it's diatonic
+                break;
             }
         }
 
-        throw new Error(
-            `Cannot convert ${chord.note.toString()} to Nashville number in key of ${sourceKey.root}`
-        );
+        // Handle bass note conversion if present
+        if (chord.bass) {
+            const bassIndex = MusicTheory.getNoteIndex(chord.bass);
+            
+            // Find the scale degree for the bass note
+            for (let i = 0; i < scaleDegrees.length; i++) {
+                const expectedIndex = (targetKeyIndex + scaleDegrees[i]) % 12;
+                if (expectedIndex === bassIndex) {
+                    const nashvilleBass = (i + 1).toString();
+                    chord.bass.root = nashvilleBass;
+                    chord.bass.postfix = undefined; // Clear any accidental since it's diatonic
+                    return;
+                }
+            }
+            
+            // If bass note is not in the scale, throw an error for now
+            throw new Error(
+                `Cannot convert bass note ${chord.bass.toString()} to Nashville number in key of ${sourceKey.root}`
+            );
+        }
     }
 }
 

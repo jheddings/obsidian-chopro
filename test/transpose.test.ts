@@ -146,18 +146,21 @@ describe('MusicalKey', () => {
 describe('NoteTransposer', () => {
     describe('transposeNote', () => {
         const testCases = [
-            { note: 'C', interval: 2, expected: 'D', postfix: undefined },
-            { note: 'C', interval: 1, expected: 'C', postfix: '#' },
-            { note: 'B', interval: 1, expected: 'C', postfix: undefined },
+            { input: 'C', interval: 2, expected: 'D' },
+            { input: 'C', interval: 1, expected: 'C#' },
+            { input: 'B', interval: 1, expected: 'C' },
         ];
 
         test.each(testCases)(
-            'should transpose $note by $interval semitones to $expected',
-            ({ note, interval, expected, postfix }) => {
-                const musicalNote = new MusicalNote(note);
-                NoteTransposer.transposeNote(musicalNote, interval);
-                expect(musicalNote.root).toBe(expected);
-                expect(musicalNote.postfix).toBe(postfix);
+            'should transpose $input by $interval semitones to $expected',
+            ({ input, interval, expected }) => {
+                const inputNote = MusicalNote.parse(input);
+                const expectedNote = MusicalNote.parse(expected);
+                
+                NoteTransposer.transposeNote(inputNote, interval);
+                
+                expect(inputNote.root).toBe(expectedNote.root);
+                expect(inputNote.postfix).toBe(expectedNote.postfix);
             }
         );
 
@@ -173,82 +176,66 @@ describe('NoteTransposer', () => {
     });
 
     describe('transposeChord', () => {
-        test('should transpose basic chord', () => {
-            const chord = new ChordNotation(new MusicalNote('C'));
-            NoteTransposer.transposeChord(chord, 2);
-            expect(chord.note.root).toBe('D');
-            expect(chord.modifier).toBeUndefined();
-        });
+        const testCases = [
+            // Basic chord
+            { input: '[C]', interval: 2, expected: '[D]' },
+            
+            // Chord with modifier
+            { input: '[Cmaj7]', interval: 7, expected: '[Gmaj7]' },
+            
+            // Chord with bass note
+            { input: '[C/E]', interval: 2, expected: '[D/F#]' },
+        ];
 
-        test('should transpose chord with modifier', () => {
-            const chord = new ChordNotation(new MusicalNote('C'), 'maj7');
-            NoteTransposer.transposeChord(chord, 7);
-            expect(chord.note.root).toBe('G');
-            expect(chord.modifier).toBe('maj7');
-        });
-
-        test('should transpose chord with bass note', () => {
-            const chord = new ChordNotation(
-                new MusicalNote('C'), 
-                undefined, 
-                new MusicalNote('E')
-            );
-            NoteTransposer.transposeChord(chord, 2);
-            expect(chord.note.root).toBe('D');
-            expect(chord.bass?.root).toBe('F');
-        });
+        test.each(testCases)(
+            'should transpose $input by $interval semitones to $expected',
+            ({ input, interval, expected }) => {
+                const inputChord = ChordNotation.parse(input);
+                const expectedChord = ChordNotation.parse(expected);
+                
+                NoteTransposer.transposeChord(inputChord, interval);
+                
+                expect(inputChord.note).toStrictEqual(expectedChord.note);
+                expect(inputChord.modifier).toBe(expectedChord.modifier);
+                expect(inputChord.bass).toStrictEqual(expectedChord.bass);
+            }
+        );
     });
 });
 
 describe('NashvilleTransposer', () => {
     describe('nashvilleToChord', () => {
-        test('should convert Nashville to chord in C major', () => {
-            const nashvilleChord = new ChordNotation(new MusicalNote('1'));
-            const key = MusicalKey.parse('C');
-            NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
-            
-            expect(nashvilleChord.note.root).toBe('C');
-        });
+        const testCases = [
+            // Basic conversions
+            { input: '[1]', key: 'C', expected: '[C]' },
+            { input: '[5]', key: 'G', expected: '[D]' },
+            { input: '[4]', key: 'F', expected: '[Bb]' },
+            { input: '[2]', key: 'D', expected: '[E]' },
+            { input: '[3]', key: 'A', expected: '[C#]' },
+            { input: '[6]', key: 'Bb', expected: '[G]' },
+            { input: '[7]', key: 'E', expected: '[D#]' },
 
-        test('should convert Nashville to chord in G major', () => {
-            const nashvilleChord = new ChordNotation(new MusicalNote('5'));
-            const key = MusicalKey.parse('G');
-            NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
-            
-            expect(nashvilleChord.note.root).toBe('D');
-        });
+            // Chord with modifier
+            { input: '[2m7]', key: 'C', expected: '[Dm7]' },
 
-        test('should convert Nashville to chord in F major', () => {
-            const nashvilleChord = new ChordNotation(new MusicalNote('4'));
-            const key = MusicalKey.parse('F');
-            NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
-            
-            // Should be Bb in F major (4th degree)
-            expect(nashvilleChord.note.root).toBe('B');
-            expect(nashvilleChord.note.postfix).toBe('b');
-        });
+            // Chord with bass note
+            { input: '[1/5]', key: 'C', expected: '[C/G]' },
+        ];
 
-        test('should handle Nashville chord with modifier', () => {
-            const nashvilleChord = new ChordNotation(new MusicalNote('2'), 'm7');
-            const key = MusicalKey.parse('C');
-            NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
-            
-            expect(nashvilleChord.note.root).toBe('D');
-            expect(nashvilleChord.modifier).toBe('m7');
-        });
-
-        test('should handle Nashville chord with bass note', () => {
-            const nashvilleChord = new ChordNotation(
-                new MusicalNote('1'), 
-                undefined, 
-                new MusicalNote('5')
-            );
-            const key = MusicalKey.parse('C');
-            NashvilleTransposer.nashvilleToChord(nashvilleChord, key);
-            
-            expect(nashvilleChord.note.root).toBe('C');
-            expect(nashvilleChord.bass?.root).toBe('G');
-        });
+        test.each(testCases)(
+            'should convert Nashville $input in key $key to $expected',
+            ({ input, key, expected }) => {
+                const nashvilleChord = ChordNotation.parse(input);
+                const expectedChord = ChordNotation.parse(expected);
+                const musicalKey = MusicalKey.parse(key);
+                
+                NashvilleTransposer.nashvilleToChord(nashvilleChord, musicalKey);
+                
+                expect(nashvilleChord.note).toStrictEqual(expectedChord.note);
+                expect(nashvilleChord.modifier).toBe(expectedChord.modifier);
+                expect(nashvilleChord.bass).toStrictEqual(expectedChord.bass);
+            }
+        );
 
         test('should throw on non-Nashville chord', () => {
             const alphaChord = new ChordNotation(new MusicalNote('C'));
@@ -260,21 +247,37 @@ describe('NashvilleTransposer', () => {
     });
 
     describe('chordToNashville', () => {
-        test('should convert chord to Nashville in C major', () => {
-            const chord = new ChordNotation(new MusicalNote('G'));
-            const key = MusicalKey.parse('C');
-            NashvilleTransposer.chordToNashville(chord, key);
-            
-            expect(chord.note.root).toBe('5');
-        });
+        const testCases = [
+            // Basic conversions
+            { input: '[C]', key: 'C', expected: '[1]' },
+            { input: '[D]', key: 'G', expected: '[5]' },
+            { input: '[Bb]', key: 'F', expected: '[4]' },
+            { input: '[E]', key: 'D', expected: '[2]' },
+            { input: '[C#]', key: 'A', expected: '[3]' },
+            { input: '[G]', key: 'Bb', expected: '[6]' },
+            { input: '[D#]', key: 'E', expected: '[7]' },
 
-        test('should convert chord to Nashville in G major', () => {
-            const chord = new ChordNotation(new MusicalNote('D'));
-            const key = MusicalKey.parse('G');
-            NashvilleTransposer.chordToNashville(chord, key);
-            
-            expect(chord.note.root).toBe('5');
-        });
+            // Chord with modifier
+            { input: '[Dm7]', key: 'C', expected: '[2m7]' },
+
+            // Chord with bass note
+            { input: '[C/G]', key: 'C', expected: '[1/5]' },
+        ];
+
+        test.each(testCases)(
+            'should convert chord $input in key $key to Nashville $expected',
+            ({ input, key, expected }) => {
+                const alphaChord = ChordNotation.parse(input);
+                const expectedChord = ChordNotation.parse(expected);
+                const musicalKey = MusicalKey.parse(key);
+                
+                NashvilleTransposer.chordToNashville(alphaChord, musicalKey);
+                
+                expect(alphaChord.note).toStrictEqual(expectedChord.note);
+                expect(alphaChord.modifier).toBe(expectedChord.modifier);
+                expect(alphaChord.bass).toStrictEqual(expectedChord.bass);
+            }
+        );
 
         test('should throw on non-alphabetic chord', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('1'));
