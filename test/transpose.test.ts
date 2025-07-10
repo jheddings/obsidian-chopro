@@ -219,7 +219,8 @@ describe('NashvilleTransposer', () => {
             { input: '[2m7]', key: 'C', expected: '[Dm7]' },
 
             // Chord with bass note
-            { input: '[1/5]', key: 'C', expected: '[C/G]' },
+            { input: '[1/3]', key: 'Bb', expected: '[Bb/D]' },
+            { input: '[6m/5]', key: 'C', expected: '[Am/G]' },
         ];
 
         test.each(testCases)(
@@ -261,7 +262,8 @@ describe('NashvilleTransposer', () => {
             { input: '[Dm7]', key: 'C', expected: '[2m7]' },
 
             // Chord with bass note
-            { input: '[C/G]', key: 'C', expected: '[1/5]' },
+            { input: '[C/E]', key: 'C', expected: '[1/3]' },
+            { input: '[G/B]', key: 'C', expected: '[5/7]' },
         ];
 
         test.each(testCases)(
