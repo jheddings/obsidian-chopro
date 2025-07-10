@@ -185,7 +185,7 @@ export class ChordNotation extends LineSegment {
 
     /**
      * Convert the chord notation to its ChoPro representation.
-     * @param normalize If true, normalize accidentals and chord qualities to standard forms (default: false)
+     * @param normalize If true, normalize accidentals and chord qualities (default: false)
      */
     toString(normalize: boolean = false): string {
         let chordString = this.note.toString(normalize);
