@@ -157,14 +157,45 @@ export class ChordNotation extends LineSegment {
     }
 
     /**
+     * Get the normalized chord quality in standard form.
+     */
+    get quality(): string | undefined {
+        if (!this.modifier) return undefined;
+        
+        let normalized = this.modifier;
+        
+        // Delta (Δ) to maj
+        normalized = normalized.replace(/Δ/g, 'maj');
+        
+        // Circle (o) to dim
+        normalized = normalized.replace(/(?<!ø)o(?!f)/g, 'dim');
+        
+        // Half-diminished (ø) to m7b5
+        normalized = normalized.replace(/ø7?/g, 'm7b5');
+        
+        // Plus (+) to aug - but preserve existing + if already used
+        normalized = normalized.replace(/\+(?!.*aug)/g, 'aug');
+        
+        // Normalize accidentals within chord modifiers
+        normalized = normalized.replace(/#/g, '♯');
+        normalized = normalized.replace(/b/g, '♭');
+        
+        return normalized.toLowerCase();
+    }
+
+    /**
      * Convert the chord notation to its ChoPro representation.
-     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     * @param normalize If true, normalize accidentals and chord qualities to standard forms (default: false)
      */
     toString(normalize: boolean = false): string {
         let chordString = this.note.toString(normalize);
         
         if (this.modifier) {
-            chordString += normalize ? this.modifier.toLowerCase() : this.modifier;
+            if (normalize) {
+                chordString += this.quality;
+            } else { 
+                chordString += this.modifier;
+            }
         }
 
         if (this.bass) {

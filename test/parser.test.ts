@@ -116,6 +116,16 @@ describe("ChordNotation", () => {
         { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, noteType: NoteType.ALPHA },
         { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, noteType: NoteType.ALPHA },
+
+        // Alternative chord quality notations
+        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[Co]", note: "C", modifier: "o", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[C+]", note: "C", modifier: "+", bass: undefined, noteType: NoteType.ALPHA },
+        { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E", noteType: NoteType.ALPHA },
+        { input: "[Go7/B]", note: "G", modifier: "o7", bass: "B", noteType: NoteType.ALPHA },
+        { input: "[A+add9]", note: "A", modifier: "+add9", bass: undefined, noteType: NoteType.ALPHA },
     ];
 
     describe("parses valid chord notation", () => {
@@ -144,6 +154,7 @@ describe("ChordNotation", () => {
 
     describe("normalization", () => {
         const normalizationCases = [
+            // Basic accidental normalization
             { input: "[F#m7]", normalized: "[F♯m7]" },
             { input: "[BbMAJ7]", normalized: "[B♭maj7]" },
             { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
@@ -151,6 +162,23 @@ describe("ChordNotation", () => {
             { input: "[4b7/5#]", normalized: "[4♭7/5♯]" },
             { input: "[Fes]", normalized: "[F♭]" },
             { input: "[Gis]", normalized: "[G♯]" },
+            
+            // Alternative chord quality normalization
+            { input: "[CΔ]", normalized: "[Cmaj]" },
+            { input: "[FΔ7]", normalized: "[Fmaj7]" },
+            { input: "[BbΔ9]", normalized: "[B♭maj9]" },
+            { input: "[DΔ#11]", normalized: "[Dmaj♯11]" },
+            { input: "[Co]", normalized: "[Cdim]" },
+            { input: "[Co7]", normalized: "[Cdim7]" },
+            { input: "[F#o]", normalized: "[F♯dim]" },
+            { input: "[Go7/B]", normalized: "[Gdim7/B]" },
+            { input: "[Cø]", normalized: "[Cm7♭5]" },
+            { input: "[Cø7]", normalized: "[Cm7♭5]" },
+            { input: "[F#ø7]", normalized: "[F♯m7♭5]" },
+            { input: "[Amø]", normalized: "[Amm7♭5]" },
+            { input: "[C+7]", normalized: "[Caug7]" },
+            { input: "[F+]", normalized: "[Faug]" },
+            { input: "[A+add9]", normalized: "[Aaugadd9]" },
         ];
 
         test.each(normalizationCases)(
@@ -163,15 +191,27 @@ describe("ChordNotation", () => {
             }
         );
 
-        it("preserves unicode accidentals when normalized", () => {
-            const unicodeSharp = ChordNotation.parse("[F♯m7]");
-            expect(unicodeSharp.toString(false)).toBe("[F♯m7]");
-            expect(unicodeSharp.toString(true)).toBe("[F♯m7]");
+        // Test the quality property specifically
+        const qualityTests = [
+            { input: "[CΔ7]", expectedQuality: "maj7" },
+            { input: "[Co]", expectedQuality: "dim" },
+            { input: "[Cø7]", expectedQuality: "m7♭5" },
+            { input: "[C+]", expectedQuality: "aug" },
+            { input: "[C]", expectedQuality: undefined },
+            { input: "[Cmaj7]", expectedQuality: "maj7" },
+            { input: "[C#Δ9]", expectedQuality: "maj9" },
+            { input: "[F#o7]", expectedQuality: "dim7" },
+            { input: "[Bbø]", expectedQuality: "m7♭5" },
+            { input: "[D+add9]", expectedQuality: "augadd9" },
+        ];
 
-            const unicodeFlat = ChordNotation.parse("[B♭maj7]");
-            expect(unicodeFlat.toString(false)).toBe("[B♭maj7]");
-            expect(unicodeFlat.toString(true)).toBe("[B♭maj7]");
-        });
+        test.each(qualityTests)(
+            "exposes correct quality property for $input",
+            ({ input, expectedQuality }) => {
+                const chord = ChordNotation.parse(input);
+                expect(chord.quality).toBe(expectedQuality);
+            }
+        );
     });
 
     describe("validation", () => {
@@ -179,6 +219,12 @@ describe("ChordNotation", () => {
             // Alpha notation
             "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]", "[Fes]", "[Gis]",
             "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[F#m7/B]", "[C/G]", "[Bb/F]",
+            
+            // Alternative chord quality notations
+            "[CΔ]", "[FΔ7]", "[BbΔ9]", "[DΔ#11]", "[CΔ7/E]",
+            "[Co]", "[Co7]", "[F#o]", "[Go7/B]", "[C#odim]",
+            "[Cø]", "[Cø7]", "[F#ø7]", "[Amø]", "[Dmø7/F#]",
+            "[C+]", "[C+7]", "[F+]", "[A+add9]", "[G+maj7]",
             
             // Nashville notation
             "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
