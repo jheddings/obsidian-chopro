@@ -1,8 +1,11 @@
+import { verify } from "crypto";
 import { 
     ChordNotation, 
     MusicalNote, 
     Accidental,
     ChoproFile,
+    ChoproBlock,
+    SegmentedLine,
 } from "../src/parser";
 
 import {
@@ -14,6 +17,8 @@ import {
     KeyQuality,
     MusicalKey,
 } from "../src/transpose";
+
+import { verifyChordsInBlock } from "./parser.test";
 
 describe("MusicTheory", () => {
     describe("getNoteIndex", () => {
@@ -367,6 +372,129 @@ describe('TransposeUtils', () => {
                 const key = TransposeUtils.detectKey(file);
                 
                 expect(key).toEqual(expected);
+            }
+        );
+    });
+});
+
+describe('ChoproTransposer', () => {
+    const path = require('path');
+
+   /**
+     * Helper function to load a test file & parse it.
+     */
+    const loadTestFile = (filename: string): ChoproFile => {
+        const filePath = path.resolve(__dirname, filename);
+        return ChoproFile.load(filePath);
+    }
+
+    describe('transpose standard.md', () => {
+        describe('should transpose standard.md from C to G', () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = loadTestFile("standard.md");
+                expect(file.key).toBe('C');
+
+                const transposer = new ChoproTransposer({
+                    fromKey: 'C',
+                    toKey: 'G'
+                });
+
+                transposer.transpose(file);
+                expect(file.key).toBe('G');
+            });
+
+            it("transposes verse 1 correctly", () => {
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
+                    [ "[G]", "[C]", "[G]", "[Em]", "[G]", "[D]" ],
+                    [ "[G]", "[C]", "[G]", "[Em]", "[D]", "[C]", "[G]" ],
+                ]);
+            });
+
+            it("transposes verse 4 correctly", () => {
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[7] as ChoproBlock, [
+                    [ "[A]", "[D]", "[A]", "[F#m]", "[A]", "[E]" ],
+                    [ "[A]", "[D]", "[A]", "[F#m]", "[E]", "[D]", "[A]" ],
+                ]);
+            });
+        });
+
+        describe('should transpose standard.md from C to Bb (flat key)', () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = loadTestFile("standard.md");
+                expect(file.key).toBe('C');
+
+                const transposer = new ChoproTransposer({
+                    fromKey: 'C',
+                    toKey: 'Bb'
+                });
+
+                transposer.transpose(file);
+                expect(file.key).toBe('Bb');
+            });
+
+            it("transposes verse 1 correctly", () => {
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
+                    [ "[Bb]", "[Eb]", "[Bb]", "[Gm]", "[Bb]", "[F]" ],
+                    [ "[Bb]", "[Eb]", "[Bb]", "[Gm]", "[F]", "[Eb]", "[Bb]" ],
+                ]);
+            });
+        });
+
+        describe('should transpose standard.md from C to F# (sharp key)', () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = loadTestFile("standard.md");
+                expect(file.key).toBe('C');
+
+                const transposer = new ChoproTransposer({
+                    fromKey: 'C',
+                    toKey: 'F#'
+                });
+
+                transposer.transpose(file);
+                expect(file.key).toBe('F#');
+            });
+
+            it("transposes verse 1 correctly", () => {
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
+                    [ "[F#]", "[B]", "[F#]", "[D#m]", "[F#]", "[C#]" ],
+                    [ "[F#]", "[B]", "[F#]", "[D#m]", "[C#]", "[B]", "[F#]" ],
+                ]);
+            });
+        });
+    });
+
+    describe('validation', () => {
+        const validKeyTestCases = [
+            { fromKey: 'C', toKey: 'G' },
+            { fromKey: 'F#m', toKey: 'Bbm' },
+        ];
+
+        test.each(validKeyTestCases)(
+            'should accept valid keys: fromKey=$fromKey, toKey=$toKey',
+            ({ fromKey, toKey }) => {
+                expect(() => new ChoproTransposer({ fromKey, toKey })).not.toThrow();
+            }
+        );
+
+        const invalidKeyTestCases = [
+            { fromKey: 'InvalidKey', toKey: 'G', },
+            { fromKey: 'C', toKey: 'InvalidKey', }
+        ];
+
+        test.each(invalidKeyTestCases)(
+            'should error for invalid keys: fromKey=$fromKey, toKey=$toKey',
+            ({ fromKey, toKey }) => {
+                expect(() => new ChoproTransposer({ fromKey, toKey })).toThrow();
             }
         );
     });

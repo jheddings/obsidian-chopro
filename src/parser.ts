@@ -120,7 +120,7 @@ export class MusicalNote {
 }
 
 export abstract class LineSegment {
-    constructor(public content: string) {}
+    constructor() {}
 }
 
 export class ChordNotation extends LineSegment {
@@ -131,7 +131,7 @@ export class ChordNotation extends LineSegment {
         public modifier?: string,
         public bass?: MusicalNote
     ) {
-        super(note + (modifier || '') + (bass || ''));
+        super();
     }
 
     static test(content: string): boolean {
@@ -216,8 +216,8 @@ export class ChordNotation extends LineSegment {
 export class Annotation extends LineSegment {
     public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
 
-    constructor(content: string) {
-        super(content);
+    constructor(public content: string) {
+        super();
     }
 
     static test(content: string): boolean {
@@ -243,8 +243,8 @@ export class Annotation extends LineSegment {
 }
 
 export class TextSegment extends LineSegment {
-    constructor(content: string) {
-        super(content);
+    constructor(public content: string) {
+        super();
     }
 
     /**
