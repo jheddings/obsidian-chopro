@@ -108,7 +108,7 @@ export class ChoproRenderer {
     /**
      * Render text segment that doesn't have a chord above it
      */
-    private renderTextSegment(container: HTMLElement, segment: LineSegment): void {
+    private renderTextSegment(container: HTMLElement, segment: TextSegment): void {
         container.createSpan({
             text: segment.content,
             cls: 'chopro-lyrics'
@@ -134,7 +134,7 @@ export class ChoproRenderer {
         // Check if there's text immediately following
         let textContent = '';
         let textConsumed = false;
-        if (nextSegment && this.isTextSegment(nextSegment)) {
+        if (nextSegment && this.isTextSegment(nextSegment) && nextSegment instanceof TextSegment) {
             textContent = nextSegment.content;
             textConsumed = true;
         }
@@ -162,7 +162,7 @@ export class ChoproRenderer {
             } else if (segment instanceof Annotation) {
                 this.renderAnnotation(container, segment);
             } else {
-                this.renderTextSegment(container, segment);
+                this.renderTextSegment(container, segment as TextSegment);
             }
         }
     }

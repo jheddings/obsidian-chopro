@@ -6,8 +6,9 @@ import {
     SegmentedLine,
     ChoproBlock,
     Frontmatter,
-    MusicalNote,
-    NoteType,
+    MusicNote,
+    AlphaNote,
+    NashvilleNote,
     Accidental,
     LineSegment,
     ContentBlock,
@@ -111,7 +112,7 @@ export class MajorKeyInfo extends KeyInfo {
      * Get the relative minor key
      */
     getRelativeMinor(): MinorKeyInfo {
-        const rootNote = MusicalNote.parse(this.root);
+        const rootNote = MusicNote.parse(this.root);
         const minorRootIndex = (MusicTheory.getNoteIndex(rootNote) + 9) % 12; // Down a minor third
         const minorRootName = MusicTheory.getPreferredNoteName(minorRootIndex, this.accidental);
         const preferredAccidental = MusicTheory.getPreferredAccidental(minorRootName);
@@ -145,7 +146,7 @@ export class MinorKeyInfo extends KeyInfo {
      * Get the relative major key
      */
     getRelativeMajor(): MajorKeyInfo {
-        const rootNote = MusicalNote.parse(this.root);
+        const rootNote = MusicNote.parse(this.root);
         const majorRootIndex = (MusicTheory.getNoteIndex(rootNote) + 3) % 12; // Up a minor third
         const majorRootName = MusicTheory.getPreferredNoteName(majorRootIndex, this.accidental);
         const preferredAccidental = MusicTheory.getPreferredAccidental(majorRootName);
@@ -184,7 +185,7 @@ export class MusicTheory {
     /**
      * Get the chromatic index (0-11) for a note
      */
-    static getNoteIndex(note: MusicalNote): number {
+    static getNoteIndex(note: MusicNote): number {
         const rootIndex = this.getBaseNoteIndex(note.root);
         const accidentalOffset = this.getAccidentalOffset(note.accidental);
         return (rootIndex + accidentalOffset + 12) % 12;
@@ -265,7 +266,7 @@ export class MusicTheory {
     /**
      * Calculate the interval between two notes in semitones
      */
-    static getInterval(fromNote: MusicalNote, toNote: MusicalNote): number {
+    static getInterval(fromNote: MusicNote, toNote: MusicNote): number {
         const fromIndex = this.getNoteIndex(fromNote);
         const toIndex = this.getNoteIndex(toNote);
         return (toIndex - fromIndex + 12) % 12;
@@ -281,7 +282,7 @@ export class NoteTransposer {
      * Transpose a note by a given interval.
      */
     static transposeNote(
-        note: MusicalNote,
+        note: MusicNote,
         interval: number,
         preferredAccidental?: Accidental
     ): void {
@@ -289,7 +290,7 @@ export class NoteTransposer {
         const newIndex = (originalIndex + interval + 12) % 12;
         const newNoteName = MusicTheory.getPreferredNoteName(newIndex, preferredAccidental);
 
-        const newNote = MusicalNote.parse(newNoteName);
+        const newNote = MusicNote.parse(newNoteName);
         note.root = newNote.root;
         note.postfix = newNote.postfix;
     }
@@ -360,7 +361,7 @@ export class NashvilleTransposer {
      * Convert a note to alphabetic notation and update in place.
      */
     private static convertNoteToAlpha(
-        note: MusicalNote,
+        note: MusicNote,
         degree: number,
         keyIndex: number,
         scaleDegrees: number[],
@@ -368,7 +369,7 @@ export class NashvilleTransposer {
     ): void {
         const noteIndex = this.nashvilleDegreeToNoteIndex(degree, keyIndex, scaleDegrees);
         const noteName = MusicTheory.getPreferredNoteName(noteIndex, preferredAccidental);
-        const parsedNote = MusicalNote.parse(noteName);
+        const parsedNote = MusicNote.parse(noteName);
         
         note.root = parsedNote.root;
         note.postfix = parsedNote.postfix;
@@ -378,7 +379,7 @@ export class NashvilleTransposer {
      * Convert a note to Nashville notation and update in place.
      */
     private static convertNoteToNashville(
-        note: MusicalNote,
+        note: MusicNote,
         keyIndex: number,
         scaleDegrees: number[]
     ): void {
@@ -399,13 +400,13 @@ export class NashvilleTransposer {
      * Convert Nashville number to chord notation.
      */
     static nashvilleToChord(nashvilleChord: ChordNotation, targetKey: KeyInfo): void {
-        if (nashvilleChord.note.noteType !== NoteType.NASHVILLE) {
+        if (!(nashvilleChord.note instanceof NashvilleNote)) {
             throw new Error("Chord is not in Nashville notation");
         }
 
         // Pre-calculate key information
         const scaleDegrees = targetKey.getScaleDegrees();
-        const targetKeyNote = MusicalNote.parse(targetKey.root);
+        const targetKeyNote = MusicNote.parse(targetKey.root);
         const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
 
         // Convert main note
@@ -435,13 +436,13 @@ export class NashvilleTransposer {
      * Convert chord notation to Nashville number.
      */
     static chordToNashville(chord: ChordNotation, sourceKey: KeyInfo): void {
-        if (chord.note.noteType !== NoteType.ALPHA) {
+        if (!(chord.note instanceof AlphaNote)) {
             throw new Error("Chord is not in alphabetic notation");
         }
 
         // Pre-calculate key information
         const scaleDegrees = sourceKey.getScaleDegrees();
-        const keyNote = MusicalNote.parse(sourceKey.root);
+        const keyNote = MusicNote.parse(sourceKey.root);
         const keyIndex = MusicTheory.getNoteIndex(keyNote);
 
         // Convert main note
@@ -532,14 +533,14 @@ export class ChoproTransposer {
      */
     private transposeChordSegment(chord: ChordNotation): void {
 
-        if (chord.note.noteType === NoteType.ALPHA) {
+        if (chord.note instanceof AlphaNote) {
             this.transposeAlphaChordSegment(chord);
 
-        } else if (chord.note.noteType === NoteType.NASHVILLE) {
+        } else if (chord.note instanceof NashvilleNote) {
             this.transposeNashvilleChordSegment(chord);
 
         } else {
-            throw new Error(`Unsupported note type: ${chord.note.noteType}`);
+            throw new Error(`Unsupported note type: ${chord.note.constructor.name}`);
         }
     }
 
@@ -561,8 +562,8 @@ export class ChoproTransposer {
         // Transpose from Alpha to Alpha
         } else {
             const interval = MusicTheory.getInterval(
-                MusicalNote.parse(sourceKey.root),
-                MusicalNote.parse(targetKey.root)
+                MusicNote.parse(sourceKey.root),
+                MusicNote.parse(targetKey.root)
             );
 
             NoteTransposer.transposeChord(
@@ -615,7 +616,10 @@ export class ChoproTransposer {
 
         if (this.options.toKey) {
             try {
-                KeyInfo.parse(this.options.toKey);
+                // Special case: "##" is used to indicate Nashville notation
+                if (this.options.toKey !== "##") {
+                    KeyInfo.parse(this.options.toKey);
+                }
             } catch (error) {
                 throw new Error(`Invalid 'to' key format: ${error}`);
             }

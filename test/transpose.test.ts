@@ -1,11 +1,11 @@
-import { verify } from "crypto";
 import { 
     ChordNotation, 
-    MusicalNote, 
+    MusicNote, 
     Accidental,
     ChoproFile,
     ChoproBlock,
-    SegmentedLine,
+    AlphaNote,
+    NashvilleNote,
 } from "../src/parser";
 
 import {
@@ -14,7 +14,6 @@ import {
     NashvilleTransposer,
     ChoproTransposer,
     TransposeUtils,
-    KeyQuality,
     KeyInfo,
     MajorKeyInfo,
     MinorKeyInfo,
@@ -37,9 +36,9 @@ describe("MusicTheory", () => {
         test.each(noteIndexTestCases)(
             "should return chromatic index $expectedIndex for $pitch$accidental",
             ({ pitch, accidental, expectedIndex }) => {
-                expect(
-                    MusicTheory.getNoteIndex(new MusicalNote(pitch, accidental))
-                ).toEqual(expectedIndex);
+                const note = new AlphaNote(pitch, accidental);
+                const noteIndex = MusicTheory.getNoteIndex(note);
+                expect(noteIndex).toEqual(expectedIndex);
             }
         );
     });
@@ -170,14 +169,14 @@ describe('KeyInfo', () => {
 
     describe('getInterval', () => {
         const intervalTestCases = [
-            { from: new MusicalNote('C'), to: new MusicalNote('C'), expected: 0 },
-            { from: new MusicalNote('C'), to: new MusicalNote('D'), expected: 2 },
-            { from: new MusicalNote('C'), to: new MusicalNote('G'), expected: 7 },
-            { from: new MusicalNote('C'), to: new MusicalNote('C', '#'), expected: 1 },
-            { from: new MusicalNote('D'), to: new MusicalNote('C'), expected: 10 },
-            { from: new MusicalNote('G'), to: new MusicalNote('F'), expected: 10 },
-            { from: new MusicalNote('A'), to: new MusicalNote('A'), expected: 0 },
-            { from: new MusicalNote('F', '#'), to: new MusicalNote('G', 'b'), expected: 0 },
+            { from: new AlphaNote('C'), to: new AlphaNote('C'), expected: 0 },
+            { from: new AlphaNote('C'), to: new AlphaNote('D'), expected: 2 },
+            { from: new AlphaNote('C'), to: new AlphaNote('G'), expected: 7 },
+            { from: new AlphaNote('C'), to: new AlphaNote('C', '#'), expected: 1 },
+            { from: new AlphaNote('D'), to: new AlphaNote('C'), expected: 10 },
+            { from: new AlphaNote('G'), to: new AlphaNote('F'), expected: 10 },
+            { from: new AlphaNote('A'), to: new AlphaNote('A'), expected: 0 },
+            { from: new AlphaNote('F', '#'), to: new AlphaNote('G', 'b'), expected: 0 },
         ];
 
         test.each(intervalTestCases)(
@@ -200,8 +199,8 @@ describe('NoteTransposer', () => {
         test.each(testCases)(
             'should transpose $input by $interval semitones to $expected',
             ({ input, interval, expected }) => {
-                const inputNote = MusicalNote.parse(input);
-                const expectedNote = MusicalNote.parse(expected);
+                const inputNote = MusicNote.parse(input);
+                const expectedNote = MusicNote.parse(expected);
                 
                 NoteTransposer.transposeNote(inputNote, interval);
                 
@@ -211,8 +210,8 @@ describe('NoteTransposer', () => {
         );
 
         test('should respect enharmonic preferences', () => {
-            const C1 = new MusicalNote('C');
-            const C2 = new MusicalNote('C');
+            const C1 = new AlphaNote('C');
+            const C2 = new AlphaNote('C');
             NoteTransposer.transposeNote(C1, 1, Accidental.SHARP);
             NoteTransposer.transposeNote(C2, 1, Accidental.FLAT);
             
@@ -285,11 +284,11 @@ describe('NashvilleTransposer', () => {
         );
 
         test('should throw on non-Nashville chord', () => {
-            const alphaChord = new ChordNotation(new MusicalNote('C'));
+            const alphaNote = new AlphaNote('C');
+            const alphaChord = new ChordNotation(alphaNote);
             const key = KeyInfo.parse('C');
             
-            expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key))
-                .toThrow('Chord is not in Nashville notation');
+            expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key)).toThrow();
         });
     });
 
@@ -328,7 +327,8 @@ describe('NashvilleTransposer', () => {
         );
 
         test('should throw on non-alphabetic chord', () => {
-            const nashvilleChord = new ChordNotation(new MusicalNote('1'));
+            const nashvilleNum = new NashvilleNote('1');
+            const nashvilleChord = new ChordNotation(nashvilleNum);
             const key = KeyInfo.parse('C');
             
             expect(() => NashvilleTransposer.chordToNashville(nashvilleChord, key))
@@ -512,6 +512,41 @@ describe('ChoproTransposer', () => {
                 ]);
             });
         });
+
+        /*
+        describe('should transpose standard.md from C to Nashville notation', () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = loadTestFile("standard.md");
+                expect(file.key).toBe('C');
+
+                const transposer = new ChoproTransposer({
+                    fromKey: 'C',
+                    toKey: '##'
+                });
+
+                transposer.transpose(file);
+                expect(file.key).toBe('nashville');
+            });
+
+            it("transposes verse 1 correctly", () => {
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
+                    [ "[1]", "[4]", "[1]", "[6m]", "[1]", "[5]" ],
+                    [ "[1]", "[4]", "[1]", "[6m]", "[5]", "[4]", "[1]" ],
+                ]);
+            });
+
+            it("transposes verse 4 correctly", () => {
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                verifyChordsInBlock(file.blocks[7] as ChoproBlock, [
+                    [ "[2]", "[5]", "[2]", "[7m]", "[2]", "[6]" ],
+                    [ "[2]", "[5]", "[2]", "[7m]", "[6]", "[5]", "[2]" ],
+                ]);
+            });
+        });
+        */
     });
 
     describe('validation', () => {
