@@ -44,10 +44,10 @@ describe("MusicalNote", () => {
             ({ input, root, postfix, accidental, noteType }) => {
                 const note = MusicalNote.parse(input);
                 
-                expect(note.root).toBe(root);
-                expect(note.postfix).toBe(postfix);
-                expect(note.accidental).toBe(accidental);
-                expect(note.noteType).toBe(noteType);
+                expect(note.root).toEqual(root);
+                expect(note.postfix).toEqual(postfix);
+                expect(note.accidental).toEqual(accidental);
+                expect(note.noteType).toEqual(noteType);
             }
         );
 
@@ -84,9 +84,9 @@ describe("MusicalNote", () => {
             "normalizes $input correctly",
             ({ input, normalized }) => {
                 const note = MusicalNote.parse(input);
-                expect(note.toString()).toBe(input);
-                expect(note.toString(false)).toBe(input);
-                expect(note.toString(true)).toBe(normalized);
+                expect(note.toString()).toEqual(input);
+                expect(note.toString(false)).toEqual(input);
+                expect(note.toString(true)).toEqual(normalized);
             }
         );
     });
@@ -135,13 +135,13 @@ describe("ChordNotation", () => {
             ({ input, note, modifier, bass, noteType }) => {
                 const chord = ChordNotation.parse(input);
                 
-                expect(chord.note.toString()).toBe(note);
-                expect(chord.note.noteType).toBe(noteType);
-                expect(chord.modifier).toBe(modifier);
-                expect(chord.bass?.toString()).toBe(bass);
+                expect(chord.note.toString()).toEqual(note);
+                expect(chord.note.noteType).toEqual(noteType);
+                expect(chord.modifier).toEqual(modifier);
+                expect(chord.bass?.toString()).toEqual(bass);
                 
                 // round-trip test
-                expect(chord.toString()).toBe(input);
+                expect(chord.toString()).toEqual(input);
             }
         );
 
@@ -186,9 +186,9 @@ describe("ChordNotation", () => {
             "normalizes $input correctly",
             ({ input, normalized }) => {
                 const chord = ChordNotation.parse(input);
-                expect(chord.toString()).toBe(input);
-                expect(chord.toString(false)).toBe(input);
-                expect(chord.toString(true)).toBe(normalized);
+                expect(chord.toString()).toEqual(input);
+                expect(chord.toString(false)).toEqual(input);
+                expect(chord.toString(true)).toEqual(normalized);
             }
         );
 
@@ -210,7 +210,7 @@ describe("ChordNotation", () => {
             "exposes correct quality property for $input",
             ({ input, expectedQuality }) => {
                 const chord = ChordNotation.parse(input);
-                expect(chord.quality).toBe(expectedQuality);
+                expect(chord.quality).toEqual(expectedQuality);
             }
         );
     });
@@ -262,14 +262,14 @@ describe("Annotation", () => {
         const original = "[*Basic Annotation]";
 
         const annotation = Annotation.parse(original);
-        expect(annotation.content).toBe("Basic Annotation");
+        expect(annotation.content).toEqual("Basic Annotation");
 
         const roundTrip = annotation.toString();
-        expect(roundTrip).toBe(original);
+        expect(roundTrip).toEqual(original);
 
         // parse again to ensure round-trip compatibility
         const takeTwo = Annotation.parse(roundTrip);
-        expect(takeTwo.content).toBe(annotation.content);
+        expect(takeTwo.content).toEqual(annotation.content);
     });
 
     describe("validation", () => {
@@ -300,8 +300,8 @@ describe("TextSegment", () => {
     it("stores and stringifies plain text", () => {
         const text = "Just some lyrics";
         const segment = new TextSegment(text);
-        expect(segment.content).toBe(text);
-        expect(segment.toString()).toBe(text);
+        expect(segment.content).toEqual(text);
+        expect(segment.toString()).toEqual(text);
     });
 });
 
@@ -319,14 +319,14 @@ describe("CommentLine", () => {
             "parses $input correctly",
             ({ input, content, output }) => {
                 const comment = CommentLine.parse(input);
-                expect(comment.content).toBe(content);
+                expect(comment.content).toEqual(content);
 
                 const roundTrip = comment.toString();
-                expect(roundTrip).toBe(output);
+                expect(roundTrip).toEqual(output);
 
                 // parse again to ensure round-trip compatibility
                 const takeTwo = CommentLine.parse(roundTrip);
-                expect(takeTwo.content).toBe(comment.content);
+                expect(takeTwo.content).toEqual(comment.content);
             }
         );
     });
@@ -369,11 +369,11 @@ describe("EmptyLine", () => {
                 const emptyLine = EmptyLine.parse(input);
 
                 const roundTrip = emptyLine.toString();
-                expect(roundTrip).toBe("");
+                expect(roundTrip).toEqual("");
 
                 // parse again to ensure round-trip compatibility
                 const takeTwo = EmptyLine.parse(roundTrip);
-                expect(takeTwo.toString()).toBe(emptyLine.toString());
+                expect(takeTwo.toString()).toEqual(emptyLine.toString());
             }
         );
 
@@ -424,14 +424,14 @@ describe("TextLine", () => {
             "parses '$input' correctly",
             ({ input }) => {
                 const textLine = TextLine.parse(input);
-                expect(textLine.content).toBe(input);
+                expect(textLine.content).toEqual(input);
 
                 const roundTrip = textLine.toString();
-                expect(roundTrip).toBe(input);
+                expect(roundTrip).toEqual(input);
 
                 // parse again to ensure round-trip compatibility
                 const takeTwo = TextLine.parse(roundTrip);
-                expect(takeTwo.content).toBe(textLine.content);
+                expect(takeTwo.content).toEqual(textLine.content);
             }
         );
     });
@@ -563,25 +563,25 @@ describe("ChoproFile", () => {
                     expect(file.blocks[1].toString()).toContain("[D]wheels on the bus");
 
                     expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toBe("");
+                    expect(file.blocks[2].toString()).toEqual("");
 
                     expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
                     expect(file.blocks[3].toString()).toContain("[D]wipers on the bus");
 
                     expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[4].toString()).toBe("");
+                    expect(file.blocks[4].toString()).toEqual("");
 
                     expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
                     expect(file.blocks[5].toString()).toContain("[D]horn on the bus");
 
                     expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[6].toString()).toBe("");
+                    expect(file.blocks[6].toString()).toEqual("");
 
                     expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
                     expect(file.blocks[7].toString()).toContain("[D]doors on the bus");
 
                     expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[8].toString()).toBe("");
+                    expect(file.blocks[8].toString()).toEqual("");
                 }
             },
             {
@@ -622,7 +622,7 @@ describe("ChoproFile", () => {
                     expect(file.blocks[7].toString()).toContain("When [D]we've been there");
 
                     expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[8].toString()).toBe("");
+                    expect(file.blocks[8].toString()).toEqual("");
                 }
             },
             {
@@ -634,10 +634,10 @@ describe("ChoproFile", () => {
                     expect(file.blocks[0].toString()).toContain("# Goofy");
 
                     expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[1].toString()).toBe("```chopro\n```");
+                    expect(file.blocks[1].toString()).toEqual("```chopro\n```");
 
                     expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toBe("");
+                    expect(file.blocks[2].toString()).toEqual("");
                 }
             },
             {
@@ -701,7 +701,7 @@ describe("ChoproFile", () => {
                     expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
 
                     expect(file.blocks[18]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[18].toString()).toBe("");
+                    expect(file.blocks[18].toString()).toEqual("");
                 }
             }
         ];

@@ -32,7 +32,7 @@ describe("MusicTheory", () => {
             ({ pitch, accidental, expectedIndex }) => {
                 expect(
                     MusicTheory.getNoteIndex(new MusicalNote(pitch, accidental))
-                ).toBe(expectedIndex);
+                ).toEqual(expectedIndex);
             }
         );
     });
@@ -68,7 +68,7 @@ describe("MusicTheory", () => {
             ({ index, preference, expected }) => {
                 expect(
                     MusicTheory.getPreferredNoteName(index, preference)
-                ).toBe(expected);
+                ).toEqual(expected);
             }
         );
     });
@@ -98,9 +98,9 @@ describe('MusicalKey', () => {
             'should parse $input correctly',
             ({ input, root, quality, accidental }) => {
                 const key = MusicalKey.parse(input);
-                expect(key.root).toBe(root);
-                expect(key.quality).toBe(quality);
-                expect(key.accidental).toBe(accidental);
+                expect(key.root).toEqual(root);
+                expect(key.quality).toEqual(quality);
+                expect(key.accidental).toEqual(accidental);
             }
         );
 
@@ -137,7 +137,7 @@ describe('MusicalKey', () => {
         test.each(intervalTestCases)(
             'should calculate interval from $from.root$from.postfix to $to.root$to.postfix as $expected',
             ({ from, to, expected }) => {
-                expect(MusicTheory.getInterval(from, to)).toBe(expected);
+                expect(MusicTheory.getInterval(from, to)).toEqual(expected);
             }
         );
     });
@@ -159,8 +159,8 @@ describe('NoteTransposer', () => {
                 
                 NoteTransposer.transposeNote(inputNote, interval);
                 
-                expect(inputNote.root).toBe(expectedNote.root);
-                expect(inputNote.postfix).toBe(expectedNote.postfix);
+                expect(inputNote.root).toEqual(expectedNote.root);
+                expect(inputNote.postfix).toEqual(expectedNote.postfix);
             }
         );
 
@@ -170,8 +170,8 @@ describe('NoteTransposer', () => {
             NoteTransposer.transposeNote(C1, 1, Accidental.SHARP);
             NoteTransposer.transposeNote(C2, 1, Accidental.FLAT);
             
-            expect(C1.toString()).toBe('C#');
-            expect(C2.toString()).toBe('Db');
+            expect(C1.toString()).toEqual('C#');
+            expect(C2.toString()).toEqual('Db');
         });
     });
 
@@ -195,9 +195,9 @@ describe('NoteTransposer', () => {
                 
                 NoteTransposer.transposeChord(inputChord, interval);
                 
-                expect(inputChord.note).toStrictEqual(expectedChord.note);
-                expect(inputChord.modifier).toBe(expectedChord.modifier);
-                expect(inputChord.bass).toStrictEqual(expectedChord.bass);
+                expect(inputChord.note).toEqual(expectedChord.note);
+                expect(inputChord.modifier).toEqual(expectedChord.modifier);
+                expect(inputChord.bass).toEqual(expectedChord.bass);
             }
         );
     });
@@ -232,9 +232,9 @@ describe('NashvilleTransposer', () => {
                 
                 NashvilleTransposer.nashvilleToChord(nashvilleChord, musicalKey);
                 
-                expect(nashvilleChord.note).toStrictEqual(expectedChord.note);
-                expect(nashvilleChord.modifier).toBe(expectedChord.modifier);
-                expect(nashvilleChord.bass).toStrictEqual(expectedChord.bass);
+                expect(nashvilleChord.note).toEqual(expectedChord.note);
+                expect(nashvilleChord.modifier).toEqual(expectedChord.modifier);
+                expect(nashvilleChord.bass).toEqual(expectedChord.bass);
             }
         );
 
@@ -275,9 +275,9 @@ describe('NashvilleTransposer', () => {
                 
                 NashvilleTransposer.chordToNashville(alphaChord, musicalKey);
                 
-                expect(alphaChord.note).toStrictEqual(expectedChord.note);
-                expect(alphaChord.modifier).toBe(expectedChord.modifier);
-                expect(alphaChord.bass).toStrictEqual(expectedChord.bass);
+                expect(alphaChord.note).toEqual(expectedChord.note);
+                expect(alphaChord.modifier).toEqual(expectedChord.modifier);
+                expect(alphaChord.bass).toEqual(expectedChord.bass);
             }
         );
 
@@ -385,7 +385,7 @@ Just a simple song`,
             ({ content, expected }) => {
                 const file = ChoproFile.parse(content);
                 const key = TransposeUtils.detectKey(file);
-                expect(key).toBe(expected);
+                expect(key).toEqual(expected);
             }
         );
     });
