@@ -548,181 +548,204 @@ describe("SegmentedLine", () => {
 });
 
 describe("ChoproFile", () => {
+    const path = require('path');
+
+    const loadTestFile = (filename: string): ChoproFile => {
+        const filePath = path.resolve(__dirname, filename);
+        return ChoproFile.load(filePath);
+    };
+
+    const verifyRoundTripSerialization = (file: ChoproFile): void => {
+        const roundTrip = file.toString();
+        const reparsed = ChoproFile.parse(roundTrip);
+        expect(reparsed).toEqual(file);
+    };
+
     describe("content block parsing & serialization", () => {
-        const markdownFileTestCases = [
-            {
-                filename: "minimal.md",
-                verifyBlocks: (file: ChoproFile) => {
-                    expect(file.frontmatter).toBeUndefined();
-                    expect(file.blocks).toHaveLength(9);
+        describe("minimal.md", () => {
+            let file: ChoproFile;
 
-                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[0].toString()).toContain("# Wheels on the Bus");
+            beforeAll(() => {
+                file = loadTestFile("minimal.md");
+            });
 
-                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[1].toString()).toContain("[D]wheels on the bus");
+            afterAll(() => {
+                verifyRoundTripSerialization(file);
+            });
 
-                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toEqual("");
+            it("parses file structure correctly", () => {
+                expect(file.frontmatter).toBeUndefined();
+                expect(file.blocks).toHaveLength(9);
+            });
 
-                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[3].toString()).toContain("[D]wipers on the bus");
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+            });
 
-                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[4].toString()).toEqual("");
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Wheels on the Bus");
+                expect(file.blocks[1].toString()).toContain("[D]wheels on the bus");
+                expect(file.blocks[2].toString()).toEqual("");
+                expect(file.blocks[3].toString()).toContain("[D]wipers on the bus");
+                expect(file.blocks[4].toString()).toEqual("");
+                expect(file.blocks[5].toString()).toContain("[D]horn on the bus");
+                expect(file.blocks[6].toString()).toEqual("");
+                expect(file.blocks[7].toString()).toContain("[D]doors on the bus");
+                expect(file.blocks[8].toString()).toEqual("");
+            });
+        });
 
-                    expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[5].toString()).toContain("[D]horn on the bus");
+        describe("standard.md", () => {
+            let file: ChoproFile;
 
-                    expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[6].toString()).toEqual("");
+            beforeAll(() => {
+                file = loadTestFile("standard.md");
+            });
 
-                    expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[7].toString()).toContain("[D]doors on the bus");
+            afterAll(() => {
+                verifyRoundTripSerialization(file);
+            });
 
-                    expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[8].toString()).toEqual("");
-                }
-            },
-            {
-                filename: "standard.md",
-                verifyBlocks: (file: ChoproFile) => {
-                    expect(file.frontmatter).toBeDefined();
-                    expect(file.frontmatter?.get("title")).toEqual("Amazing Grace (Traditional)");
-                    expect(file.frontmatter?.get("artist")).toEqual("John Newton");
-                    expect(file.frontmatter?.get("time")).toEqual("3/4");
-                    expect(file.frontmatter?.get("key")).toEqual("C");
-                    expect(file.frontmatter?.get("tempo")).toEqual(80);
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(9);
+                expect(file.frontmatter).toBeDefined();
+            });
 
-                    expect(file.blocks).toHaveLength(9);
+            it("parses frontmatter correctly", () => {
+                expect(file.frontmatter?.get("title")).toEqual("Amazing Grace (Traditional)");
+                expect(file.frontmatter?.get("artist")).toEqual("John Newton");
+                expect(file.frontmatter?.get("time")).toEqual("3/4");
+                expect(file.frontmatter?.get("key")).toEqual("C");
+                expect(file.frontmatter?.get("tempo")).toEqual(80);
+            });
 
-                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[0].toString()).toContain("# Amazing Grace");
-                    expect(file.blocks[0].toString()).toContain("## Verse 1");
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+            });
 
-                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[1].toString()).toContain("[C]Amazing grace, how [F]sweet the [C]sound");
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Amazing Grace");
+                expect(file.blocks[0].toString()).toContain("## Verse 1");
+                expect(file.blocks[1].toString()).toContain("[C]Amazing grace, how [F]sweet the [C]sound");
+                expect(file.blocks[2].toString()).toContain("## Verse 2");
+                expect(file.blocks[3].toString()).toContain("'Twas [C]grace that taught my [F]heart");
+                expect(file.blocks[4].toString()).toContain("## Verse 3");
+                expect(file.blocks[5].toString()).toContain("Through [C]many dangers");
+                expect(file.blocks[6].toString()).toContain("## Verse 4");
+                expect(file.blocks[7].toString()).toContain("When [D]we've been there");
+                expect(file.blocks[8].toString()).toEqual("");
+            });
+        });
 
-                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toContain("## Verse 2");
+        describe("goofy-chopro.md", () => {
+            let file: ChoproFile;
 
-                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[3].toString()).toContain("'Twas [C]grace that taught my [F]heart");
+            beforeAll(() => {
+                file = loadTestFile("goofy-chopro.md");
+            });
 
-                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[4].toString()).toContain("## Verse 3");
+            afterAll(() => {
+                verifyRoundTripSerialization(file);
+            });
 
-                    expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[5].toString()).toContain("Through [C]many dangers");
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(3);
+            });
 
-                    expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[6].toString()).toContain("## Verse 4");
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            });
 
-                    expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[7].toString()).toContain("When [D]we've been there");
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Goofy");
+                expect(file.blocks[1].toString()).toEqual("```chopro\n```");
+                expect(file.blocks[2].toString()).toEqual("");
+            });
+        });
 
-                    expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[8].toString()).toEqual("");
-                }
-            },
-            {
-                filename: "goofy-chopro.md",
-                verifyBlocks: (file: ChoproFile) => {
-                    expect(file.blocks).toHaveLength(3);
+        describe("nashville.md", () => {
+            let file: ChoproFile;
 
-                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[0].toString()).toContain("# Goofy");
+            beforeAll(() => {
+                file = loadTestFile("nashville.md");
+            });
 
-                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[1].toString()).toEqual("```chopro\n```");
+            afterAll(() => {
+                verifyRoundTripSerialization(file);
+            });
 
-                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toEqual("");
-                }
-            },
-            {
-                filename: "nashville.md",
-                verifyBlocks: (file: ChoproFile) => {
-                    expect(file.frontmatter).toBeUndefined();
-                    expect(file.blocks).toHaveLength(19);
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(19);
+                expect(file.frontmatter).toBeUndefined();
+            });
 
-                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[0].toString()).toContain("# House of the Rising Sun");
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[9]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[10]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[11]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[12]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[13]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[14]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[15]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[16]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[17]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[18]).toBeInstanceOf(MarkdownBlock);
+            });
 
-                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[1].toString()).toContain("[1m] [3] [4] [6]");
+            it("parses header and intro content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# House of the Rising Sun");
+                expect(file.blocks[1].toString()).toContain("[1m] [3] [4] [6]");
+            });
 
-                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[2].toString()).toContain("## Verse 1");
+            it("parses verse sections correctly", () => {
+                expect(file.blocks[2].toString()).toContain("## Verse 1");
+                expect(file.blocks[3].toString()).toContain("There [1m]is a house in [3]New Or[4]leans");
+                expect(file.blocks[4].toString()).toContain("## Turn");
+                expect(file.blocks[5].toString()).toContain("[3] [4] [6] [1m] [5] [1m] [5]");
+                expect(file.blocks[6].toString()).toContain("## Verse 2");
+                expect(file.blocks[7].toString()).toContain("My [1m]mother was a [3]tailor");
+                expect(file.blocks[8].toString()).toContain("## Verse 3");
+                expect(file.blocks[9].toString()).toContain("Now the [1m]only thing a [3]gambler");
+                expect(file.blocks[10].toString()).toContain("## Verse 4");
+                expect(file.blocks[11].toString()).toContain("Oh [1m]mother, tell your [3]children");
+                expect(file.blocks[12].toString()).toContain("## Verse 5");
+                expect(file.blocks[13].toString()).toContain("Well, I [1m]got one foot on");
+            });
 
-                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[3].toString()).toContain("There [1m]is a house in [3]New Or[4]leans");
-
-                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[4].toString()).toContain("## Turn");
-
-                    expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[5].toString()).toContain("[3] [4] [6] [1m] [5] [1m] [5]");
-
-                    expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[6].toString()).toContain("## Verse 2");
-
-                    expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[7].toString()).toContain("My [1m]mother was a [3]tailor");
-
-                    expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[8].toString()).toContain("## Verse 3");
-
-                    expect(file.blocks[9]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[9].toString()).toContain("Now the [1m]only thing a [3]gambler");
-
-                    expect(file.blocks[10]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[10].toString()).toContain("## Verse 4");
-
-                    expect(file.blocks[11]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[11].toString()).toContain("Oh [1m]mother, tell your [3]children");
-
-                    expect(file.blocks[12]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[12].toString()).toContain("## Verse 5");
-
-                    expect(file.blocks[13]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[13].toString()).toContain("Well, I [1m]got one foot on");
-
-                    expect(file.blocks[14]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[14].toString()).toContain("## Outro");
-
-                    expect(file.blocks[15]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[15].toString()).toContain("there [1m]is a house ");
-
-                    expect(file.blocks[16]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[16].toString()).toContain("## Ending");
-
-                    expect(file.blocks[17]).toBeInstanceOf(ChoproBlock);
-                    expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
-
-                    expect(file.blocks[18]).toBeInstanceOf(MarkdownBlock);
-                    expect(file.blocks[18].toString()).toEqual("");
-                }
-            }
-        ];
-
-        test.each(markdownFileTestCases)(
-            "parses $filename correctly",
-            ({ filename, verifyBlocks }) => {
-                const path = require('path');
-                const filePath = path.resolve(__dirname, filename);
-
-                const chopro = ChoproFile.load(filePath);
-                
-                if (verifyBlocks) {
-                    verifyBlocks(chopro);
-                }
-
-                const roundTrip = chopro.toString();
-                const takeTwo = ChoproFile.parse(roundTrip);
-
-                expect(takeTwo).toEqual(chopro);
-            }
-        );
+            it("parses outro and ending correctly", () => {
+                expect(file.blocks[14].toString()).toContain("## Outro");
+                expect(file.blocks[15].toString()).toContain("there [1m]is a house ");
+                expect(file.blocks[16].toString()).toContain("## Ending");
+                expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
+                expect(file.blocks[18].toString()).toEqual("");
+            });
+        });
     });
 });
