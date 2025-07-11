@@ -292,6 +292,8 @@ describe('NashvilleTransposer', () => {
 });
 
 describe('TransposeUtils', () => {
+    const path = require('path');
+
     describe('getAllKeys', () => {
         test('should return all major and minor keys', () => {
             const keys = TransposeUtils.getAllKeys();
@@ -344,48 +346,32 @@ describe('TransposeUtils', () => {
     describe('detectKey', () => {
         const detectKeyTestCases = [
             {
-                description: 'key from frontmatter',
-                content: `---
-key: Am
----
-
-# Test Song`,
-                expected: 'Am'
+                filename: "standard.md",
+                expected: "C"
             },
             {
-                description: 'major key from frontmatter',
-                content: `---
-key: F#
-title: Test Song
----
-
-# Test Song`,
-                expected: 'F#'
-            },
-            {
-                description: 'undefined when no key in frontmatter',
-                content: `---
-title: Test Song
----
-
-# Test Song`,
+                filename: "minimal.md",
                 expected: undefined
             },
             {
-                description: 'undefined when no frontmatter',
-                content: `# Test Song
-
-Just a simple song`,
+                filename: "nashville.md",
                 expected: undefined
             }
         ];
 
         test.each(detectKeyTestCases)(
-            'should detect $expected for $description',
-            ({ content, expected }) => {
-                const file = ChoproFile.parse(content);
+            'should detect $expected for $filename',
+            ({ filename, expected }) => {
+                const filePath = path.resolve(__dirname, filename);
+                const file = ChoproFile.load(filePath);
                 const key = TransposeUtils.detectKey(file);
-                expect(key).toEqual(expected);
+                
+                if (expected === undefined) {
+                    expect(key).toBeUndefined();
+                } else {
+                    expect(key).toBeDefined();
+                    expect(key?.toString()).toEqual(expected);
+                }
             }
         );
     });

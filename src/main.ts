@@ -77,7 +77,8 @@ export default class ChoproPlugin extends Plugin {
 
         const content = await this.app.vault.read(file);
         const song = ChoproFile.parse(content);
-        const currentKey = TransposeUtils.detectKey(song) || "C";
+        const detectedKey = TransposeUtils.detectKey(song);
+        const currentKey = detectedKey ? detectedKey.toString() : "C";
 
         const modal = new TransposeModal(
             this.app,

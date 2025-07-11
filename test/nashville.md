@@ -1,13 +1,17 @@
-# House of the Rising Sun
+---
+title: House of the Rising Sun
+artist: The Animals
+tempo: 117
+---
 
-## Intro
+# Intro
 
 ```chopro
 [1m] [3] [4] [6]
 [1m] [5] [1m] [5]
 ```
 
-## Verse 1
+# Verse 1
 
 ```chopro
 There [1m]is a house in [3]New Or[4]leans [6]
@@ -16,13 +20,13 @@ And it's [1m]been the [3]ruin of [4]many a poor [6]boy
 And [1m]God, I [5]know, I'm [1m]one
 ```
 
-## Turn
+# Turn
 
 ```chopro
 [3] [4] [6] [1m] [5] [1m] [5]
 ```
 
-## Verse 2
+# Verse 2
 
 ```chopro
 My [1m]mother was a [3]tailor [4] [6]
@@ -33,7 +37,7 @@ Down in [1m]New Or[5]leans [1m]
 (Turn)
 ```
 
-## Verse 3
+# Verse 3
 
 ```chopro
 Now the [1m]only thing a [3]gambler [4]needs [6]
@@ -44,7 +48,7 @@ Is when [1m]he's all [5]drunk [1m]
 (Turn)
 ```
 
-## Verse 4
+# Verse 4
 
 ```chopro
 Oh [1m]mother, tell your [3]children [4] [6]
@@ -55,7 +59,7 @@ In the [1m]House of [5]Rising [1m]Sun
 (Turn)
 ```
 
-## Verse 5
+# Verse 5
 
 ```chopro
 Well, I [1m]got one foot on the [3]platform [4] [6]
@@ -66,7 +70,7 @@ To wear that [1m]ball [5]and [1m]chain
 (Turn)
 ```
 
-## Outro
+# Outro
 
 ```chopro
 Well, there [1m]is a house in [3]New Or[4]leans [6]
@@ -75,7 +79,7 @@ And it's [1m]been the [3]ruin of [4]many a poor [6]boy
 And [1m]God, I [5]know, I'm [1m]one
 ```
 
-## Ending
+# Ending
 
 ```chopro
 [3] [4] [6] [1m] [5] [1m]

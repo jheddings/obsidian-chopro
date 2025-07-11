@@ -586,9 +586,12 @@ export class TransposeUtils {
     /**
      * Detect the key from a ChoPro file.
      */
-    static detectKey(file: ChoproFile): string | undefined {
+    static detectKey(file: ChoproFile): MusicalKey | undefined {
         if (file.frontmatter?.has("key")) {
-            return file.frontmatter.get("key");
+            const keyString = file.frontmatter.get("key");
+            if (keyString && this.isValidKey(keyString)) {
+                return MusicalKey.parse(keyString);
+            }
         }
 
         // TODO: Implement key detection algorithm based on chord analysis
