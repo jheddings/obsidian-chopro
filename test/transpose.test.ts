@@ -347,7 +347,7 @@ describe('TransposeUtils', () => {
         const detectKeyTestCases = [
             {
                 filename: "standard.md",
-                expected: "C"
+                expected: MusicalKey.parse('C')
             },
             {
                 filename: "minimal.md",
@@ -366,12 +366,7 @@ describe('TransposeUtils', () => {
                 const file = ChoproFile.load(filePath);
                 const key = TransposeUtils.detectKey(file);
                 
-                if (expected === undefined) {
-                    expect(key).toBeUndefined();
-                } else {
-                    expect(key).toBeDefined();
-                    expect(key?.toString()).toEqual(expected);
-                }
+                expect(key).toEqual(expected);
             }
         );
     });

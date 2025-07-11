@@ -623,8 +623,9 @@ describe("ChoproFile", () => {
                 expect(file.frontmatter?.get("title")).toEqual("Amazing Grace (Traditional)");
                 expect(file.frontmatter?.get("artist")).toEqual("John Newton");
                 expect(file.frontmatter?.get("time")).toEqual("3/4");
-                expect(file.frontmatter?.get("key")).toEqual("C");
                 expect(file.frontmatter?.get("tempo")).toEqual(80);
+
+                expect(file.key).toEqual("C");
             });
 
             it("identifies block types correctly", () => {
