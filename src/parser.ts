@@ -363,8 +363,34 @@ export abstract class SegmentedLine extends ChoproLine {
         super();
     }
 
+    /**
+     * Get all chord notation segments from this line.
+     */
+    get chords(): ChordNotation[] {
+        return this.segments.filter(segment => segment instanceof ChordNotation) as ChordNotation[];
+    }
+
+    /**
+     * Get all text segments from this line.
+     */
+    get lyrics(): TextSegment[] {
+        return this.segments.filter(segment => segment instanceof TextSegment) as TextSegment[];
+    }
+
     static test(line: string): boolean {
         return SegmentedLine.INLINE_MARKER_PATTERN.test(line);
+    }
+
+    static parse(line: string): SegmentedLine {
+        if (ChordLyricsLine.test(line)) {
+            return ChordLyricsLine.parse(line);
+        }
+
+        if (InstrumentalLine.test(line)) {
+            return InstrumentalLine.parse(line);
+        }
+
+        throw new Error('invalid line format for SegmentedLine');
     }
 
     protected static parseLineSegments(line: string): LineSegment[] {

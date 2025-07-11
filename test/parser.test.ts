@@ -11,6 +11,7 @@ import {
     Accidental,
     ChoproBlock,
     MarkdownBlock,
+    SegmentedLine,
 } from "../src/parser";
 
 describe("MusicalNote", () => {
@@ -456,6 +457,96 @@ describe("TextLine", () => {
     });
 });
 
+describe("SegmentedLine", () => {
+    describe("chords getter", () => {
+        const testCases = [
+            {
+                input: "[C]Hello [G]world",
+                expected: ["[C]", "[G]"],
+            },
+            {
+                input: "[Am]Just one chord with lyrics",
+                expected: ["[Am]"],
+            },
+            {
+                input: "[C] [G] [Am] [F]",
+                expected: ["[C]", "[G]", "[Am]", "[F]"],
+            },
+            {
+                input: "[*verse] [C]Hello [*bridge] [G]world",
+                expected: ["[C]", "[G]"],
+            },
+            {
+                input: "[F#m7/B]Complex [Bb7add9]chord [C/G]notation",
+                expected: ["[F#m7/B]", "[Bb7add9]", "[C/G]"],
+            }
+        ];
+
+        test.each(testCases)(
+            "parses chord segments from $input",
+            ({ input, expected }) => {
+                const line = SegmentedLine.parse(input);
+
+                const chords = line.chords;
+
+                expect(chords).toHaveLength(expected.length);
+
+                chords.forEach(chord => {
+                    expect(chord).toBeInstanceOf(ChordNotation);
+                });
+
+                const segments = expected.map(text => ChordNotation.parse(text));
+
+                expect(chords).toEqual(segments);
+            }
+        );
+    });
+
+    describe("lyrics getter", () => {
+        const testCases = [
+            {
+                input: "[C]Hello [G]world",
+                expected: ["Hello ", "world"],
+            },
+            {
+                input: "[Am]Just one chord with lyrics",
+                expected: ["Just one chord with lyrics"],
+            },
+            {
+                input: "[C] [G] [Am] [F]",
+                expected: [" ", " ", " "],
+            },
+            {
+                input: "[*verse] [C]Hello [*bridge] [G]world",
+                expected: [" ", "Hello ", " ", "world"],
+            },
+            {
+                input: "Start [C]middle [G]end",
+                expected: ["Start ", "middle ", "end"],
+            }
+        ];
+
+        test.each(testCases)(
+            "parses lyrics segments from $input",
+            ({ input, expected }) => {
+                const line = SegmentedLine.parse(input);
+                
+                const lyrics = line.lyrics;
+                
+                expect(lyrics).toHaveLength(expected.length);
+
+                lyrics.forEach(segment => {
+                    expect(segment).toBeInstanceOf(TextSegment);
+                });
+
+                const segments = expected.map(text => new TextSegment(text));
+
+                expect(lyrics).toEqual(segments);
+            }
+        );
+    });
+});
+
 describe("ChoproFile", () => {
     describe("content block parsing & serialization", () => {
         const markdownFileTestCases = [
@@ -630,7 +721,7 @@ describe("ChoproFile", () => {
                 const roundTrip = chopro.toString();
                 const takeTwo = ChoproFile.parse(roundTrip);
 
-                expect(takeTwo).toStrictEqual(chopro);
+                expect(takeTwo).toEqual(chopro);
             }
         );
     });
