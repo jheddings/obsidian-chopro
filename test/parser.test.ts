@@ -549,16 +549,24 @@ describe("SegmentedLine", () => {
 
 describe("ChoproFile", () => {
     const path = require('path');
+    const fs = require('fs');
 
-    const loadTestFile = (filename: string): ChoproFile => {
+    /**
+     * Helper function to load a test file, parse it, and verify round-trip serialization.
+     */
+    const prepareTestFile = (filename: string): ChoproFile => {
         const filePath = path.resolve(__dirname, filename);
-        return ChoproFile.load(filePath);
-    };
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
 
-    const verifyRoundTripSerialization = (file: ChoproFile): void => {
+        const file = ChoproFile.load(filePath);
+
         const roundTrip = file.toString();
+        expect(roundTrip).toEqual(fileContent);
+
         const reparsed = ChoproFile.parse(roundTrip);
         expect(reparsed).toEqual(file);
+
+        return file;
     };
 
     describe("content block parsing & serialization", () => {
@@ -566,11 +574,7 @@ describe("ChoproFile", () => {
             let file: ChoproFile;
 
             beforeAll(() => {
-                file = loadTestFile("minimal.md");
-            });
-
-            afterAll(() => {
-                verifyRoundTripSerialization(file);
+                file = prepareTestFile("minimal.md");
             });
 
             it("parses file structure correctly", () => {
@@ -607,11 +611,7 @@ describe("ChoproFile", () => {
             let file: ChoproFile;
 
             beforeAll(() => {
-                file = loadTestFile("standard.md");
-            });
-
-            afterAll(() => {
-                verifyRoundTripSerialization(file);
+                file = prepareTestFile("standard.md");
             });
 
             it("parses file structure correctly", () => {
@@ -657,11 +657,7 @@ describe("ChoproFile", () => {
             let file: ChoproFile;
 
             beforeAll(() => {
-                file = loadTestFile("goofy-chopro.md");
-            });
-
-            afterAll(() => {
-                verifyRoundTripSerialization(file);
+                file = prepareTestFile("goofy-chopro.md");
             });
 
             it("parses file structure correctly", () => {
@@ -685,11 +681,7 @@ describe("ChoproFile", () => {
             let file: ChoproFile;
 
             beforeAll(() => {
-                file = loadTestFile("nashville.md");
-            });
-
-            afterAll(() => {
-                verifyRoundTripSerialization(file);
+                file = prepareTestFile("nashville.md");
             });
 
             it("parses file structure correctly", () => {
