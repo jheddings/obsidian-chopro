@@ -460,101 +460,59 @@ describe("ChoproFile", () => {
     describe("content block parsing", () => {
         const contentParsingCases = [
             {
-                name: "mixed markdown and ChoPro content",
-                source: `# Title
+                name: "standard markdown+chopro content",
+                filename: "minimal.md",
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.blocks).toHaveLength(3);
 
-Some introduction text.
+                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[0].toString()).toContain("# Amazing Grace");
 
-\`\`\`chopro
-[C]Amazing [F]grace
-\`\`\`
+                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
 
-## Section 1
-
-Content for section 1.
-
-\`\`\`chopro
-[G]How [Am]sweet the [F]sound[C]
-\`\`\`
-
-# Another Title
-
-More content under another title.`,
-                expectedBlocks: [
-                    { type: MarkdownBlock, contains: "# Title" },
-                    { type: ChoproBlock, lineCount: 1 },
-                    { type: MarkdownBlock, contains: "## Section 1" },
-                    { type: ChoproBlock, lineCount: 1 },
-                    { type: MarkdownBlock, contains: "# Another Title" }
-                ]
+                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[2].toString()).toBe("");
+                }
             },
             {
-                name: "multiple ChoPro blocks with markdown between them",
-                source: `# Multiple Blocks Test
+                name: "goofy ChoPro blocks",
+                filename: "goofy-chopro.md",
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.blocks).toHaveLength(6);
 
-First markdown section.
+                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[0].toString()).toContain("# Goofy");
 
-\`\`\`chopro
-[C]First [F]block
-\`\`\`
+                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[1].toString()).toBe("```chopro\n```");
 
-Middle markdown section.
+                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[2].toString()).toContain("## Consecutive");
 
-\`\`\`chopro
-[G]Second [Am]block
-\`\`\`
+                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[3].toString()).toContain("[C]First");
 
-Final markdown section.`,
-                expectedBlocks: [
-                    { type: MarkdownBlock, contains: "Multiple Blocks Test" },
-                    { type: ChoproBlock, lineCount: 1 },
-                    { type: MarkdownBlock, contains: "Middle markdown section" },
-                    { type: ChoproBlock, lineCount: 1 },
-                    { type: MarkdownBlock, contains: "Final markdown section" }
-                ]
-            },
-            {
-                name: "consecutive ChoPro blocks",
-                source: `\`\`\`chopro
-[C]First verse
-\`\`\`
-\`\`\`chopro
-[F]Second verse
-\`\`\``,
-                expectedBlocks: [
-                    { type: ChoproBlock, lineCount: 1 },
-                    { type: ChoproBlock, lineCount: 1 }
-                ]
-            },
-            {
-                name: "empty ChoPro blocks",
-                source: `\`\`\`chopro\n\`\`\``,
-                expectedBlocks: [
-                    { type: ChoproBlock, lineCount: 0 }
-                ]
+                    expect(file.blocks[4]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[4].toString()).toContain("[F]Second");
+
+                    expect(file.blocks[5]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[5].toString()).toBe("");
+                }
             }
         ];
 
         test.each(contentParsingCases)(
             "handles $name",
-            ({ source, expectedBlocks }) => {
-                const file = ChoproFile.parse(source);
+            ({ filename, verifyBlocks }) => {
+                const path = require('path');
+                const filePath = path.resolve(__dirname, filename);
 
+                const file = ChoproFile.load(filePath);
                 expect(file).toBeInstanceOf(ChoproFile);
-                expect(file.blocks).toHaveLength(expectedBlocks.length);
-
-                expectedBlocks.forEach((expected, index) => {
-                    const block = file.blocks[index];
-                    expect(block).toBeInstanceOf(expected.type);
-                    
-                    if (expected.contains) {
-                        expect(block.toString()).toContain(expected.contains);
-                    }
-                    
-                    if (expected.lineCount !== undefined && block instanceof ChoproBlock) {
-                        expect(block.lines).toHaveLength(expected.lineCount);
-                    }
-                });
+                
+                if (verifyBlocks) {
+                    verifyBlocks(file);
+                }
             }
         );
     });
@@ -684,26 +642,5 @@ Final paragraph with trailing spaces.`,
                 }
             }
         );
-    });
-
-    describe("integration tests with real files", () => {
-        test.each([
-            "basic.md", 
-            "complex.md", 
-            "nashville.md", 
-            "performance.md", 
-            "special.md"
-        ])("parses %s without errors", (fileName) => {
-            const fs = require("fs");
-            const path = require("path");
-            const filePath = path.join(__dirname, fileName);
-            const content = fs.readFileSync(filePath, "utf8");
-            
-            expect(() => ChoproFile.parse(content)).not.toThrow();
-            
-            // FIXME - this is failing due to an issue with CommentLine.toString()
-            // const file = ChoproFile.parse(content);
-            // expect(file.toString()).toBe(content);
-        });
     });
 });

@@ -474,11 +474,11 @@ export class Frontmatter extends ContentBlock {
     /**
      * Create a Frontmatter block from YAML content.
      */
-    static parse(yamlContent: string): Frontmatter {
+    static parse(content: string): Frontmatter {
         const frontmatter = new Frontmatter();
 
         try {
-            frontmatter.properties = parseYaml(yamlContent) || {};
+            frontmatter.properties = parseYaml(content) || {};
         } catch (error) {
             console.warn('Failed to parse YAML frontmatter:', error);
             frontmatter.properties = {};
@@ -570,8 +570,16 @@ export class ChoproBlock extends ContentBlock {
      * Convert the block to its normalized ChoPro representation.
      */
     toString(): string {
-        const content = this.lines.map(line => line.toString()).join('\n');
-        return '```chopro\n' + content + '\n```';
+        let content = '```chopro\n';
+
+        if (this.lines.length > 0) {
+            content += this.lines.map(line => line.toString()).join('\n');
+            content += '\n```';
+        } else {
+            content += '```';
+        }
+
+        return content;
     }
 
 }
@@ -635,6 +643,15 @@ export class ChoproFile {
         const blocks = ChoproFile.parseContentBlocks(remainingContent);
 
         return new ChoproFile(frontmatter, blocks);
+    }
+
+    /**
+     * Load a ChoPro file from a given filename.
+     */
+    static load(path: string): ChoproFile {
+        const fs = require('fs');
+        const fileContent = fs.readFileSync(path, 'utf-8');
+        return ChoproFile.parse(fileContent);
     }
 
     /**

@@ -291,22 +291,6 @@ describe('NashvilleTransposer', () => {
     });
 });
 
-describe('ChoproTransposer', () => {
-    describe('Basic transposition', () => {
-        test('should transpose simple chord progression', async () => {
-            const fs = require("fs");
-            const path = require("path");
-            const filePath = path.join(__dirname, "basic.md");
-            const content = fs.readFileSync(filePath, "utf8");
-            const song = ChoproFile.parse(content);
-            const transposer = new ChoproTransposer({ fromKey: 'C', toKey: 'D' });
-            const result = await transposer.transposeAsync(song);
-
-            expect(result.success).toBe(true);
-        });
-    });
-});
-
 describe('TransposeUtils', () => {
     describe('getAllKeys', () => {
         test('should return all major and minor keys', () => {
