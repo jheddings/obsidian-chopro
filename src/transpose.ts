@@ -402,9 +402,9 @@ export class ChoproTransposer {
     /**
      * Transpose a complete ChoPro file in place.
      */
-    async transposeFileAsync(file: ChoproFile): Promise<TransposeResult> {
+    async transposeAsync(file: ChoproFile): Promise<TransposeResult> {
         try {
-            this.transposeFile(file);
+            this.transpose(file);
 
             return {
                 success: true,
@@ -425,7 +425,7 @@ export class ChoproTransposer {
     /**
      * Transpose a complete ChoPro file in place.
      */
-    transposeFile(file: ChoproFile): void {
+    transpose(file: ChoproFile): void {
         file.blocks.forEach((block) => this.transposeBlock(block));
         this.transposeFrontmatter(file.frontmatter);
     }

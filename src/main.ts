@@ -89,7 +89,7 @@ export default class ChoproPlugin extends Plugin {
                 });
 
                 try {
-                    transposer.transposeFile(song);
+                    transposer.transpose(song);
                     const transposedContent = song.toString();
                     await this.app.vault.modify(file, transposedContent);
                     new Notice("File transposed successfully");

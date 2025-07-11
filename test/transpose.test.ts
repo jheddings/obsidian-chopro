@@ -300,7 +300,7 @@ describe('ChoproTransposer', () => {
             const content = fs.readFileSync(filePath, "utf8");
             const song = ChoproFile.parse(content);
             const transposer = new ChoproTransposer({ fromKey: 'C', toKey: 'D' });
-            const result = await transposer.transposeFileAsync(song);
+            const result = await transposer.transposeAsync(song);
 
             expect(result.success).toBe(true);
         });
