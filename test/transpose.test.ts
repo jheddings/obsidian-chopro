@@ -102,7 +102,6 @@ describe('KeyInfo', () => {
 
                 const majorKey = key as MajorKeyInfo;
                 expect(majorKey.root).toEqual(root);
-                expect(majorKey.quality).toEqual(KeyQuality.MAJOR);
                 expect(majorKey.accidental).toEqual(accidental);
 
                 // verify major key info properties
@@ -138,7 +137,6 @@ describe('KeyInfo', () => {
 
                 const minorKey = key as MinorKeyInfo;
                 expect(minorKey.root).toEqual(root);
-                expect(minorKey.quality).toEqual(KeyQuality.MINOR);
                 expect(minorKey.accidental).toEqual(accidental);
 
                 // verify minor key info properties

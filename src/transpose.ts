@@ -43,11 +43,7 @@ export interface TransposeResult {
 }
 
 export abstract class KeyInfo {
-    constructor(
-        public root: string,
-        public quality: KeyQuality,
-        public accidental?: Accidental
-    ) {}
+    constructor(public root: string, public accidental?: Accidental) {}
 
     /**
      * Parse a key string (e.g., "C", "Am", "F#m") into a KeyInfo object
@@ -97,11 +93,10 @@ export abstract class KeyInfo {
  * Represents a major key with major scale intervals
  */
 export class MajorKeyInfo extends KeyInfo {
-    // scale intervals (semitone distances)
     public static readonly SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
 
-    constructor(root: string, accidental?: Accidental) {
-        super(root, KeyQuality.MAJOR, accidental);
+    constructor(public root: string, public accidental?: Accidental) {
+        super(root, accidental);
     }
 
     getScaleDegrees(): number[] {
@@ -132,11 +127,10 @@ export class MajorKeyInfo extends KeyInfo {
  * Represents a minor key with natural minor scale intervals
  */
 export class MinorKeyInfo extends KeyInfo {
-    // scale intervals (semitone distances)
     public static readonly SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
 
     constructor(root: string, accidental?: Accidental) {
-        super(root, KeyQuality.MINOR, accidental);
+        super(root, accidental);
     }
 
     getScaleDegrees(): number[] {
@@ -529,6 +523,8 @@ export class ChoproTransposer {
         if (segment instanceof ChordNotation) {
             this.transposeChordSegment(segment);
         }
+
+        // other segment types (e.g., TextSegment) are not transposed
     }
 
     /**
@@ -558,16 +554,23 @@ export class ChoproTransposer {
         const sourceKey = KeyInfo.parse(this.options.fromKey);
         const targetKey = KeyInfo.parse(this.options.toKey);
 
-        const interval = MusicTheory.getInterval(
-            MusicalNote.parse(sourceKey.root),
-            MusicalNote.parse(targetKey.root)
-        );
+        // Convert from Alpha to Nashville if needed
+        if (this.options.toKey === "##") {
+            NashvilleTransposer.chordToNashville(chord, sourceKey);
 
-        NoteTransposer.transposeChord(
-            chord,
-            interval,
-            targetKey.accidental
-        );
+        // Transpose from Alpha to Alpha
+        } else {
+            const interval = MusicTheory.getInterval(
+                MusicalNote.parse(sourceKey.root),
+                MusicalNote.parse(targetKey.root)
+            );
+
+            NoteTransposer.transposeChord(
+                chord,
+                interval,
+                targetKey.accidental
+            );
+        }
     }
 
     /**
@@ -578,8 +581,11 @@ export class ChoproTransposer {
             throw new Error("target key required for Nashville notation");
         }
 
-        // TODO
-        throw new Error("not yet implemented");
+        // Convert from Nashville to Alpha if needed
+        if (this.options.toKey !== "##") {
+            const targetKey = KeyInfo.parse(this.options.toKey);
+            NashvilleTransposer.nashvilleToChord(chord, targetKey);
+        }
     }
 
     /**
