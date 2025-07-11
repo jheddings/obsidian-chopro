@@ -739,5 +739,58 @@ describe("ChoproFile", () => {
                 expect(file.blocks[18].toString()).toEqual("");
             });
         });
+
+        describe("block-spacing.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("block-spacing.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(16);
+                expect(file.frontmatter).toBeUndefined();
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[0].toString()).toContain("# Mixed Spacing");
+            });
+
+            it("handles adjacent chopro blocks correctly", () => {
+                expect(file.blocks[0].toString()).toContain("## No Spacing");
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(ChoproBlock);
+            });
+
+            it("preserves single empty line spacing correctly", () => {
+                expect(file.blocks[3].toString()).toContain("## Single Empty Line");
+
+                expect(file.blocks[3]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[4]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[5]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[6]).toBeInstanceOf(ChoproBlock);
+
+                expect(file.blocks[5].toString()).toEqual("");
+            });
+
+            it("preserves multiple empty line spacing correctly", () => {
+                expect(file.blocks[7].toString()).toContain("## Multiple Empty Lines");
+
+                expect(file.blocks[7]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[8]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[9]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[10]).toBeInstanceOf(ChoproBlock);
+
+                expect(file.blocks[9].toString()).toEqual("\n\n");
+            });
+
+            it("handles extra markdown spacing correctly", () => {
+                expect(file.blocks[11].toString()).toContain("## Extra Markdown Spacing");
+
+                expect(file.blocks[11]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[12]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[13]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[14]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[15]).toBeInstanceOf(MarkdownBlock);
+            });
+        });
     });
 });
