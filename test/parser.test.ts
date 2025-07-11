@@ -792,5 +792,23 @@ describe("ChoproFile", () => {
                 expect(file.blocks[15]).toBeInstanceOf(MarkdownBlock);
             });
         });
+
+        describe("no-chopro.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("no-chopro.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(1);
+                expect(file.frontmatter).toBeUndefined();
+            });
+
+            it("identifies single markdown block correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[0].toString()).toContain("# No `chopro` Blocks in Here");
+            });
+        });
     });
 });
