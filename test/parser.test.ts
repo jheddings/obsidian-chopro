@@ -548,6 +548,70 @@ describe("ChoproFile", () => {
                     expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
                     expect(file.blocks[2].toString()).toBe("");
                 }
+            },
+            {
+                filename: "nashville.md",
+                verifyBlocks: (file: ChoproFile) => {
+                    expect(file.frontmatter).toBeUndefined();
+                    expect(file.blocks).toHaveLength(19);
+
+                    expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[0].toString()).toContain("# House of the Rising Sun");
+
+                    expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[1].toString()).toContain("[1m] [3] [4] [6]");
+
+                    expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[2].toString()).toContain("## Verse 1");
+
+                    expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[3].toString()).toContain("There [1m]is a house in [3]New Or[4]leans");
+
+                    expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[4].toString()).toContain("## Turn");
+
+                    expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[5].toString()).toContain("[3] [4] [6] [1m] [5] [1m] [5]");
+
+                    expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[6].toString()).toContain("## Verse 2");
+
+                    expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[7].toString()).toContain("My [1m]mother was a [3]tailor");
+
+                    expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[8].toString()).toContain("## Verse 3");
+
+                    expect(file.blocks[9]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[9].toString()).toContain("Now the [1m]only thing a [3]gambler");
+
+                    expect(file.blocks[10]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[10].toString()).toContain("## Verse 4");
+
+                    expect(file.blocks[11]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[11].toString()).toContain("Oh [1m]mother, tell your [3]children");
+
+                    expect(file.blocks[12]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[12].toString()).toContain("## Verse 5");
+
+                    expect(file.blocks[13]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[13].toString()).toContain("Well, I [1m]got one foot on");
+
+                    expect(file.blocks[14]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[14].toString()).toContain("## Outro");
+
+                    expect(file.blocks[15]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[15].toString()).toContain("there [1m]is a house ");
+
+                    expect(file.blocks[16]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[16].toString()).toContain("## Ending");
+
+                    expect(file.blocks[17]).toBeInstanceOf(ChoproBlock);
+                    expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
+
+                    expect(file.blocks[18]).toBeInstanceOf(MarkdownBlock);
+                    expect(file.blocks[18].toString()).toBe("");
+                }
             }
         ];
 
