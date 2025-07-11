@@ -15,7 +15,7 @@ export enum Accidental {
 }
 
 export class MusicalNote {
-    public static  PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
+    public static PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
 
     constructor(public root: string, public postfix?: string) {
         this.root = root;
