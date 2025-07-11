@@ -42,7 +42,7 @@ export interface TransposeResult {
     errors?: string[];
 }
 
-export class MusicalKey {
+export abstract class KeyInfo {
     constructor(
         public root: string,
         public quality: KeyQuality,
@@ -50,9 +50,9 @@ export class MusicalKey {
     ) {}
 
     /**
-     * Parse a key string (e.g., "C", "Am", "F#m") into a MusicalKey object
+     * Parse a key string (e.g., "C", "Am", "F#m") into a KeyInfo object
      */
-    static parse(keyString: string): MusicalKey {
+    static parse(keyString: string): KeyInfo {
         const match = keyString.match(/^([A-G])(#|♯|b|♭)?(m|min|minor)?$/);
         if (!match) {
             throw new Error(`Invalid key format: ${keyString}`);
@@ -69,23 +69,97 @@ export class MusicalKey {
 
         const preferredAccidental = MusicTheory.getPreferredAccidental(fullRoot);
 
-        return new MusicalKey(fullRoot, quality, preferredAccidental);
+        // Return appropriate subclass instance
+        if (quality === KeyQuality.MAJOR) {
+            return new MajorKeyInfo(fullRoot, preferredAccidental);
+        } else {
+            return new MinorKeyInfo(fullRoot, preferredAccidental);
+        }
     }
 
     /**
      * Get scale degrees for this key
      */
-    getScaleDegrees(): number[] {
-        return this.quality === KeyQuality.MAJOR
-            ? MusicTheory.MAJOR_SCALE_INTERVALS
-            : MusicTheory.MINOR_SCALE_INTERVALS;
-    }
+    abstract getScaleDegrees(): number[];
 
     /**
      * Get string representation of the key
      */
+    abstract toString(): string;
+
+    /**
+     * Get the modal brightness of the key (useful for determining chord relationships)
+     */
+    abstract getBrightness(): number;
+}
+
+/**
+ * Represents a major key with major scale intervals
+ */
+export class MajorKeyInfo extends KeyInfo {
+    // scale intervals (semitone distances)
+    public static readonly SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+
+    constructor(root: string, accidental?: Accidental) {
+        super(root, KeyQuality.MAJOR, accidental);
+    }
+
+    getScaleDegrees(): number[] {
+        return MajorKeyInfo.SCALE_INTERVALS;
+    }
+
+    getBrightness(): number {
+        return 1; // Major keys are bright
+    }
+
+    /**
+     * Get the relative minor key
+     */
+    getRelativeMinor(): MinorKeyInfo {
+        const rootNote = MusicalNote.parse(this.root);
+        const minorRootIndex = (MusicTheory.getNoteIndex(rootNote) + 9) % 12; // Down a minor third
+        const minorRootName = MusicTheory.getPreferredNoteName(minorRootIndex, this.accidental);
+        const preferredAccidental = MusicTheory.getPreferredAccidental(minorRootName);
+        return new MinorKeyInfo(minorRootName, preferredAccidental);
+    }
+
     toString(): string {
-        return this.root + (this.quality === KeyQuality.MINOR ? 'm' : '');
+        return this.root;
+    }
+}
+
+/**
+ * Represents a minor key with natural minor scale intervals
+ */
+export class MinorKeyInfo extends KeyInfo {
+    // scale intervals (semitone distances)
+    public static readonly SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
+
+    constructor(root: string, accidental?: Accidental) {
+        super(root, KeyQuality.MINOR, accidental);
+    }
+
+    getScaleDegrees(): number[] {
+        return MinorKeyInfo.SCALE_INTERVALS;
+    }
+
+    getBrightness(): number {
+        return -1; // Minor keys are darker
+    }
+
+    /**
+     * Get the relative major key
+     */
+    getRelativeMajor(): MajorKeyInfo {
+        const rootNote = MusicalNote.parse(this.root);
+        const majorRootIndex = (MusicTheory.getNoteIndex(rootNote) + 3) % 12; // Up a minor third
+        const majorRootName = MusicTheory.getPreferredNoteName(majorRootIndex, this.accidental);
+        const preferredAccidental = MusicTheory.getPreferredAccidental(majorRootName);
+        return new MajorKeyInfo(majorRootName, preferredAccidental);
+    }
+
+    toString(): string {
+        return this.root + 'm';
     }
 }
 
@@ -112,10 +186,6 @@ export class MusicTheory {
     // circle of fifths for determining preferred accidentals
     public static readonly SHARP_KEYS = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
     public static readonly FLAT_KEYS = ["F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
-
-    // scale intervals (semitone distances)
-    public static readonly MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
-    public static readonly MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
 
     /**
      * Get the chromatic index (0-11) for a note
@@ -334,7 +404,7 @@ export class NashvilleTransposer {
     /**
      * Convert Nashville number to chord notation.
      */
-    static nashvilleToChord(nashvilleChord: ChordNotation, targetKey: MusicalKey): void {
+    static nashvilleToChord(nashvilleChord: ChordNotation, targetKey: KeyInfo): void {
         if (nashvilleChord.note.noteType !== NoteType.NASHVILLE) {
             throw new Error("Chord is not in Nashville notation");
         }
@@ -370,7 +440,7 @@ export class NashvilleTransposer {
     /**
      * Convert chord notation to Nashville number.
      */
-    static chordToNashville(chord: ChordNotation, sourceKey: MusicalKey): void {
+    static chordToNashville(chord: ChordNotation, sourceKey: KeyInfo): void {
         if (chord.note.noteType !== NoteType.ALPHA) {
             throw new Error("Chord is not in alphabetic notation");
         }
@@ -485,8 +555,8 @@ export class ChoproTransposer {
             throw new Error("source and target keys required for alphabetic notation");
         }
 
-        const sourceKey = MusicalKey.parse(this.options.fromKey);
-        const targetKey = MusicalKey.parse(this.options.toKey);
+        const sourceKey = KeyInfo.parse(this.options.fromKey);
+        const targetKey = KeyInfo.parse(this.options.toKey);
 
         const interval = MusicTheory.getInterval(
             MusicalNote.parse(sourceKey.root),
@@ -531,7 +601,7 @@ export class ChoproTransposer {
     private validateOptions(): void {
         if (this.options.fromKey) {
             try {
-                MusicalKey.parse(this.options.fromKey);
+                KeyInfo.parse(this.options.fromKey);
             } catch (error) {
                 throw new Error(`Invalid 'from' key format: ${error}`);
             }
@@ -539,7 +609,7 @@ export class ChoproTransposer {
 
         if (this.options.toKey) {
             try {
-                MusicalKey.parse(this.options.toKey);
+                KeyInfo.parse(this.options.toKey);
             } catch (error) {
                 throw new Error(`Invalid 'to' key format: ${error}`);
             }
@@ -586,10 +656,10 @@ export class TransposeUtils {
     /**
      * Detect the key from a ChoPro file.
      */
-    static detectKey(file: ChoproFile): MusicalKey | undefined {
+    static detectKey(file: ChoproFile): KeyInfo | undefined {
         const keyString = file.key;
         if (keyString && this.isValidKey(keyString)) {
-            return MusicalKey.parse(keyString);
+            return KeyInfo.parse(keyString);
         }
 
         // TODO: Implement key detection algorithm based on chord analysis
@@ -603,7 +673,7 @@ export class TransposeUtils {
      */
     static isValidKey(keyString: string): boolean {
         try {
-            MusicalKey.parse(keyString);
+            KeyInfo.parse(keyString);
             return true;
         } catch {
             return false;

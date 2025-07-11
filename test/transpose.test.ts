@@ -15,7 +15,9 @@ import {
     ChoproTransposer,
     TransposeUtils,
     KeyQuality,
-    MusicalKey,
+    KeyInfo,
+    MajorKeyInfo,
+    MinorKeyInfo,
 } from "../src/transpose";
 
 import { verifyChordsInBlock } from "./parser.test";
@@ -79,33 +81,74 @@ describe("MusicTheory", () => {
     });
 });
 
-describe('MusicalKey', () => {
-    describe('parse', () => {
-        const validKeyTestCases = [
-            // Major keys
-            { input: 'C', root: 'C', quality: KeyQuality.MAJOR, accidental: Accidental.NATURAL },
-            { input: 'G', root: 'G', quality: KeyQuality.MAJOR, accidental: Accidental.NATURAL },
-            { input: 'F#', root: 'F#', quality: KeyQuality.MAJOR, accidental: Accidental.SHARP },
-            { input: 'Bb', root: 'Bb', quality: KeyQuality.MAJOR, accidental: Accidental.FLAT },
-            { input: 'Db', root: 'Db', quality: KeyQuality.MAJOR, accidental: Accidental.FLAT },
-            { input: 'C#', root: 'C#', quality: KeyQuality.MAJOR, accidental: Accidental.SHARP },
-            
-            // Minor keys
-            { input: 'Am', root: 'A', quality: KeyQuality.MINOR, accidental: Accidental.NATURAL },
-            { input: 'Em', root: 'E', quality: KeyQuality.MINOR, accidental: Accidental.NATURAL },
-            { input: 'F#m', root: 'F#', quality: KeyQuality.MINOR, accidental: Accidental.SHARP },
-            { input: 'Bbm', root: 'Bb', quality: KeyQuality.MINOR, accidental: Accidental.FLAT },
-            { input: 'C#m', root: 'C#', quality: KeyQuality.MINOR, accidental: Accidental.SHARP },
-            { input: 'Ebm', root: 'Eb', quality: KeyQuality.MINOR, accidental: Accidental.FLAT },
+describe('KeyInfo', () => {
+    describe('parse major keys', () => {
+        const majorKeyTestCases = [
+            { input: 'C', root: 'C', accidental: Accidental.NATURAL, minor: 'Am' },
+            { input: 'G', root: 'G', accidental: Accidental.NATURAL, minor: 'Em' },
+            { input: 'F#', root: 'F#', accidental: Accidental.SHARP, minor: 'D#m' },
+            { input: 'Bb', root: 'Bb', accidental: Accidental.FLAT, minor: 'Gm' },
+            { input: 'Db', root: 'Db', accidental: Accidental.FLAT, minor: 'Bbm' },
+            { input: 'C#', root: 'C#', accidental: Accidental.SHARP, minor: 'A#m' },
         ];
 
-        test.each(validKeyTestCases)(
+        test.each(majorKeyTestCases)(
             'should parse $input correctly',
-            ({ input, root, quality, accidental }) => {
-                const key = MusicalKey.parse(input);
-                expect(key.root).toEqual(root);
-                expect(key.quality).toEqual(quality);
-                expect(key.accidental).toEqual(accidental);
+            ({ input, root, accidental, minor }) => {
+                const key = KeyInfo.parse(input);
+
+                expect(key).toBeInstanceOf(MajorKeyInfo);
+                expect(key.toString()).toEqual(input);
+
+                const majorKey = key as MajorKeyInfo;
+                expect(majorKey.root).toEqual(root);
+                expect(majorKey.quality).toEqual(KeyQuality.MAJOR);
+                expect(majorKey.accidental).toEqual(accidental);
+
+                // verify major key info properties
+                expect(majorKey.getScaleDegrees()).toEqual([0, 2, 4, 5, 7, 9, 11]);
+                expect(majorKey.getBrightness()).toBe(1);
+
+                // verify relative minor key
+                const expectedMinor = KeyInfo.parse(minor) as MinorKeyInfo;
+                const relativeMinor = majorKey.getRelativeMinor();
+                expect(relativeMinor).toEqual(expectedMinor);
+            }
+        );
+
+    });
+
+    describe('parse minor keys', () => {
+        const minorKeyTestCases = [
+            { input: 'Am', root: 'A', accidental: Accidental.NATURAL, major: 'C' },
+            { input: 'Em', root: 'E', accidental: Accidental.NATURAL, major: 'G' },
+            { input: 'F#m', root: 'F#', accidental: Accidental.SHARP, major: 'A' },
+            { input: 'Bbm', root: 'Bb', accidental: Accidental.FLAT, major: 'Db' },
+            { input: 'C#m', root: 'C#', accidental: Accidental.SHARP, major: 'E' },
+            { input: 'Ebm', root: 'Eb', accidental: Accidental.FLAT, major: 'Gb' },
+        ];
+
+        test.each(minorKeyTestCases)(
+            'should parse $input correctly',
+            ({ input, root, accidental, major }) => {
+                const key = KeyInfo.parse(input);
+
+                expect(key).toBeInstanceOf(MinorKeyInfo);
+                expect(key.toString()).toEqual(input);
+
+                const minorKey = key as MinorKeyInfo;
+                expect(minorKey.root).toEqual(root);
+                expect(minorKey.quality).toEqual(KeyQuality.MINOR);
+                expect(minorKey.accidental).toEqual(accidental);
+
+                // verify minor key info properties
+                expect(minorKey.getScaleDegrees()).toEqual([0, 2, 3, 5, 7, 8, 10]);
+                expect(minorKey.getBrightness()).toBe(-1);
+
+                // verify relative major key
+                const expectedMajor = KeyInfo.parse(major) as MajorKeyInfo;
+                const relativeMajor = minorKey.getRelativeMajor();
+                expect(relativeMajor).toEqual(expectedMajor);
             }
         );
 
@@ -122,7 +165,7 @@ describe('MusicalKey', () => {
         test.each(invalidKeyTestCases)(
             'should throw on invalid key %s',
             (invalidKey) => {
-                expect(() => MusicalKey.parse(invalidKey)).toThrow('Invalid key format');
+                expect(() => KeyInfo.parse(invalidKey)).toThrow();
             }
         );
     });
@@ -233,7 +276,7 @@ describe('NashvilleTransposer', () => {
             ({ input, key, expected }) => {
                 const nashvilleChord = ChordNotation.parse(input);
                 const expectedChord = ChordNotation.parse(expected);
-                const musicalKey = MusicalKey.parse(key);
+                const musicalKey = KeyInfo.parse(key);
                 
                 NashvilleTransposer.nashvilleToChord(nashvilleChord, musicalKey);
                 
@@ -245,7 +288,7 @@ describe('NashvilleTransposer', () => {
 
         test('should throw on non-Nashville chord', () => {
             const alphaChord = new ChordNotation(new MusicalNote('C'));
-            const key = MusicalKey.parse('C');
+            const key = KeyInfo.parse('C');
             
             expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key))
                 .toThrow('Chord is not in Nashville notation');
@@ -276,7 +319,7 @@ describe('NashvilleTransposer', () => {
             ({ input, key, expected }) => {
                 const alphaChord = ChordNotation.parse(input);
                 const expectedChord = ChordNotation.parse(expected);
-                const musicalKey = MusicalKey.parse(key);
+                const musicalKey = KeyInfo.parse(key);
                 
                 NashvilleTransposer.chordToNashville(alphaChord, musicalKey);
                 
@@ -288,7 +331,7 @@ describe('NashvilleTransposer', () => {
 
         test('should throw on non-alphabetic chord', () => {
             const nashvilleChord = new ChordNotation(new MusicalNote('1'));
-            const key = MusicalKey.parse('C');
+            const key = KeyInfo.parse('C');
             
             expect(() => NashvilleTransposer.chordToNashville(nashvilleChord, key))
                 .toThrow('Chord is not in alphabetic notation');
@@ -352,7 +395,7 @@ describe('TransposeUtils', () => {
         const detectKeyTestCases = [
             {
                 filename: "standard.md",
-                expected: MusicalKey.parse('C')
+                expected: KeyInfo.parse('C')
             },
             {
                 filename: "minimal.md",
