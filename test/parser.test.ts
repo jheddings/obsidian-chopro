@@ -1,57 +1,99 @@
 import {
     ChordNotation,
-    MusicalNote,
-    NoteType,
     Annotation,
     TextSegment,
     ChoproFile,
     CommentLine,
     EmptyLine,
     TextLine,
-    Accidental,
+    ChoproBlock,
+    MarkdownBlock,
+    SegmentedLine,
 } from "../src/parser";
 
-describe("MusicalNote", () => {
+import {
+    AbstractNote,
+    MusicNote,
+    NashvilleNumber,
+    Accidental,
+} from "../src/music";
+
+/**
+ * Helper function to verify that a SegmentedLine contains the expected chords.
+ * Expected chords can be provided as either strings or ChordNotation objects.
+ */
+export function verifyChordsInLine(
+    line: SegmentedLine,
+    expected: (string | ChordNotation)[]
+): void {
+    const actualChords = line.chords;
+
+    expect(actualChords).toHaveLength(expected.length);
+
+    const expectedChords = expected.map((chord) =>
+        typeof chord === "string" ? ChordNotation.parse(chord) : chord
+    );
+
+    actualChords.forEach((actualChord, index) => {
+        expect(actualChord).toBeInstanceOf(ChordNotation);
+        expect(actualChord).toEqual(expectedChords[index]);
+    });
+}
+
+export function verifyChordsInBlock(
+    block: ChoproBlock,
+    expected: (string[] | ChordNotation[])[]
+): void {
+    const lines = block.lines;
+
+    expect(lines).toHaveLength(expected.length);
+
+    lines.forEach((line, index) => {
+        verifyChordsInLine(line as SegmentedLine, expected[index]);
+    });
+}
+
+describe("MusicNote", () => {
     const testCases = [
         // Basic alpha notes
-        { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.ALPHA },
-        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.ALPHA },
-        { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
-        { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: MusicNote },
+        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: MusicNote },
+        { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT, expectedClass: MusicNote },
         
         // German notation
-        { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
-        { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
-        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
+        { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT, expectedClass: MusicNote },
+        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT, expectedClass: MusicNote },
         
         // Nashville notation
-        { input: "1", root: "1", postfix: undefined, accidental: Accidental.NATURAL, noteType: NoteType.NASHVILLE },
-        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT, noteType: NoteType.NASHVILLE },
-        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP, noteType: NoteType.NASHVILLE },
+        { input: "1", root: "1", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: NashvilleNumber },
+        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT, expectedClass: NashvilleNumber },
+        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP, expectedClass: NashvilleNumber },
         
         // Unicode accidentals
-        { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP, noteType: NoteType.ALPHA },
-        { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT, noteType: NoteType.ALPHA },
-        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP, noteType: NoteType.NASHVILLE },
+        { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT, expectedClass: MusicNote },
+        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP, expectedClass: NashvilleNumber },
     ];
 
     describe("parsing", () => {
         test.each(testCases)(
             "parses $input correctly",
-            ({ input, root, postfix, accidental, noteType }) => {
-                const note = MusicalNote.parse(input);
+            ({ input, root, postfix, accidental, expectedClass }) => {
+                const note = AbstractNote.parse(input);
                 
-                expect(note.root).toBe(root);
-                expect(note.postfix).toBe(postfix);
-                expect(note.accidental).toBe(accidental);
-                expect(note.noteType).toBe(noteType);
+                expect(note.root).toEqual(root);
+                expect(note.postfix).toEqual(postfix);
+                expect(note.accidental).toEqual(accidental);
+                expect(note).toBeInstanceOf(expectedClass);
             }
         );
 
         it("throws error for invalid note format", () => {
-            expect(() => MusicalNote.parse("H")).toThrow("Invalid note format");
-            expect(() => MusicalNote.parse("8")).toThrow("Invalid note format");
-            expect(() => MusicalNote.parse("")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("H")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("8")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("")).toThrow("Invalid note format");
         });
     });
 
@@ -80,60 +122,194 @@ describe("MusicalNote", () => {
         test.each(normalizationCases)(
             "normalizes $input correctly",
             ({ input, normalized }) => {
-                const note = MusicalNote.parse(input);
-                expect(note.toString()).toBe(input);
-                expect(note.toString(false)).toBe(input);
-                expect(note.toString(true)).toBe(normalized);
+                const note = AbstractNote.parse(input);
+                expect(note.toString()).toEqual(input);
+                expect(note.toString(false)).toEqual(input);
+                expect(note.toString(true)).toEqual(normalized);
             }
         );
+    });
+
+    describe("AlphaNote", () => {
+        describe("validation", () => {
+            const validNotes = [
+                "C", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"
+            ];
+
+            test.each(validNotes)(
+                "returns true for valid alpha note %s", (note) => {
+                    expect(MusicNote.test(note)).toBe(true);
+                }
+            );
+
+            const invalidNotes = [
+                "1", "5b", "H", "8", "", "invalid"
+            ];
+
+            test.each(invalidNotes)(
+                "returns false for invalid alpha note %s",
+                (note) => {
+                    expect(MusicNote.test(note)).toBe(false);
+                }
+            );
+        });
+
+        describe("parsing", () => {
+            const alphaNotes = [
+                { input: "C", root: "C", postfix: undefined },
+                { input: "F#", root: "F", postfix: "#" },
+                { input: "Bb", root: "B", postfix: "b" },
+                { input: "G♯", root: "G", postfix: "♯" },
+                { input: "A♭", root: "A", postfix: "♭" },
+                { input: "Gis", root: "G", postfix: "is" },
+                { input: "Fes", root: "F", postfix: "es" },
+            ];
+
+            test.each(alphaNotes)(
+                "parses $input correctly",
+                ({ input, root, postfix }) => {
+                    const note = MusicNote.parse(input);
+                    expect(note).toBeInstanceOf(MusicNote);
+                    expect(note.root).toBe(root);
+                    expect(note.postfix).toEqual(postfix);
+                }
+            );
+
+            const invalidNotes = [
+                "1", "8", "I", "iv", "&", "#", ""
+            ];
+
+            test.each(invalidNotes)(
+                "throws error for invalid alpha note %s", (input) => {
+                    expect(() => MusicNote.parse(input)).toThrow("Invalid note format");
+                }
+            );
+        });
+
+    });
+
+    describe("NashvilleNote", () => {
+        describe("validation", () => {
+
+            const validNotes = [
+                "1", "4b", "2#", "7♯", "3♭"
+            ];
+
+            test.each(validNotes)(
+                "returns true for valid Nashville note %s", (note) => {
+                    expect(NashvilleNumber.test(note)).toBe(true);
+                }
+            );
+
+            const invalidNotes = [
+                "C", "F#", "8", "0", "", "invalid"
+            ];
+
+            test.each(invalidNotes)(
+                "returns false for invalid Nashville note %s",
+                (note) => {
+                    expect(NashvilleNumber.test(note)).toBe(false);
+                }
+            );
+        });
+
+        describe("parsing", () => {
+            const nashvilleNumbers = [
+                { input: "1", root: "1", postfix: undefined },
+                { input: "4b", root: "4", postfix: "b" },
+                { input: "2#", root: "2", postfix: "#" },
+                { input: "7♯", root: "7", postfix: "♯" },
+                { input: "3♭", root: "3", postfix: "♭" },
+            ];
+
+            test.each(nashvilleNumbers)(
+                "parses $input correctly",
+                ({ input, root, postfix }) => {
+                    const note = NashvilleNumber.parse(input);
+                    expect(note).toBeInstanceOf(NashvilleNumber);
+                    expect(note.root).toBe(root);
+                    expect(note.postfix).toEqual(postfix);
+                }
+            );
+
+            const invalidNumbers = [
+                "C", "8", "*", "ii", "V", ""
+            ];
+
+            test.each(invalidNumbers)(
+                "throws error for invalid Nashville note %s",
+                (input) => {
+                    expect(() => NashvilleNumber.parse(input)).toThrow();
+                }
+            );
+        });
     });
 });
 
 describe("ChordNotation", () => {
     const testCases = [
         // Alpha notation
-        { input: "[C]", note: "C", modifier: undefined, bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[F#m7]", note: "F#", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", noteType: NoteType.ALPHA },
-        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", noteType: NoteType.ALPHA },
+        { input: "[C]", note: "C", modifier: undefined, bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", expectedNoteClass: MusicNote },
+        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", expectedNoteClass: MusicNote },
         
         // Nashville notation
-        { input: "[1]", note: "1", modifier: undefined, bass: undefined, noteType: NoteType.NASHVILLE },
-        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, noteType: NoteType.NASHVILLE },
-        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", noteType: NoteType.NASHVILLE },
-        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", noteType: NoteType.NASHVILLE },
+        { input: "[1]", note: "1", modifier: undefined, bass: undefined, expectedNoteClass: NashvilleNumber },
+        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, expectedNoteClass: NashvilleNumber },
+        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
+        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", expectedNoteClass: NashvilleNumber },
         
         // Unicode accidentals
-        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, noteType: NoteType.ALPHA },
-        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", noteType: NoteType.NASHVILLE },
+        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
+
+        // Complex modifiers
+        { input: "[C#dim]", note: "C#", modifier: "dim", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, expectedNoteClass: MusicNote },
+
+        // Alternative chord quality notations
+        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Co]", note: "C", modifier: "o", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[C+]", note: "C", modifier: "+", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E", expectedNoteClass: MusicNote },
+        { input: "[Go7/B]", note: "G", modifier: "o7", bass: "B", expectedNoteClass: MusicNote },
+        { input: "[A+add9]", note: "A", modifier: "+add9", bass: undefined, expectedNoteClass: MusicNote },
     ];
 
-    describe("parsing", () => {
+    describe("parses valid chord notation", () => {
         test.each(testCases)(
             "parses $input correctly",
-            ({ input, note, modifier, bass, noteType }) => {
+            ({ input, note, modifier, bass, expectedNoteClass }) => {
                 const chord = ChordNotation.parse(input);
                 
-                expect(chord.note.toString()).toBe(note);
-                expect(chord.note.noteType).toBe(noteType);
-                expect(chord.modifier).toBe(modifier);
-                expect(chord.bass?.toString()).toBe(bass);
+                expect(chord.note.toString()).toEqual(note);
+                expect(chord.note).toBeInstanceOf(expectedNoteClass);
+                expect(chord.modifier).toEqual(modifier);
+                expect(chord.bass?.toString()).toEqual(bass);
                 
                 // round-trip test
-                expect(chord.toString()).toBe(input);
+                expect(chord.toString()).toEqual(input);
             }
         );
 
-        it("throws error for invalid chord format", () => {
-            expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
-            expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
-        });
     });
+
+    it("throws error for invalid chord format", () => {
+        expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
+        expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
+    });
+
 
     describe("normalization", () => {
         const normalizationCases = [
+            // Basic accidental normalization
             { input: "[F#m7]", normalized: "[F♯m7]" },
             { input: "[BbMAJ7]", normalized: "[B♭maj7]" },
             { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
@@ -141,27 +317,56 @@ describe("ChordNotation", () => {
             { input: "[4b7/5#]", normalized: "[4♭7/5♯]" },
             { input: "[Fes]", normalized: "[F♭]" },
             { input: "[Gis]", normalized: "[G♯]" },
+            
+            // Alternative chord quality normalization
+            { input: "[CΔ]", normalized: "[Cmaj]" },
+            { input: "[FΔ7]", normalized: "[Fmaj7]" },
+            { input: "[BbΔ9]", normalized: "[B♭maj9]" },
+            { input: "[DΔ#11]", normalized: "[Dmaj♯11]" },
+            { input: "[Co]", normalized: "[Cdim]" },
+            { input: "[Co7]", normalized: "[Cdim7]" },
+            { input: "[F#o]", normalized: "[F♯dim]" },
+            { input: "[Go7/B]", normalized: "[Gdim7/B]" },
+            { input: "[Cø]", normalized: "[Cm7♭5]" },
+            { input: "[Cø7]", normalized: "[Cm7♭5]" },
+            { input: "[F#ø7]", normalized: "[F♯m7♭5]" },
+            { input: "[Amø]", normalized: "[Amm7♭5]" },
+            { input: "[C+7]", normalized: "[Caug7]" },
+            { input: "[F+]", normalized: "[Faug]" },
+            { input: "[A+add9]", normalized: "[Aaugadd9]" },
         ];
 
         test.each(normalizationCases)(
             "normalizes $input correctly",
             ({ input, normalized }) => {
                 const chord = ChordNotation.parse(input);
-                expect(chord.toString()).toBe(input);
-                expect(chord.toString(false)).toBe(input);
-                expect(chord.toString(true)).toBe(normalized);
+                expect(chord.toString()).toEqual(input);
+                expect(chord.toString(false)).toEqual(input);
+                expect(chord.toString(true)).toEqual(normalized);
             }
         );
 
-        it("preserves unicode accidentals when normalized", () => {
-            const unicodeSharp = ChordNotation.parse("[F♯m7]");
-            expect(unicodeSharp.toString(false)).toBe("[F♯m7]");
-            expect(unicodeSharp.toString(true)).toBe("[F♯m7]");
+        // Test the quality property specifically
+        const qualityTests = [
+            { input: "[CΔ7]", expectedQuality: "maj7" },
+            { input: "[Co]", expectedQuality: "dim" },
+            { input: "[Cø7]", expectedQuality: "m7♭5" },
+            { input: "[C+]", expectedQuality: "aug" },
+            { input: "[C]", expectedQuality: undefined },
+            { input: "[Cmaj7]", expectedQuality: "maj7" },
+            { input: "[C#Δ9]", expectedQuality: "maj9" },
+            { input: "[F#o7]", expectedQuality: "dim7" },
+            { input: "[Bbø]", expectedQuality: "m7♭5" },
+            { input: "[D+add9]", expectedQuality: "augadd9" },
+        ];
 
-            const unicodeFlat = ChordNotation.parse("[B♭maj7]");
-            expect(unicodeFlat.toString(false)).toBe("[B♭maj7]");
-            expect(unicodeFlat.toString(true)).toBe("[B♭maj7]");
-        });
+        test.each(qualityTests)(
+            "exposes correct quality property for $input",
+            ({ input, expectedQuality }) => {
+                const chord = ChordNotation.parse(input);
+                expect(chord.quality).toEqual(expectedQuality);
+            }
+        );
     });
 
     describe("validation", () => {
@@ -169,6 +374,12 @@ describe("ChordNotation", () => {
             // Alpha notation
             "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]", "[Fes]", "[Gis]",
             "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[F#m7/B]", "[C/G]", "[Bb/F]",
+            
+            // Alternative chord quality notations
+            "[CΔ]", "[FΔ7]", "[BbΔ9]", "[DΔ#11]", "[CΔ7/E]",
+            "[Co]", "[Co7]", "[F#o]", "[Go7/B]", "[C#odim]",
+            "[Cø]", "[Cø7]", "[F#ø7]", "[Amø]", "[Dmø7/F#]",
+            "[C+]", "[C+7]", "[F+]", "[A+add9]", "[G+maj7]",
             
             // Nashville notation
             "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
@@ -205,14 +416,14 @@ describe("Annotation", () => {
         const original = "[*Basic Annotation]";
 
         const annotation = Annotation.parse(original);
-        expect(annotation.content).toBe("Basic Annotation");
+        expect(annotation.content).toEqual("Basic Annotation");
 
         const roundTrip = annotation.toString();
-        expect(roundTrip).toBe(original);
+        expect(roundTrip).toEqual(original);
 
         // parse again to ensure round-trip compatibility
         const takeTwo = Annotation.parse(roundTrip);
-        expect(takeTwo.content).toBe(annotation.content);
+        expect(takeTwo.content).toEqual(annotation.content);
     });
 
     describe("validation", () => {
@@ -243,68 +454,53 @@ describe("TextSegment", () => {
     it("stores and stringifies plain text", () => {
         const text = "Just some lyrics";
         const segment = new TextSegment(text);
-        expect(segment.content).toBe(text);
-        expect(segment.toString()).toBe(text);
+        expect(segment.content).toEqual(text);
+        expect(segment.toString()).toEqual(text);
     });
 });
 
 describe("CommentLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "# This is a comment";
+    const testCases = [
+        { input: "# This is a comment", content: "This is a comment", output: "# This is a comment" },
+        { input: "### Multiple hashes comment", content: "Multiple hashes comment", output: "# Multiple hashes comment" },
+        { input: "#No space comment", content: "No space comment", output: "# No space comment" },
+        { input: "#", content: "", output: "# " },
+        { input: "## Another comment", content: "Another comment", output: "# Another comment" },
+    ];
 
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("This is a comment");
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses $input correctly",
+            ({ input, content, output }) => {
+                const comment = CommentLine.parse(input);
+                expect(comment.content).toEqual(content);
 
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = comment.toString();
+                expect(roundTrip).toEqual(output);
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = CommentLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(comment.content);
-    });
-
-    it("parses multiple hash symbols", () => {
-        const original = "### Multiple hashes comment";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("Multiple hashes comment");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# Multiple hashes comment");
-    });
-
-    it("parses comment without space after hash", () => {
-        const original = "#No space comment";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("No space comment");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# No space comment");
-    });
-
-    it("parses empty comment", () => {
-        const original = "#";
-
-        const comment = CommentLine.parse(original);
-        expect(comment.content).toBe("");
-
-        const roundTrip = comment.toString();
-        expect(roundTrip).toBe("# ");
+                // parse again to ensure round-trip compatibility
+                const takeTwo = CommentLine.parse(roundTrip);
+                expect(takeTwo.content).toEqual(comment.content);
+            }
+        );
     });
 
     describe("validation", () => {
         const validComments = [
-            "# This is a comment", "## Another comment", "#", "#No space"
-        ];
-
-        const invalidComments = [
-            "This is not a comment", "(Instruction)", ""
+            "# This is a comment",
+            "## Another comment",
+            "#",
+            "#No space",
         ];
 
         test.each(validComments)("accepts valid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(true);
         });
+
+        const invalidComments = [
+            "This is not a comment",
+            "(Instruction)", ""
+        ];
 
         test.each(invalidComments)("rejects invalid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(false);
@@ -313,26 +509,35 @@ describe("CommentLine", () => {
 });
 
 describe("EmptyLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "";
+    const testCases = [
+        { input: "" },
+        { input: "   " },
+        { input: "\t" },
+        { input: " \t " },
+    ];
 
-        const emptyLine = EmptyLine.parse(original);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses '$input' correctly",
+            ({ input }) => {
+                const emptyLine = EmptyLine.parse(input);
 
-        const roundTrip = emptyLine.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = emptyLine.toString();
+                expect(roundTrip).toEqual("");
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = EmptyLine.parse(roundTrip);
-        expect(takeTwo.toString()).toBe(emptyLine.toString());
-    });
+                // parse again to ensure round-trip compatibility
+                const takeTwo = EmptyLine.parse(roundTrip);
+                expect(takeTwo.toString()).toEqual(emptyLine.toString());
+            }
+        );
 
-    it("parses whitespace-only lines", () => {
-        const original = "   ";
+        const invalidCases = [
+            "Not empty", "# Comment", "(Instruction)"
+        ];
 
-        const emptyLine = EmptyLine.parse(original);
-
-        const roundTrip = emptyLine.toString();
-        expect(roundTrip).toBe("");
+        test.each(invalidCases)("throws errors for non-empty line '%s'", (input) => {
+            expect(() => EmptyLine.parse(input)).toThrow();
+        });
     });
 
     describe("validation", () => {
@@ -352,60 +557,37 @@ describe("EmptyLine", () => {
             expect(EmptyLine.test(line)).toBe(false);
         });
     });
-
-    it("throws errors for non-empty lines", () => {
-        expect(() => EmptyLine.parse("Not empty")).toThrow();
-        expect(() => EmptyLine.parse("# Comment")).toThrow();
-    });
 });
 
 describe("TextLine", () => {
-    it("parses and stringifies correctly", () => {
-        const original = "This is a line of lyrics";
+    const testCases = [
+        { input: "This is a line of lyrics" },
+        { input: "  Text with spaces  " },
+        { input: "Special chars: !@#$%^&*()" },
+        { input: "𝐔𝗇𝗂𝖼𝗈𝖽𝖾: ñ 中文 🎵 ♯♭" },
+        { input: "Text with numbers 123" },
+        { input: "Text with punctuation!" },
+        { input: "  Text with leading spaces" },
+        { input: "Text with trailing spaces  " },
+        { input: "123" },
+        { input: "Special chars: àáâãäå" },
+    ];
 
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
+    describe("parsing", () => {
+        test.each(testCases)(
+            "parses '$input' correctly",
+            ({ input }) => {
+                const textLine = TextLine.parse(input);
+                expect(textLine.content).toEqual(input);
 
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
+                const roundTrip = textLine.toString();
+                expect(roundTrip).toEqual(input);
 
-        // parse again to ensure round-trip compatibility
-        const takeTwo = TextLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(textLine.content);
-    });
-
-    it("parses lines with whitespace", () => {
-        const original = "  Text with spaces  ";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-    });
-
-    it("parses lines with special characters", () => {
-        const original = "Special chars: !@#$%^&*()";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-    });
-
-    it("parses lines with unicode characters", () => {
-        const original = "𝐔𝗇𝗂𝖼𝗈𝖽𝖾: ñ 中文 🎵 ♯♭";
-
-        const textLine = TextLine.parse(original);
-        expect(textLine.content).toBe(original);
-
-        const roundTrip = textLine.toString();
-        expect(roundTrip).toBe(original);
-
-        // parse again to ensure round-trip compatibility
-        const takeTwo = TextLine.parse(roundTrip);
-        expect(takeTwo.content).toBe(textLine.content);
+                // parse again to ensure round-trip compatibility
+                const takeTwo = TextLine.parse(roundTrip);
+                expect(takeTwo.content).toEqual(textLine.content);
+            }
+        );
     });
 
     describe("validation", () => {
@@ -429,16 +611,350 @@ describe("TextLine", () => {
     });
 });
 
-describe("File Parsing", () => {
-    test.each(
-        ["basic.md", "complex.md", "nashville.md", "performance.md", "special.md"])(
-        "parses %s without errors",
-        (fileName) => {
-            const fs = require("fs");
-            const path = require("path");
-            const filePath = path.join(__dirname, fileName);
-            const content = fs.readFileSync(filePath, "utf8");
-            expect(() => ChoproFile.parse(content)).not.toThrow();
-        }
-    );
+describe("SegmentedLine", () => {
+    describe("chords getter", () => {
+        const testCases = [
+            {
+                input: "[C]Hello [G]world",
+                expected: ["[C]", "[G]"],
+            },
+            {
+                input: "[Am]Just one chord with lyrics",
+                expected: ["[Am]"],
+            },
+            {
+                input: "[C] [G] [Am] [F]",
+                expected: ["[C]", "[G]", "[Am]", "[F]"],
+            },
+            {
+                input: "[*verse] [C]Hello [*bridge] [G]world",
+                expected: ["[C]", "[G]"],
+            },
+            {
+                input: "[F#m7/B]Complex [Bb7add9]chord [C/G]notation",
+                expected: ["[F#m7/B]", "[Bb7add9]", "[C/G]"],
+            }
+        ];
+
+        test.each(testCases)(
+            "parses chord segments from $input",
+            ({ input, expected }) => {
+                const line = SegmentedLine.parse(input);
+
+                verifyChordsInLine(line, expected);
+            }
+        );
+    });
+
+    describe("lyrics getter", () => {
+        const testCases = [
+            {
+                input: "[C]Hello [G]world",
+                expected: ["Hello ", "world"],
+            },
+            {
+                input: "[Am]Just one chord with lyrics",
+                expected: ["Just one chord with lyrics"],
+            },
+            {
+                input: "[C] [G] [Am] [F]",
+                expected: [" ", " ", " "],
+            },
+            {
+                input: "[*verse] [C]Hello [*bridge] [G]world",
+                expected: [" ", "Hello ", " ", "world"],
+            },
+            {
+                input: "Start [C]middle [G]end",
+                expected: ["Start ", "middle ", "end"],
+            }
+        ];
+
+        test.each(testCases)(
+            "parses lyrics segments from $input",
+            ({ input, expected }) => {
+                const line = SegmentedLine.parse(input);
+                
+                const lyrics = line.lyrics;
+                
+                expect(lyrics).toHaveLength(expected.length);
+
+                lyrics.forEach(segment => {
+                    expect(segment).toBeInstanceOf(TextSegment);
+                });
+
+                const segments = expected.map(text => new TextSegment(text));
+
+                expect(lyrics).toEqual(segments);
+            }
+        );
+    });
+});
+
+describe("ChoproFile", () => {
+    const path = require('path');
+    const fs = require('fs');
+
+    /**
+     * Helper function to load a test file, parse it, and verify round-trip serialization.
+     */
+    const prepareTestFile = (filename: string): ChoproFile => {
+        const filePath = path.resolve(__dirname, filename);
+        const fileContent = fs.readFileSync(filePath, 'utf-8');
+
+        const file = ChoproFile.load(filePath);
+
+        const roundTrip = file.toString();
+        expect(roundTrip).toEqual(fileContent);
+
+        const reparsed = ChoproFile.parse(roundTrip);
+        expect(reparsed).toEqual(file);
+
+        return file;
+    };
+
+    describe("content block parsing & serialization", () => {
+        describe("minimal.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("minimal.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.frontmatter).toBeUndefined();
+                expect(file.blocks).toHaveLength(9);
+            });
+
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+            });
+
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Wheels on the Bus");
+                expect(file.blocks[1].toString()).toContain("[D]wheels on the bus");
+                expect(file.blocks[2].toString()).toEqual("");
+                expect(file.blocks[3].toString()).toContain("[D]wipers on the bus");
+                expect(file.blocks[4].toString()).toEqual("");
+                expect(file.blocks[5].toString()).toContain("[D]horn on the bus");
+                expect(file.blocks[6].toString()).toEqual("");
+                expect(file.blocks[7].toString()).toContain("[D]doors on the bus");
+                expect(file.blocks[8].toString()).toEqual("");
+            });
+        });
+
+        describe("standard.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("standard.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(9);
+                expect(file.frontmatter).toBeDefined();
+            });
+
+            it("parses frontmatter correctly", () => {
+                expect(file.frontmatter?.get("title")).toEqual("Amazing Grace (Traditional)");
+                expect(file.frontmatter?.get("artist")).toEqual("John Newton");
+                expect(file.frontmatter?.get("time")).toEqual("3/4");
+                expect(file.frontmatter?.get("tempo")).toEqual(80);
+
+                expect(file.key).toEqual("C");
+            });
+
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+            });
+
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Amazing Grace");
+                expect(file.blocks[0].toString()).toContain("## Verse 1");
+                expect(file.blocks[1].toString()).toContain("[C]Amazing grace, how [F]sweet the [C]sound");
+                expect(file.blocks[2].toString()).toContain("## Verse 2");
+                expect(file.blocks[3].toString()).toContain("'Twas [C]grace that taught my [F]heart");
+                expect(file.blocks[4].toString()).toContain("## Verse 3");
+                expect(file.blocks[5].toString()).toContain("Through [C]many dangers");
+                expect(file.blocks[6].toString()).toContain("## Verse 4");
+                expect(file.blocks[7].toString()).toContain("When [D]we've been there");
+                expect(file.blocks[8].toString()).toEqual("");
+            });
+        });
+
+        describe("goofy-chopro.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("goofy-chopro.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(3);
+            });
+
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+            });
+
+            it("parses block content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Goofy");
+                expect(file.blocks[1].toString()).toEqual("```chopro\n```");
+                expect(file.blocks[2].toString()).toEqual("");
+            });
+        });
+
+        describe("nashville.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("nashville.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(19);
+                expect(file.frontmatter).toBeDefined();
+                expect(file.frontmatter?.get("title")).toEqual("House of the Rising Sun");
+            });
+
+            it("identifies block types correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[3]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[4]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[5]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[6]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[8]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[9]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[10]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[11]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[12]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[13]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[14]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[15]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[16]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[17]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[18]).toBeInstanceOf(MarkdownBlock);
+            });
+
+            it("parses header and intro content correctly", () => {
+                expect(file.blocks[0].toString()).toContain("# Intro");
+                expect(file.blocks[1].toString()).toContain("[1m] [3] [4] [6]");
+            });
+
+            it("parses verse sections correctly", () => {
+                expect(file.blocks[2].toString()).toContain("# Verse 1");
+                expect(file.blocks[3].toString()).toContain("There [1m]is a house in [3]New Or[4]leans");
+                expect(file.blocks[4].toString()).toContain("# Turn");
+                expect(file.blocks[5].toString()).toContain("[3] [4] [6] [1m] [5] [1m] [5]");
+                expect(file.blocks[6].toString()).toContain("# Verse 2");
+                expect(file.blocks[7].toString()).toContain("My [1m]mother was a [3]tailor");
+                expect(file.blocks[8].toString()).toContain("# Verse 3");
+                expect(file.blocks[9].toString()).toContain("Now the [1m]only thing a [3]gambler");
+                expect(file.blocks[10].toString()).toContain("# Verse 4");
+                expect(file.blocks[11].toString()).toContain("Oh [1m]mother, tell your [3]children");
+                expect(file.blocks[12].toString()).toContain("# Verse 5");
+                expect(file.blocks[13].toString()).toContain("Well, I [1m]got one foot on");
+            });
+
+            it("parses outro and ending correctly", () => {
+                expect(file.blocks[14].toString()).toContain("# Outro");
+                expect(file.blocks[15].toString()).toContain("there [1m]is a house ");
+                expect(file.blocks[16].toString()).toContain("# Ending");
+                expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
+                expect(file.blocks[18].toString()).toEqual("");
+            });
+        });
+
+        describe("block-spacing.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("block-spacing.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(16);
+                expect(file.frontmatter).toBeUndefined();
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[0].toString()).toContain("# Mixed Spacing");
+            });
+
+            it("handles adjacent chopro blocks correctly", () => {
+                expect(file.blocks[0].toString()).toContain("## No Spacing");
+                expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[2]).toBeInstanceOf(ChoproBlock);
+            });
+
+            it("preserves single empty line spacing correctly", () => {
+                expect(file.blocks[3].toString()).toContain("## Single Empty Line");
+
+                expect(file.blocks[3]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[4]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[5]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[6]).toBeInstanceOf(ChoproBlock);
+
+                expect(file.blocks[5].toString()).toEqual("");
+            });
+
+            it("preserves multiple empty line spacing correctly", () => {
+                expect(file.blocks[7].toString()).toContain("## Multiple Empty Lines");
+
+                expect(file.blocks[7]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[8]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[9]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[10]).toBeInstanceOf(ChoproBlock);
+
+                expect(file.blocks[9].toString()).toEqual("\n\n");
+            });
+
+            it("handles extra markdown spacing correctly", () => {
+                expect(file.blocks[11].toString()).toContain("## Extra Markdown Spacing");
+
+                expect(file.blocks[11]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[12]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[13]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[14]).toBeInstanceOf(ChoproBlock);
+                expect(file.blocks[15]).toBeInstanceOf(MarkdownBlock);
+            });
+        });
+
+        describe("no-chopro.md", () => {
+            let file: ChoproFile;
+
+            beforeAll(() => {
+                file = prepareTestFile("no-chopro.md");
+            });
+
+            it("parses file structure correctly", () => {
+                expect(file.blocks).toHaveLength(1);
+                expect(file.frontmatter).toBeUndefined();
+            });
+
+            it("identifies single markdown block correctly", () => {
+                expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
+                expect(file.blocks[0].toString()).toContain("# No `chopro` Blocks in Here");
+            });
+        });
+    });
 });

@@ -70,6 +70,11 @@ The settings panel includes a live preview that updates as you change configurat
 3. Run `npm run dev` for development with hot reload
 4. Run `npm run build` for production build
 
+### BRAT
+
+1. Add this repo to your [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin list.
+2. Enable the plugin in Settings → Community Plugins
+
 ## License
 
 MIT License - see LICENSE file for details

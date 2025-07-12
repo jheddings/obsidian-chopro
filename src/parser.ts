@@ -1,121 +1,21 @@
 // parser - ChoPro parsing elements and data structures
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-
-export enum NoteType {
-    ALPHA = 'alpha',
-    NASHVILLE = 'nashville',
-    UNKNOWN = 'unknown'
-}
-
-export enum Accidental {
-    SHARP = '♯',
-    FLAT = '♭',
-    NATURAL = '♮'
-}
-
-export class MusicalNote {
-    public static  PATTERN = /^([A-G1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
-
-    constructor(public root: string, public postfix?: string) {
-        this.root = root;
-        this.postfix = postfix;
-    }
-
-    /**
-     * Get the accidental type based on the postfix.
-     */
-    get accidental(): Accidental {
-        switch (this.postfix) {
-            case '#':
-            case '♯':
-            case 'is':
-                return Accidental.SHARP;
-            case 'b':
-            case '♭':
-            case 'es':
-            case 's':
-                return Accidental.FLAT;
-        }
-
-        return Accidental.NATURAL;
-    }
-
-    /**
-     * Determine the type of note notation (alpha, nashville, or unknown).
-     */
-    get noteType(): NoteType {
-        // Check if root is a letter (A-G) - alpha notation
-        if (/^[A-G]$/i.test(this.root)) {
-            return NoteType.ALPHA;
-        }
-        
-        // Check if root is a number (1-7) - nashville notation
-        if (/^[1-7]$/.test(this.root)) {
-            return NoteType.NASHVILLE;
-        }
-        
-        return NoteType.UNKNOWN;
-    }
-
-    /**
-     * Parse a note string into a MusicalNote instance.
-     */
-    static parse(noteString: string): MusicalNote {
-        const match = noteString.match(MusicalNote.PATTERN);
-        
-        if (!match) {
-            throw new Error('Invalid note format');
-        }
-
-        const root = match[1].toUpperCase();
-        const postfix = match[2] ? match[2].toLowerCase() : undefined;
-
-        return new MusicalNote(root, postfix);
-    }
-
-    /**
-     * Convert the note to its string representation.
-     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
-     */
-    toString(normalize: boolean = false): string {
-        let noteString = this.root;
-        
-        if (this.postfix) {
-            if (normalize) {
-                switch (this.accidental) {
-                    case Accidental.NATURAL:
-                        // no postfix for natural notes
-                        break;
-                    case Accidental.SHARP:
-                        noteString += '♯';
-                        break;
-                    case Accidental.FLAT:
-                        noteString += '♭';
-                        break;
-                }
-            } else {
-                noteString += this.postfix;
-            }
-        }
-        
-        return noteString;
-    }
-}
+import { AbstractNote } from './music';
 
 export abstract class LineSegment {
-    constructor(public content: string) {}
+    constructor() {}
 }
 
 export class ChordNotation extends LineSegment {
-    public static readonly PATTERN = /^\[([A-G1-7])(#|♯|b|♭|[ei]s|s)?([^\/]+)?(\/(.+))?\]$/i;
+    public static readonly PATTERN = /^\[([A-G1-7](?:#|♯|b|♭|[ei]s|s)?)([^\/\]]*)?(?:\/(.+))?\]$/i;
 
     constructor(
-        public note: MusicalNote,
+        public note: AbstractNote,
         public modifier?: string,
-        public bass?: MusicalNote
+        public bass?: AbstractNote
     ) {
-        super(note + (modifier || '') + (bass || ''));
+        super();
     }
 
     static test(content: string): boolean {
@@ -129,26 +29,56 @@ export class ChordNotation extends LineSegment {
             throw new Error('Invalid chord notation format');
         }
 
-        const root = match[1].toUpperCase();
-        const accidental = match[2] ? match[2].toLowerCase() : undefined;
-        const modifier = match[3] ? match[3].trim() : undefined;
-        const bassString = match[5] ? match[5].trim() : undefined;
+        const noteString = match[1];
+        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
+        const bassString = match[3] ? match[3].trim() : undefined;
 
-        const primaryNote = new MusicalNote(root, accidental);
-        const bassNote = bassString ? MusicalNote.parse(bassString) : undefined;
+        const primaryNote = AbstractNote.parse(noteString);
+        const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
 
         return new ChordNotation(primaryNote, modifier, bassNote);
     }
 
     /**
+     * Get the normalized chord quality in standard form.
+     */
+    get quality(): string | undefined {
+        if (!this.modifier) return undefined;
+        
+        let normalized = this.modifier;
+        
+        // Delta (Δ) to maj
+        normalized = normalized.replace(/Δ/g, 'maj');
+
+        // Full-diminished (o) to dim
+        normalized = normalized.replace(/(?<!ø)o(?!f)/g, 'dim');
+        
+        // Half-diminished (ø) to m7b5
+        normalized = normalized.replace(/ø7?/g, 'm7b5');
+        
+        // Plus (+) to aug (but preserve existing +)
+        normalized = normalized.replace(/\+(?!.*aug)/g, 'aug');
+        
+        // Normalize accidentals within chord modifiers
+        normalized = normalized.replace(/#/g, '♯');
+        normalized = normalized.replace(/b/g, '♭');
+        
+        return normalized.toLowerCase();
+    }
+
+    /**
      * Convert the chord notation to its ChoPro representation.
-     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     * @param normalize If true, normalize accidentals and chord qualities (default: false)
      */
     toString(normalize: boolean = false): string {
         let chordString = this.note.toString(normalize);
         
         if (this.modifier) {
-            chordString += normalize ? this.modifier.toLowerCase() : this.modifier;
+            if (normalize) {
+                chordString += this.quality;
+            } else { 
+                chordString += this.modifier;
+            }
         }
 
         if (this.bass) {
@@ -157,13 +87,20 @@ export class ChordNotation extends LineSegment {
 
         return `[${chordString}]`;
     }
+
+    /**
+     * Check if this chord notation is equal to another chord notation.
+     */
+    equals(other: ChordNotation): boolean {
+        return this.toString(true) === other.toString(true);
+    }
 }
 
 export class Annotation extends LineSegment {
     public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
 
-    constructor(content: string) {
-        super(content);
+    constructor(public content: string) {
+        super();
     }
 
     static test(content: string): boolean {
@@ -189,8 +126,8 @@ export class Annotation extends LineSegment {
 }
 
 export class TextSegment extends LineSegment {
-    constructor(content: string) {
-        super(content);
+    constructor(public content: string) {
+        super();
     }
 
     /**
@@ -309,8 +246,34 @@ export abstract class SegmentedLine extends ChoproLine {
         super();
     }
 
+    /**
+     * Get all chord notation segments from this line.
+     */
+    get chords(): ChordNotation[] {
+        return this.segments.filter(segment => segment instanceof ChordNotation) as ChordNotation[];
+    }
+
+    /**
+     * Get all text segments from this line.
+     */
+    get lyrics(): TextSegment[] {
+        return this.segments.filter(segment => segment instanceof TextSegment) as TextSegment[];
+    }
+
     static test(line: string): boolean {
         return SegmentedLine.INLINE_MARKER_PATTERN.test(line);
+    }
+
+    static parse(line: string): SegmentedLine {
+        if (ChordLyricsLine.test(line)) {
+            return ChordLyricsLine.parse(line);
+        }
+
+        if (InstrumentalLine.test(line)) {
+            return InstrumentalLine.parse(line);
+        }
+
+        throw new Error('invalid line format for SegmentedLine');
     }
 
     protected static parseLineSegments(line: string): LineSegment[] {
@@ -411,6 +374,8 @@ export abstract class ContentBlock {
  * Represents a frontmatter block containing properties serialized as YAML.
  */
 export class Frontmatter extends ContentBlock {
+    public static readonly BLOCK_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+
     constructor(public properties: Record<string, any> = {}) {
         super();
     }
@@ -418,11 +383,11 @@ export class Frontmatter extends ContentBlock {
     /**
      * Create a Frontmatter block from YAML content.
      */
-    static parse(yamlContent: string): Frontmatter {
+    static parse(content: string): Frontmatter {
         const frontmatter = new Frontmatter();
 
         try {
-            frontmatter.properties = parseYaml(yamlContent) || {};
+            frontmatter.properties = parseYaml(content) || {};
         } catch (error) {
             console.warn('Failed to parse YAML frontmatter:', error);
             frontmatter.properties = {};
@@ -475,29 +440,6 @@ export class Frontmatter extends ContentBlock {
 }
 
 /**
- * Represents a block of generic markdown content.
- */
-export class MarkdownBlock extends ContentBlock {
-    constructor(public content: string) {
-        super();
-    }
-
-    /**
-     * Create a MarkdownBlock from content.
-     */
-    static parse(content: string): MarkdownBlock {
-        return new MarkdownBlock(content.trim());
-    }
-
-    /**
-     * Convert the markdown block to its string representation.
-     */
-    toString(): string {
-        return this.content;
-    }
-}
-
-/**
  * Represents a block of ChoPro content, containing multiple lines.
  */
 export class ChoproBlock extends ContentBlock {
@@ -511,8 +453,15 @@ export class ChoproBlock extends ContentBlock {
      * Create a ChoproBlock by parsing the content.
      */
     static parse(content: string): ChoproBlock {
-        const lines = content.trim().split('\n');
+        const trimmedContent = content.trim();
         const choproLines: ChoproLine[] = [];
+
+        // Handle empty content
+        if (!trimmedContent) {
+            return new ChoproBlock(choproLines);
+        }
+
+        const lines = trimmedContent.split('\n');
 
         for (const line of lines) {
             const trimmedLine = line.trim();
@@ -530,18 +479,47 @@ export class ChoproBlock extends ContentBlock {
      * Convert the block to its normalized ChoPro representation.
      */
     toString(): string {
-        const content = this.lines.map(line => line.toString()).join('\n');
-        return '```chopro\n' + content + '\n```';
+        let content = '```chopro\n';
+
+        if (this.lines.length > 0) {
+            content += this.lines.map(line => line.toString()).join('\n');
+            content += '\n```';
+        } else {
+            content += '```';
+        }
+
+        return content;
     }
 
+}
+
+/**
+ * Represents a block of generic markdown content.
+ */
+export class MarkdownBlock extends ContentBlock {
+    constructor(public content: string) {
+        super();
+    }
+
+    /**
+     * Create a MarkdownBlock from content.
+     */
+    static parse(content: string): MarkdownBlock {
+        return new MarkdownBlock(content);
+    }
+
+    /**
+     * Convert the markdown block to its string representation.
+     */
+    toString(): string {
+        return this.content;
+    }
 }
 
 /**
  * Represents a complete ChoPro file containing frontmatter and content blocks.
  */
 export class ChoproFile {
-    private static readonly FRONTMATTER_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
-
     public frontmatter?: Frontmatter;
     public blocks: ContentBlock[] = [];
 
@@ -564,7 +542,7 @@ export class ChoproFile {
         let frontmatter: Frontmatter | undefined;
         let remainingContent = source;
 
-        const frontmatterMatch = source.match(ChoproFile.FRONTMATTER_PATTERN);
+        const frontmatterMatch = source.match(Frontmatter.BLOCK_PATTERN);
 
         if (frontmatterMatch) {
             frontmatter = Frontmatter.parse(frontmatterMatch[1]);
@@ -577,45 +555,64 @@ export class ChoproFile {
     }
 
     /**
+     * Load a ChoPro file from a given filename.
+     */
+    static load(path: string): ChoproFile {
+        const fs = require('fs');
+        const fileContent = fs.readFileSync(path, 'utf-8');
+        return ChoproFile.parse(fileContent);
+    }
+
+    /**
      * Parse content blocks from the given content.
      */
     private static parseContentBlocks(content: string): ContentBlock[] {
         const blocks: ContentBlock[] = [];
-        const blocksPattern = new RegExp(ChoproBlock.BLOCK_PATTERN.source, 'g');
+        const lines = content.split('\n');
         
-        let lastIndex = 0;
-        let match: RegExpExecArray | null;
+        let blockContent: string[] = [];
+        let blockMarker: string | undefined = undefined;
 
-        const addMarkdownBlock = (content: string) => {
-            if (content) {
-                blocks.push(MarkdownBlock.parse(content));
+        const flushMarkdownBlock = () => {
+            if (blockContent.length > 0) {
+                const markdownContent = blockContent.join('\n');
+                const block = MarkdownBlock.parse(markdownContent);
+                blocks.push(block);
             }
+            blockContent = [];
         };
-
-        const addChoproBlock = (content: string) => {
-            if (content) {
-                blocks.push(ChoproBlock.parse(content));
-            }
+        
+        const flushChoproBlock = () => {
+            const choproContent = blockContent.join('\n');
+            const block = ChoproBlock.parse(choproContent);
+            blocks.push(block);
+            blockContent = [];
         };
+        
+        for (const line of lines) {
+            if (blockMarker) {
+                if (line.trim() === blockMarker) {
+                    flushChoproBlock();
+                    blockMarker = undefined;
+                } else {
+                    blockContent.push(line);
+                }
 
-        while ((match = blocksPattern.exec(content)) !== null) {
-            // add any markdown content before this chopro block
-            if (match.index > lastIndex) {
-                const markdown = content.substring(lastIndex, match.index);
-                addMarkdownBlock(markdown);
+            } else if (line.startsWith('```chopro')) {
+                flushMarkdownBlock();
+                blockMarker = '```';
+
+            } else {
+                blockContent.push(line);
             }
-
-            addChoproBlock(match[1]);
-
-            lastIndex = match.index + match[0].length;
         }
-
-        // add any remaining markdown content after the last chopro block
-        if (lastIndex < content.length) {
-            const markdown = content.substring(lastIndex);
-            addMarkdownBlock(markdown);
+        
+        if (blockMarker) {
+            flushChoproBlock();
+        } else {
+            flushMarkdownBlock();
         }
-
+        
         return blocks;
     }
 
