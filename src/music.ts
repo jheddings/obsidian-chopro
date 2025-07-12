@@ -166,8 +166,8 @@ export class NashvilleNumber extends AbstractNote {
     /**
      * Create a new NashvilleNumber instance.
      */
-    constructor(root: string, postfix?: string) {
-        super(root, postfix);
+    constructor(root: number, postfix?: string) {
+        super(root.toString(), postfix);
     }
 
     /**
@@ -190,7 +190,7 @@ export class NashvilleNumber extends AbstractNote {
         const root = match[1];
         const postfix = match[2] ? match[2].toLowerCase() : undefined;
 
-        return new NashvilleNumber(root, postfix);
+        return new NashvilleNumber(parseInt(root), postfix);
     }
 }
 
@@ -203,7 +203,11 @@ export abstract class KeyInfo {
     /**
      * Parse a key string into a KeyInfo object.
      */
-    static parse(keyString: string): AbsoluteKeyInfo {
+    static parse(keyString: string): KeyInfo {
+        if (keyString === "##") {
+            return NashvilleKeyInfo.parse(keyString);
+        }
+        
         try { return AbsoluteKeyInfo.parse(keyString); }
         catch (error) { }
 
@@ -369,6 +373,40 @@ export class MinorKeyInfo extends AbsoluteKeyInfo {
 
     static parse(keyString: string): MinorKeyInfo {
         return AbsoluteKeyInfo.parse(keyString) as MinorKeyInfo;
+    }
+}
+
+/**
+ * Represents a Nashville number key notation.
+ */
+export class NashvilleKeyInfo extends RelativeKeyInfo {
+    constructor() {
+        super(new NashvilleNumber(1));
+    }
+
+    /**
+     * Get scale degrees for Nashville notation (same as major scale).
+     */
+    getScaleDegrees(): number[] {
+        return MajorKeyInfo.SCALE_INTERVALS;
+    }
+
+    /**
+     * Get string representation of Nashville key.
+     */
+    toString(): string {
+        return "##"; // Special marker for Nashville notation
+    }
+
+    /**
+     * Parse a Nashville key string.
+     */
+    static parse(keyString: string): NashvilleKeyInfo {
+        if (keyString === "##") {
+            return new NashvilleKeyInfo();
+        }
+
+        throw new Error(`Invalid Nashville key format: ${keyString}`);
     }
 }
 

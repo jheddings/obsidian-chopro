@@ -23,6 +23,10 @@ import {
     TransposeUtils,
 } from "./transpose";
 
+import {
+    KeyInfo,
+} from "./music";
+
 export interface ChoproPluginSettings {
     chordColor: string;
     chordSize: number;
@@ -367,8 +371,8 @@ class TransposeModal extends Modal {
                 }
 
                 const options: TransposeOptions = {
-                    fromKey: this.fromKey || undefined,
-                    toKey: this.toKey,
+                    fromKey: this.fromKey ? TransposeUtils.parseKey(this.fromKey) : undefined,
+                    toKey: TransposeUtils.parseKey(this.toKey),
                 };
 
                 this.onConfirm(options);

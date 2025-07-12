@@ -17,12 +17,14 @@ import {
     MusicNote,
     NashvilleNumber,
     AbsoluteKeyInfo,
+    NashvilleKeyInfo,
+    KeyInfo,
     MusicTheory,
 } from "./music";
 
 export interface TransposeOptions {
-    fromKey?: string;
-    toKey?: string;
+    fromKey?: KeyInfo;
+    toKey?: KeyInfo;
 }
 
 export interface TransposeResult {
@@ -308,15 +310,20 @@ export class ChoproTransposer {
             throw new Error("source and target keys required for alphabetic notation");
         }
 
-        const sourceKey = AbsoluteKeyInfo.parse(this.options.fromKey);
-        const targetKey = AbsoluteKeyInfo.parse(this.options.toKey);
+        // Ensure we have absolute keys for alpha transposition
+        if (!(this.options.fromKey instanceof AbsoluteKeyInfo)) {
+            throw new Error("source key must be an absolute key for alphabetic notation");
+        }
+
+        const sourceKey = this.options.fromKey;
 
         // Convert from Alpha to Nashville if needed
-        if (this.options.toKey === "##") {
+        if (this.options.toKey instanceof NashvilleKeyInfo) {
             NashvilleTransposer.chordToNashville(chord, sourceKey);
 
         // Transpose from Alpha to Alpha
-        } else {
+        } else if (this.options.toKey instanceof AbsoluteKeyInfo) {
+            const targetKey = this.options.toKey;
             const interval = sourceKey.getIntervalTo(targetKey);
 
             NoteTransposer.transposeChord(
@@ -324,6 +331,8 @@ export class ChoproTransposer {
                 interval,
                 targetKey.accidental
             );
+        } else {
+            throw new Error("Invalid target key type for alphabetic notation");
         }
     }
 
@@ -336,10 +345,11 @@ export class ChoproTransposer {
         }
 
         // Convert from Nashville to Alpha if needed
-        if (this.options.toKey !== "##") {
-            const targetKey = AbsoluteKeyInfo.parse(this.options.toKey);
+        if (this.options.toKey instanceof AbsoluteKeyInfo) {
+            const targetKey = this.options.toKey;
             NashvilleTransposer.nashvilleToChord(chord, targetKey);
         }
+        // If target is also Nashville, no conversion needed
     }
 
     /**
@@ -350,9 +360,8 @@ export class ChoproTransposer {
             return;
         }
 
-        if (frontmatter.has("key")) {
-            frontmatter.set("key", this.options.toKey);
-        }
+        // Set the key property (add it if it doesn't exist)
+        frontmatter.set("key", this.options.toKey.toString());
     }
 
     /**
@@ -360,21 +369,14 @@ export class ChoproTransposer {
      */
     private validateOptions(): void {
         if (this.options.fromKey) {
-            try {
-                AbsoluteKeyInfo.parse(this.options.fromKey);
-            } catch (error) {
-                throw new Error(`Invalid 'from' key format: ${error}`);
+            if (!(this.options.fromKey instanceof KeyInfo)) {
+                throw new Error("Invalid 'from' key: must be a KeyInfo instance");
             }
         }
 
         if (this.options.toKey) {
-            try {
-                // Special case: "##" is used to indicate Nashville notation
-                if (this.options.toKey !== "##") {
-                    AbsoluteKeyInfo.parse(this.options.toKey);
-                }
-            } catch (error) {
-                throw new Error(`Invalid 'to' key format: ${error}`);
+            if (!(this.options.toKey instanceof KeyInfo)) {
+                throw new Error("Invalid 'to' key: must be a KeyInfo instance");
             }
         }
     }
@@ -413,16 +415,36 @@ export class TransposeUtils {
             keys.push(note + "m");
         }
 
+        // Add Nashville notation
+        keys.push("##");
+
         return keys.sort();
+    }
+
+    /**
+     * Get all possible KeyInfo objects.
+     */
+    static getAllKeyInfos(): KeyInfo[] {
+        const keys: KeyInfo[] = [];
+
+        for (const keyString of this.getAllKeys()) {
+            try {
+                keys.push(KeyInfo.parse(keyString));
+            } catch {
+                // Skip invalid keys
+            }
+        }
+
+        return keys;
     }
 
     /**
      * Detect the key from a ChoPro file.
      */
-    static detectKey(file: ChoproFile): AbsoluteKeyInfo | undefined {
+    static detectKey(file: ChoproFile): KeyInfo | undefined {
         const keyString = file.key;
         if (keyString && this.isValidKey(keyString)) {
-            return AbsoluteKeyInfo.parse(keyString);
+            return KeyInfo.parse(keyString);
         }
 
         // TODO: Implement key detection algorithm based on chord analysis
@@ -436,10 +458,24 @@ export class TransposeUtils {
      */
     static isValidKey(keyString: string): boolean {
         try {
-            AbsoluteKeyInfo.parse(keyString);
+            KeyInfo.parse(keyString);
             return true;
         } catch {
             return false;
         }
+    }
+
+    /**
+     * Parse a key string into a KeyInfo object.
+     */
+    static parseKey(keyString: string): KeyInfo {
+        return KeyInfo.parse(keyString);
+    }
+
+    /**
+     * Convert a KeyInfo object to its string representation.
+     */
+    static keyToString(key: KeyInfo): string {
+        return key.toString();
     }
 }

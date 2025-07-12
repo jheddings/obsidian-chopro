@@ -11,6 +11,7 @@ import {
     NashvilleNumber,
     MusicTheory,
     KeyInfo,
+    AbsoluteKeyInfo,
     MajorKeyInfo,
     MinorKeyInfo,
 } from "../src/music";
@@ -272,7 +273,7 @@ describe('NashvilleTransposer', () => {
             ({ input, key, expected }) => {
                 const nashvilleChord = ChordNotation.parse(input);
                 const expectedChord = ChordNotation.parse(expected);
-                const musicalKey = KeyInfo.parse(key);
+                const musicalKey = KeyInfo.parse(key) as AbsoluteKeyInfo;
                 
                 NashvilleTransposer.nashvilleToChord(nashvilleChord, musicalKey);
                 
@@ -285,7 +286,7 @@ describe('NashvilleTransposer', () => {
         test('should throw on non-Nashville chord', () => {
             const alphaNote = new MusicNote('C');
             const alphaChord = new ChordNotation(alphaNote);
-            const key = KeyInfo.parse('C');
+            const key = KeyInfo.parse('C') as AbsoluteKeyInfo;
             
             expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key)).toThrow();
         });
@@ -315,7 +316,7 @@ describe('NashvilleTransposer', () => {
             ({ input, key, expected }) => {
                 const alphaChord = ChordNotation.parse(input);
                 const expectedChord = ChordNotation.parse(expected);
-                const musicalKey = KeyInfo.parse(key);
+                const musicalKey = KeyInfo.parse(key) as AbsoluteKeyInfo;
                 
                 NashvilleTransposer.chordToNashville(alphaChord, musicalKey);
                 
@@ -326,9 +327,9 @@ describe('NashvilleTransposer', () => {
         );
 
         test('should throw on non-alphabetic chord', () => {
-            const nashvilleNum = new NashvilleNumber('1');
+            const nashvilleNum = new NashvilleNumber(1);
             const nashvilleChord = new ChordNotation(nashvilleNum);
-            const key = KeyInfo.parse('C');
+            const key = KeyInfo.parse('C') as AbsoluteKeyInfo;
             
             expect(() => NashvilleTransposer.chordToNashville(nashvilleChord, key))
                 .toThrow('Chord is not in alphabetic notation');
@@ -437,8 +438,8 @@ describe('ChoproTransposer', () => {
                 expect(file.key).toBe('C');
 
                 const transposer = new ChoproTransposer({
-                    fromKey: 'C',
-                    toKey: 'G'
+                    fromKey: KeyInfo.parse('C'),
+                    toKey: KeyInfo.parse('G')
                 });
 
                 transposer.transpose(file);
@@ -470,8 +471,8 @@ describe('ChoproTransposer', () => {
                 expect(file.key).toBe('C');
 
                 const transposer = new ChoproTransposer({
-                    fromKey: 'C',
-                    toKey: 'Bb'
+                    fromKey: KeyInfo.parse('C'),
+                    toKey: KeyInfo.parse('Bb')
                 });
 
                 transposer.transpose(file);
@@ -495,8 +496,8 @@ describe('ChoproTransposer', () => {
                 expect(file.key).toBe('C');
 
                 const transposer = new ChoproTransposer({
-                    fromKey: 'C',
-                    toKey: 'F#'
+                    fromKey: KeyInfo.parse('C'),
+                    toKey: KeyInfo.parse('F#')
                 });
 
                 transposer.transpose(file);
@@ -512,7 +513,6 @@ describe('ChoproTransposer', () => {
             });
         });
 
-        /*
         describe('should transpose standard.md from C to Nashville notation', () => {
             let file: ChoproFile;
 
@@ -521,12 +521,12 @@ describe('ChoproTransposer', () => {
                 expect(file.key).toBe('C');
 
                 const transposer = new ChoproTransposer({
-                    fromKey: 'C',
-                    toKey: '##'
+                    fromKey: KeyInfo.parse('C'),
+                    toKey: KeyInfo.parse('##')
                 });
 
                 transposer.transpose(file);
-                expect(file.key).toBe('nashville');
+                expect(file.key).toBe('##');
             });
 
             it("transposes verse 1 correctly", () => {
@@ -545,7 +545,6 @@ describe('ChoproTransposer', () => {
                 ]);
             });
         });
-        */
     });
 
     describe('validation', () => {
@@ -557,7 +556,10 @@ describe('ChoproTransposer', () => {
         test.each(validKeyTestCases)(
             'should accept valid keys: fromKey=$fromKey, toKey=$toKey',
             ({ fromKey, toKey }) => {
-                expect(() => new ChoproTransposer({ fromKey, toKey })).not.toThrow();
+                expect(() => new ChoproTransposer({ 
+                    fromKey: KeyInfo.parse(fromKey), 
+                    toKey: KeyInfo.parse(toKey) 
+                })).not.toThrow();
             }
         );
 
@@ -569,7 +571,10 @@ describe('ChoproTransposer', () => {
         test.each(invalidKeyTestCases)(
             'should error for invalid keys: fromKey=$fromKey, toKey=$toKey',
             ({ fromKey, toKey }) => {
-                expect(() => new ChoproTransposer({ fromKey, toKey })).toThrow();
+                expect(() => new ChoproTransposer({ 
+                    fromKey: KeyInfo.parse(fromKey), 
+                    toKey: KeyInfo.parse(toKey) 
+                })).toThrow();
             }
         );
     });
