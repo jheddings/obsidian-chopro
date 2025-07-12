@@ -48,6 +48,8 @@ export class NoteTransposer {
         interval: number,
         preferredAccidental?: Accidental
     ): void {
+        if (interval === 0) return; // No transposition needed
+        
         const originalIndex = MusicTheory.getNoteIndex(note);
         const newIndex = (originalIndex + interval + 12) % 12;
         const newNoteName = MusicTheory.getPreferredNoteName(newIndex, preferredAccidental);
@@ -83,6 +85,11 @@ export class NashvilleTransposer {
     private static nashvilleDegreeToNoteIndex(note: NashvilleNumber, key: AbsoluteKeyInfo): number {
         const degree = note.degree - 1; // Convert to 0-based
         const scaleDegrees = key.getScaleDegrees();
+        
+        if (degree < 0 || degree >= scaleDegrees.length) {
+            throw new Error(`Invalid Nashville degree: ${note.degree}`);
+        }
+        
         const keyIndex = MusicTheory.getNoteIndex(key.root);
         
         return (keyIndex + scaleDegrees[degree]) % 12;

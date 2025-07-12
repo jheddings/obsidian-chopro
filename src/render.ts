@@ -21,6 +21,13 @@ export class ChoproRenderer {
     constructor(private settings: ChoproPluginSettings) {}
 
     /**
+     * Update renderer settings without creating a new instance
+     */
+    updateSettings(settings: ChoproPluginSettings): void {
+        this.settings = settings;
+    }
+
+    /**
      * Render a ChoPro block into DOM elements
      */
     renderBlock(block: ChoproBlock, container: HTMLElement): void {
@@ -192,7 +199,7 @@ export class ChoproRenderer {
         let totalChordLength = 0;
         const { prefix, suffix } = this.getChordDecorations();
         
-        if (prefix && prefix.length > 0) {
+        if (prefix) {
             container.createSpan({ text: prefix });
             totalChordLength += prefix.length;
         }
@@ -203,11 +210,10 @@ export class ChoproRenderer {
 
         if (segment.modifier) {
             const mod = this.settings.normalizedChordDisplay ?
-                segment.modifier.toLowerCase() :
+                (segment.quality || segment.modifier.toLowerCase()) :
                 segment.modifier;
 
             container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
-
             totalChordLength += mod.length;
         }
 
@@ -217,7 +223,7 @@ export class ChoproRenderer {
             totalChordLength += 1 + bass.length; // +1 for the slash
         }
 
-        if (suffix && suffix.length > 0) {
+        if (suffix) {
             container.createSpan({ text: suffix });
             totalChordLength += suffix.length;
         }
