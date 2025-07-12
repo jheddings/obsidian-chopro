@@ -108,7 +108,7 @@ export abstract class AbstractNote {
             return false;
         }
 
-        return true
+        return true;
     }
 }
 
@@ -446,7 +446,7 @@ export class MusicTheory {
      * Get the base note index for A-G.
      */
     private static getBaseNoteIndex(root: string): number {
-        const noteMap: { [key: string]: number } = {
+        const noteMap: Record<string, number> = {
             C: 0,
             D: 2,
             E: 4,
@@ -455,7 +455,11 @@ export class MusicTheory {
             A: 9,
             B: 11,
         };
-        return noteMap[root.toUpperCase()] ?? 0;
+        const index = noteMap[root.toUpperCase()];
+        if (index === undefined) {
+            throw new Error(`Invalid note root: ${root}`);
+        }
+        return index;
     }
 
     /**
