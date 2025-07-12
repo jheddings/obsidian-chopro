@@ -1,6 +1,5 @@
 import { 
     ChordNotation,
-    LetterNotation,
     NashvilleNotation,
     ChoproFile,
     ChoproBlock,
@@ -12,8 +11,6 @@ import {
     MusicNote,
     KeyInfo,
     AbsoluteKeyInfo,
-    MajorKeyInfo,
-    MinorKeyInfo,
 } from "../src/music";
 
 import {
