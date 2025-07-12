@@ -101,7 +101,7 @@ export class ChordNotation extends LineSegment {
  * Represents a chord notation using alphabetic note names (A-G).
  */
 export class LetterNotation extends ChordNotation {
-    public static readonly PATTERN = /^\[([A-G](?:♮|#|♯|b|♭|[ei]s|s)?)([^\/\]]*)?(?:\/(.+))?\]$/;
+    public static readonly PATTERN = /^\[([A-G](?:♮|#|♯|b|♭|[ei]s|s)?)([^\/\]]+)?(?:\/(.+))?\]$/;
 
     constructor(
         public note: MusicNote,
@@ -141,7 +141,7 @@ export class LetterNotation extends ChordNotation {
  * Represents a chord notation using Nashville number system (1-7).
  */
 export class NashvilleNotation extends ChordNotation {
-    public static readonly PATTERN = /^\[([1-7](?:#|♯|b|♭)?)([^\/\]]*)?(?:\/(.+))?\]$/;
+    public static readonly PATTERN = /^\[([1-7](?:#|♯|b|♭)?)([^\/\]]+)?(?:\/(.+))?\]$/;
 
     constructor(
         public note: NashvilleNumber,
