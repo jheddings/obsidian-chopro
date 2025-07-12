@@ -2,6 +2,8 @@
 
 import {
     ChordNotation,
+    LetterNotation,
+    NashvilleNotation,
     ChoproFile,
     SegmentedLine,
     ChoproBlock,
@@ -143,10 +145,7 @@ export class NashvilleTransposer {
     /**
      * Convert Nashville number to chord notation.
      */
-    static nashvilleToChord(nashvilleChord: ChordNotation, targetKey: AbsoluteKeyInfo): void {
-        if (!(nashvilleChord.note instanceof NashvilleNumber)) {
-            throw new Error("Chord is not in Nashville notation");
-        }
+    static nashvilleToChord(nashvilleChord: NashvilleNotation, targetKey: AbsoluteKeyInfo): void {
 
         // Convert main note
         this.convertNashvilleToAlpha(nashvilleChord.note, targetKey);
@@ -164,10 +163,7 @@ export class NashvilleTransposer {
     /**
      * Convert chord notation to Nashville number.
      */
-    static chordToNashville(chord: ChordNotation, sourceKey: AbsoluteKeyInfo): void {
-        if (!(chord.note instanceof MusicNote)) {
-            throw new Error("Chord is not in alphabetic notation");
-        }
+    static chordToNashville(chord: LetterNotation, sourceKey: AbsoluteKeyInfo): void {
 
         // Convert main note
         this.convertAlphaToNashville(chord.note, sourceKey);
@@ -265,21 +261,21 @@ export class ChoproTransposer {
      */
     private transposeChordSegment(chord: ChordNotation): void {
 
-        if (chord.note instanceof MusicNote) {
+        if (chord instanceof LetterNotation) {
             this.transposeAlphaChordSegment(chord);
 
-        } else if (chord.note instanceof NashvilleNumber) {
+        } else if (chord instanceof NashvilleNotation) {
             this.transposeNashvilleChordSegment(chord);
 
         } else {
-            throw new Error(`Unsupported note type: ${chord.note.constructor.name}`);
+            throw new Error(`Unsupported chord notation type: ${chord.constructor.name}`);
         }
     }
 
     /**
      * Transpose an Alpha chord segment in place.
      */
-    private transposeAlphaChordSegment(chord: ChordNotation): void {
+    private transposeAlphaChordSegment(chord: LetterNotation): void {
         if (!this.options.fromKey || !this.options.toKey) {
             throw new Error("source and target keys required for alphabetic notation");
         }
@@ -313,7 +309,7 @@ export class ChoproTransposer {
     /**
      * Transpose a Nashville chord segment in place.
      */
-    private transposeNashvilleChordSegment(chord: ChordNotation): void {
+    private transposeNashvilleChordSegment(chord: NashvilleNotation): void {
         if (!this.options.toKey) {
             throw new Error("target key required for Nashville notation");
         }

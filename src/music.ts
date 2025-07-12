@@ -10,14 +10,6 @@ export enum Accidental {
 }
 
 /**
- * Musical key quality.
- */
-export enum KeyQuality {
-    MAJOR = "major",
-    MINOR = "minor",
-}
-
-/**
  * Scale types for different musical modes.
  */
 export enum ScaleType {
@@ -124,7 +116,7 @@ export abstract class AbstractNote {
  * Represents an alphabetic musical note (A-G).
  */
 export class MusicNote extends AbstractNote {
-    public static readonly PATTERN = /^([A-G])(♮|#|♯|b|♭|[ei]s|s)?/;
+    public static readonly PATTERN = /^([A-G])(♮|#|♯|b|♭|[ei]s|s)?$/;
 
     /**
      * Create a new MusicNote instance.
@@ -151,7 +143,7 @@ export class MusicNote extends AbstractNote {
         }
 
         const root = match[1].toUpperCase();
-        const postfix = match[2] ? match[2].toLowerCase() : undefined;
+        const postfix = match[2];
 
         return new MusicNote(root, postfix);
     }
@@ -161,7 +153,7 @@ export class MusicNote extends AbstractNote {
  * Represents a Nashville number notation (1-7).
  */
 export class NashvilleNumber extends AbstractNote {
-    public static readonly PATTERN = /^([1-7])(#|♯|b|♭)?/;
+    public static readonly PATTERN = /^([1-7])(#|♯|b|♭)?$/;
 
     /**
      * Create a new NashvilleNumber instance.
@@ -195,7 +187,7 @@ export class NashvilleNumber extends AbstractNote {
         }
 
         const root = match[1];
-        const postfix = match[2] ? match[2].toLowerCase() : undefined;
+        const postfix = match[2];
 
         return new NashvilleNumber(parseInt(root), postfix);
     }
@@ -251,7 +243,7 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
 
         const root = match[1].toUpperCase();
         const accidental = match[2] || "";
-        const quality = match[3] ? KeyQuality.MINOR : KeyQuality.MAJOR;
+        const isMinor = !!match[3];
 
         let noteString = root;
         if (accidental) {
@@ -261,12 +253,11 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
         const rootNote = MusicNote.parse(noteString);
         const preferredAccidental = MusicTheory.getPreferredAccidental(noteString);
 
-        // Return appropriate subclass instance
-        if (quality === KeyQuality.MAJOR) {
-            return new MajorKeyInfo(rootNote, preferredAccidental);
-        } else {
+        if (isMinor) {
             return new MinorKeyInfo(rootNote, preferredAccidental);
         }
+
+        return new MajorKeyInfo(rootNote, preferredAccidental);
     }
 
     /**
