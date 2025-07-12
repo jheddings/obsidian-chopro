@@ -9,8 +9,6 @@ export enum Accidental {
     NATURAL = '♮'
 }
 
-
-
 /**
  * Scale types for different musical modes.
  */
