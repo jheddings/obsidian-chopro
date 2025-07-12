@@ -171,6 +171,13 @@ export class NashvilleNumber extends AbstractNote {
     }
 
     /**
+     * Get the numeric degree value (1-7).
+     */
+    get degree(): number {
+        return parseInt(this.root);
+    }
+
+    /**
      * Test if a string matches the NashvilleNumber pattern.
      */
     static test(noteString: string): boolean {

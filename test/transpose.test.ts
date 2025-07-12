@@ -526,7 +526,7 @@ describe('ChoproTransposer', () => {
                 });
 
                 transposer.transpose(file);
-                expect(file.key).toBe('##');
+                expect(file.key).toBeUndefined();
             });
 
             it("transposes verse 1 correctly", () => {
