@@ -13,19 +13,26 @@ An Obsidian plugin that renders ChordPro format chord sheets with accurate chord
 - **Accurate Chord Positioning**: Improved algorithm for precise chord-to-lyric alignment
 - **Configurable Styling**: Customizable chord color, directive display
 - **Chord Normalization**: Automatic cleanup and standardization of chord notation
+- **Transpose Files**: Transpose entire files between keys or chord notations
 
 ## Usage
 
 Create a code block with the `chopro` language identifier:
 
-````markdown
+~~~markdown
 ```chopro
 [C]Amazing [F]grace how [G]sweet the sound
 That [C]saved a [Am]wretch like [F]me[G]
 [C]I once was [F]lost but [G]now am found
 Was [C]blind but [Am]now I [F]see[C]
 ```
-````
+~~~
+
+## Commands
+
+These actions are available using the Command Palette.
+
+- **Transpose chords in current file**: open the transpose dialog for the current file
 
 ## Configuration
 
