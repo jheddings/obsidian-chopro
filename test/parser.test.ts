@@ -1,19 +1,22 @@
 import {
     ChordNotation,
-    MusicNote,
-    AlphaNote,
-    NashvilleNote,
     Annotation,
     TextSegment,
     ChoproFile,
     CommentLine,
     EmptyLine,
     TextLine,
-    Accidental,
     ChoproBlock,
     MarkdownBlock,
     SegmentedLine,
 } from "../src/parser";
+
+import {
+    AbstractNote,
+    MusicNote,
+    NashvilleNumber,
+    Accidental,
+} from "../src/music";
 
 /**
  * Helper function to verify that a SegmentedLine contains the expected chords.
@@ -50,35 +53,35 @@ export function verifyChordsInBlock(
     });
 }
 
-describe("MusicalNote", () => {
+describe("MusicNote", () => {
     const testCases = [
         // Basic alpha notes
-        { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: AlphaNote },
-        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: AlphaNote },
-        { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP, expectedClass: AlphaNote },
-        { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT, expectedClass: AlphaNote },
+        { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: MusicNote },
+        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: MusicNote },
+        { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT, expectedClass: MusicNote },
         
         // German notation
-        { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP, expectedClass: AlphaNote },
-        { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT, expectedClass: AlphaNote },
-        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT, expectedClass: AlphaNote },
+        { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT, expectedClass: MusicNote },
+        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT, expectedClass: MusicNote },
         
         // Nashville notation
-        { input: "1", root: "1", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: NashvilleNote },
-        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT, expectedClass: NashvilleNote },
-        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP, expectedClass: NashvilleNote },
+        { input: "1", root: "1", postfix: undefined, accidental: Accidental.NATURAL, expectedClass: NashvilleNumber },
+        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT, expectedClass: NashvilleNumber },
+        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP, expectedClass: NashvilleNumber },
         
         // Unicode accidentals
-        { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP, expectedClass: AlphaNote },
-        { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT, expectedClass: AlphaNote },
-        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP, expectedClass: NashvilleNote },
+        { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP, expectedClass: MusicNote },
+        { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT, expectedClass: MusicNote },
+        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP, expectedClass: NashvilleNumber },
     ];
 
     describe("parsing", () => {
         test.each(testCases)(
             "parses $input correctly",
             ({ input, root, postfix, accidental, expectedClass }) => {
-                const note = MusicNote.parse(input);
+                const note = AbstractNote.parse(input);
                 
                 expect(note.root).toEqual(root);
                 expect(note.postfix).toEqual(postfix);
@@ -88,9 +91,9 @@ describe("MusicalNote", () => {
         );
 
         it("throws error for invalid note format", () => {
-            expect(() => MusicNote.parse("H")).toThrow("Invalid note format");
-            expect(() => MusicNote.parse("8")).toThrow("Invalid note format");
-            expect(() => MusicNote.parse("")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("H")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("8")).toThrow("Invalid note format");
+            expect(() => AbstractNote.parse("")).toThrow("Invalid note format");
         });
     });
 
@@ -119,50 +122,165 @@ describe("MusicalNote", () => {
         test.each(normalizationCases)(
             "normalizes $input correctly",
             ({ input, normalized }) => {
-                const note = MusicNote.parse(input);
+                const note = AbstractNote.parse(input);
                 expect(note.toString()).toEqual(input);
                 expect(note.toString(false)).toEqual(input);
                 expect(note.toString(true)).toEqual(normalized);
             }
         );
     });
+
+    describe("AlphaNote", () => {
+        describe("validation", () => {
+            const validNotes = [
+                "C", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"
+            ];
+
+            test.each(validNotes)(
+                "returns true for valid alpha note %s", (note) => {
+                    expect(MusicNote.test(note)).toBe(true);
+                }
+            );
+
+            const invalidNotes = [
+                "1", "5b", "H", "8", "", "invalid"
+            ];
+
+            test.each(invalidNotes)(
+                "returns false for invalid alpha note %s",
+                (note) => {
+                    expect(MusicNote.test(note)).toBe(false);
+                }
+            );
+        });
+
+        describe("parsing", () => {
+            const alphaNotes = [
+                { input: "C", root: "C", postfix: undefined },
+                { input: "F#", root: "F", postfix: "#" },
+                { input: "Bb", root: "B", postfix: "b" },
+                { input: "G♯", root: "G", postfix: "♯" },
+                { input: "A♭", root: "A", postfix: "♭" },
+                { input: "Gis", root: "G", postfix: "is" },
+                { input: "Fes", root: "F", postfix: "es" },
+            ];
+
+            test.each(alphaNotes)(
+                "parses $input correctly",
+                ({ input, root, postfix }) => {
+                    const note = MusicNote.parse(input);
+                    expect(note).toBeInstanceOf(MusicNote);
+                    expect(note.root).toBe(root);
+                    expect(note.postfix).toEqual(postfix);
+                }
+            );
+
+            const invalidNotes = [
+                "1", "8", "I", "iv", "&", "#", ""
+            ];
+
+            test.each(invalidNotes)(
+                "throws error for invalid alpha note %s", (input) => {
+                    expect(() => MusicNote.parse(input)).toThrow("Invalid note format");
+                }
+            );
+        });
+
+    });
+
+    describe("NashvilleNote", () => {
+        describe("validation", () => {
+
+            const validNotes = [
+                "1", "4b", "2#", "7♯", "3♭"
+            ];
+
+            test.each(validNotes)(
+                "returns true for valid Nashville note %s", (note) => {
+                    expect(NashvilleNumber.test(note)).toBe(true);
+                }
+            );
+
+            const invalidNotes = [
+                "C", "F#", "8", "0", "", "invalid"
+            ];
+
+            test.each(invalidNotes)(
+                "returns false for invalid Nashville note %s",
+                (note) => {
+                    expect(NashvilleNumber.test(note)).toBe(false);
+                }
+            );
+        });
+
+        describe("parsing", () => {
+            const nashvilleNumbers = [
+                { input: "1", root: "1", postfix: undefined },
+                { input: "4b", root: "4", postfix: "b" },
+                { input: "2#", root: "2", postfix: "#" },
+                { input: "7♯", root: "7", postfix: "♯" },
+                { input: "3♭", root: "3", postfix: "♭" },
+            ];
+
+            test.each(nashvilleNumbers)(
+                "parses $input correctly",
+                ({ input, root, postfix }) => {
+                    const note = NashvilleNumber.parse(input);
+                    expect(note).toBeInstanceOf(NashvilleNumber);
+                    expect(note.root).toBe(root);
+                    expect(note.postfix).toEqual(postfix);
+                }
+            );
+
+            const invalidNumbers = [
+                "C", "8", "*", "ii", "V", ""
+            ];
+
+            test.each(invalidNumbers)(
+                "throws error for invalid Nashville note %s",
+                (input) => {
+                    expect(() => NashvilleNumber.parse(input)).toThrow();
+                }
+            );
+        });
+    });
 });
 
 describe("ChordNotation", () => {
     const testCases = [
         // Alpha notation
-        { input: "[C]", note: "C", modifier: undefined, bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", expectedNoteClass: AlphaNote },
-        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", expectedNoteClass: AlphaNote },
+        { input: "[C]", note: "C", modifier: undefined, bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", expectedNoteClass: MusicNote },
+        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", expectedNoteClass: MusicNote },
         
         // Nashville notation
-        { input: "[1]", note: "1", modifier: undefined, bass: undefined, expectedNoteClass: NashvilleNote },
-        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, expectedNoteClass: NashvilleNote },
-        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", expectedNoteClass: NashvilleNote },
-        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", expectedNoteClass: NashvilleNote },
+        { input: "[1]", note: "1", modifier: undefined, bass: undefined, expectedNoteClass: NashvilleNumber },
+        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, expectedNoteClass: NashvilleNumber },
+        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
+        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", expectedNoteClass: NashvilleNumber },
         
         // Unicode accidentals
-        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", expectedNoteClass: NashvilleNote },
+        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
 
         // Complex modifiers
-        { input: "[C#dim]", note: "C#", modifier: "dim", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, expectedNoteClass: AlphaNote },
+        { input: "[C#dim]", note: "C#", modifier: "dim", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, expectedNoteClass: MusicNote },
 
         // Alternative chord quality notations
-        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[Co]", note: "C", modifier: "o", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[C+]", note: "C", modifier: "+", bass: undefined, expectedNoteClass: AlphaNote },
-        { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E", expectedNoteClass: AlphaNote },
-        { input: "[Go7/B]", note: "G", modifier: "o7", bass: "B", expectedNoteClass: AlphaNote },
-        { input: "[A+add9]", note: "A", modifier: "+add9", bass: undefined, expectedNoteClass: AlphaNote },
+        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Co]", note: "C", modifier: "o", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[C+]", note: "C", modifier: "+", bass: undefined, expectedNoteClass: MusicNote },
+        { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E", expectedNoteClass: MusicNote },
+        { input: "[Go7/B]", note: "G", modifier: "o7", bass: "B", expectedNoteClass: MusicNote },
+        { input: "[A+add9]", note: "A", modifier: "+add9", bass: undefined, expectedNoteClass: MusicNote },
     ];
 
     describe("parses valid chord notation", () => {
@@ -836,100 +954,6 @@ describe("ChoproFile", () => {
             it("identifies single markdown block correctly", () => {
                 expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
                 expect(file.blocks[0].toString()).toContain("# No `chopro` Blocks in Here");
-            });
-        });
-    });
-
-    describe("static test methods", () => {
-        describe("AlphaNote.test", () => {
-            it("returns true for valid alpha notes", () => {
-                expect(AlphaNote.test("C")).toBe(true);
-                expect(AlphaNote.test("F#")).toBe(true);
-                expect(AlphaNote.test("Bb")).toBe(true);
-                expect(AlphaNote.test("G♯")).toBe(true);
-                expect(AlphaNote.test("A♭")).toBe(true);
-                expect(AlphaNote.test("Gis")).toBe(true);
-                expect(AlphaNote.test("Fes")).toBe(true);
-            });
-
-            it("returns false for invalid alpha notes", () => {
-                expect(AlphaNote.test("1")).toBe(false);
-                expect(AlphaNote.test("5b")).toBe(false);
-                expect(AlphaNote.test("H")).toBe(false);
-                expect(AlphaNote.test("8")).toBe(false);
-                expect(AlphaNote.test("")).toBe(false);
-                expect(AlphaNote.test("invalid")).toBe(false);
-            });
-        });
-
-        describe("NashvilleNote.test", () => {
-            it("returns true for valid Nashville notes", () => {
-                expect(NashvilleNote.test("1")).toBe(true);
-                expect(NashvilleNote.test("4b")).toBe(true);
-                expect(NashvilleNote.test("2#")).toBe(true);
-                expect(NashvilleNote.test("7♯")).toBe(true);
-                expect(NashvilleNote.test("3♭")).toBe(true);
-            });
-
-            it("returns false for invalid Nashville notes", () => {
-                expect(NashvilleNote.test("C")).toBe(false);
-                expect(NashvilleNote.test("F#")).toBe(false);
-                expect(NashvilleNote.test("8")).toBe(false);
-                expect(NashvilleNote.test("0")).toBe(false);
-                expect(NashvilleNote.test("")).toBe(false);
-                expect(NashvilleNote.test("invalid")).toBe(false);
-            });
-        });
-    });
-
-    describe("static parse methods", () => {
-        describe("AlphaNote.parse", () => {
-            it("parses valid alpha notes correctly", () => {
-                const noteC = AlphaNote.parse("C");
-                expect(noteC).toBeInstanceOf(AlphaNote);
-                expect(noteC.root).toBe("C");
-                expect(noteC.postfix).toBeUndefined();
-
-                const noteFSharp = AlphaNote.parse("F#");
-                expect(noteFSharp).toBeInstanceOf(AlphaNote);
-                expect(noteFSharp.root).toBe("F");
-                expect(noteFSharp.postfix).toBe("#");
-
-                const noteBFlat = AlphaNote.parse("Bb");
-                expect(noteBFlat).toBeInstanceOf(AlphaNote);
-                expect(noteBFlat.root).toBe("B");
-                expect(noteBFlat.postfix).toBe("b");
-            });
-
-            it("throws error for invalid alpha notes", () => {
-                expect(() => AlphaNote.parse("1")).toThrow("Invalid note format");
-                expect(() => AlphaNote.parse("8")).toThrow("Invalid note format");
-                expect(() => AlphaNote.parse("")).toThrow("Invalid note format");
-            });
-        });
-
-        describe("NashvilleNote.parse", () => {
-            it("parses valid Nashville notes correctly", () => {
-                const note1 = NashvilleNote.parse("1");
-                expect(note1).toBeInstanceOf(NashvilleNote);
-                expect(note1.root).toBe("1");
-                expect(note1.postfix).toBeUndefined();
-
-                const note4Flat = NashvilleNote.parse("4b");
-                expect(note4Flat).toBeInstanceOf(NashvilleNote);
-                expect(note4Flat.root).toBe("4");
-                expect(note4Flat.postfix).toBe("b");
-
-                const note2Sharp = NashvilleNote.parse("2#");
-                expect(note2Sharp).toBeInstanceOf(NashvilleNote);
-                expect(note2Sharp.root).toBe("2");
-                expect(note2Sharp.postfix).toBe("#");
-            });
-
-            it("throws error for invalid Nashville notes", () => {
-                expect(() => NashvilleNote.parse("C")).toThrow("Invalid note format");
-                expect(() => NashvilleNote.parse("8")).toThrow("Invalid note format");
-                expect(() => NashvilleNote.parse("")).toThrow("Invalid note format");
             });
         });
     });

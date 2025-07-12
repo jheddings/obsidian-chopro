@@ -1,22 +1,25 @@
 import { 
     ChordNotation, 
-    MusicNote, 
-    Accidental,
     ChoproFile,
     ChoproBlock,
-    AlphaNote,
-    NashvilleNote,
 } from "../src/parser";
 
 import {
+    AbstractNote, 
+    Accidental,
+    MusicNote,
+    NashvilleNumber,
     MusicTheory,
+    KeyInfo,
+    MajorKeyInfo,
+    MinorKeyInfo,
+} from "../src/music";
+
+import {
     NoteTransposer,
     NashvilleTransposer,
     ChoproTransposer,
     TransposeUtils,
-    KeyInfo,
-    MajorKeyInfo,
-    MinorKeyInfo,
 } from "../src/transpose";
 
 import { verifyChordsInBlock } from "./parser.test";
@@ -36,7 +39,7 @@ describe("MusicTheory", () => {
         test.each(noteIndexTestCases)(
             "should return chromatic index $expectedIndex for $pitch$accidental",
             ({ pitch, accidental, expectedIndex }) => {
-                const note = new AlphaNote(pitch, accidental);
+                const note = new MusicNote(pitch, accidental);
                 const noteIndex = MusicTheory.getNoteIndex(note);
                 expect(noteIndex).toEqual(expectedIndex);
             }
@@ -105,7 +108,6 @@ describe('KeyInfo', () => {
 
                 // verify major key info properties
                 expect(majorKey.getScaleDegrees()).toEqual([0, 2, 4, 5, 7, 9, 11]);
-                expect(majorKey.getBrightness()).toBe(1);
 
                 // verify relative minor key
                 const expectedMinor = KeyInfo.parse(minor) as MinorKeyInfo;
@@ -140,7 +142,6 @@ describe('KeyInfo', () => {
 
                 // verify minor key info properties
                 expect(minorKey.getScaleDegrees()).toEqual([0, 2, 3, 5, 7, 8, 10]);
-                expect(minorKey.getBrightness()).toBe(-1);
 
                 // verify relative major key
                 const expectedMajor = KeyInfo.parse(major) as MajorKeyInfo;
@@ -169,14 +170,14 @@ describe('KeyInfo', () => {
 
     describe('getInterval', () => {
         const intervalTestCases = [
-            { from: new AlphaNote('C'), to: new AlphaNote('C'), expected: 0 },
-            { from: new AlphaNote('C'), to: new AlphaNote('D'), expected: 2 },
-            { from: new AlphaNote('C'), to: new AlphaNote('G'), expected: 7 },
-            { from: new AlphaNote('C'), to: new AlphaNote('C', '#'), expected: 1 },
-            { from: new AlphaNote('D'), to: new AlphaNote('C'), expected: 10 },
-            { from: new AlphaNote('G'), to: new AlphaNote('F'), expected: 10 },
-            { from: new AlphaNote('A'), to: new AlphaNote('A'), expected: 0 },
-            { from: new AlphaNote('F', '#'), to: new AlphaNote('G', 'b'), expected: 0 },
+            { from: new MusicNote('C'), to: new MusicNote('C'), expected: 0 },
+            { from: new MusicNote('C'), to: new MusicNote('D'), expected: 2 },
+            { from: new MusicNote('C'), to: new MusicNote('G'), expected: 7 },
+            { from: new MusicNote('C'), to: new MusicNote('C', '#'), expected: 1 },
+            { from: new MusicNote('D'), to: new MusicNote('C'), expected: 10 },
+            { from: new MusicNote('G'), to: new MusicNote('F'), expected: 10 },
+            { from: new MusicNote('A'), to: new MusicNote('A'), expected: 0 },
+            { from: new MusicNote('F', '#'), to: new MusicNote('G', 'b'), expected: 0 },
         ];
 
         test.each(intervalTestCases)(
@@ -199,8 +200,8 @@ describe('NoteTransposer', () => {
         test.each(testCases)(
             'should transpose $input by $interval semitones to $expected',
             ({ input, interval, expected }) => {
-                const inputNote = MusicNote.parse(input);
-                const expectedNote = MusicNote.parse(expected);
+                const inputNote = AbstractNote.parse(input);
+                const expectedNote = AbstractNote.parse(expected);
                 
                 NoteTransposer.transposeNote(inputNote, interval);
                 
@@ -210,8 +211,8 @@ describe('NoteTransposer', () => {
         );
 
         test('should respect enharmonic preferences', () => {
-            const C1 = new AlphaNote('C');
-            const C2 = new AlphaNote('C');
+            const C1 = new MusicNote('C');
+            const C2 = new MusicNote('C');
             NoteTransposer.transposeNote(C1, 1, Accidental.SHARP);
             NoteTransposer.transposeNote(C2, 1, Accidental.FLAT);
             
@@ -284,7 +285,7 @@ describe('NashvilleTransposer', () => {
         );
 
         test('should throw on non-Nashville chord', () => {
-            const alphaNote = new AlphaNote('C');
+            const alphaNote = new MusicNote('C');
             const alphaChord = new ChordNotation(alphaNote);
             const key = KeyInfo.parse('C');
             
@@ -327,7 +328,7 @@ describe('NashvilleTransposer', () => {
         );
 
         test('should throw on non-alphabetic chord', () => {
-            const nashvilleNum = new NashvilleNote('1');
+            const nashvilleNum = new NashvilleNumber('1');
             const nashvilleChord = new ChordNotation(nashvilleNum);
             const key = KeyInfo.parse('C');
             

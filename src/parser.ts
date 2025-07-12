@@ -1,153 +1,7 @@
 // parser - ChoPro parsing elements and data structures
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-
-export enum Accidental {
-    SHARP = '♯',
-    FLAT = '♭',
-    NATURAL = '♮'
-}
-
-export abstract class MusicNote {
-    constructor(public root: string, public postfix?: string) {
-        this.root = root;
-        this.postfix = postfix;
-    }
-
-    /**
-     * Get the accidental type based on the postfix.
-     */
-    get accidental(): Accidental {
-        switch (this.postfix) {
-            case '#':
-            case '♯':
-            case 'is':
-                return Accidental.SHARP;
-            case 'b':
-            case '♭':
-            case 'es':
-            case 's':
-                return Accidental.FLAT;
-        }
-
-        return Accidental.NATURAL;
-    }
-
-    /**
-     * Parse a note string into the appropriate MusicNote subclass.
-     */
-    static parse(noteString: string): MusicNote {
-        if (AlphaNote.test(noteString)) {
-            return AlphaNote.parse(noteString);
-        }
-        
-        if (NashvilleNote.test(noteString)) {
-            return NashvilleNote.parse(noteString);
-        }
-        
-        throw new Error('Invalid note format');
-    }
-
-    /**
-     * Convert the note to its string representation.
-     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
-     */
-    toString(normalize: boolean = false): string {
-        let noteString = this.root;
-        
-        if (this.postfix) {
-            if (normalize) {
-                switch (this.accidental) {
-                    case Accidental.SHARP:
-                        noteString += '♯';
-                        break;
-                    case Accidental.FLAT:
-                        noteString += '♭';
-                        break;
-                    case Accidental.NATURAL:
-                    default:
-                        // no postfix for natural notes
-                        break;
-                }
-            } else {
-                noteString += this.postfix;
-            }
-        }
-        
-        return noteString;
-    }
-
-    /**
-     * Check if this note is musically equal to another note.
-     */
-    equals(other: MusicNote): boolean {
-        if (this.root !== other.root) {
-            return false;
-        }
-
-        if (this.accidental !== other.accidental) {
-            return false;
-        }
-
-        return true
-    }
-}
-
-/**
- * Represents an alphabetic musical note (A-G).
- */
-export class AlphaNote extends MusicNote {
-    public static readonly PATTERN = /^([A-G])(♮|#|♯|b|♭|[ei]s|s)?/i;
-
-    constructor(root: string, postfix?: string) {
-        super(root.toUpperCase(), postfix);
-    }
-
-    static test(noteString: string): boolean {
-        return AlphaNote.PATTERN.test(noteString);
-    }
-
-    static parse(noteString: string): AlphaNote {
-        const match = noteString.match(AlphaNote.PATTERN);
-        
-        if (!match) {
-            throw new Error('Invalid note format');
-        }
-
-        const root = match[1].toUpperCase();
-        const postfix = match[2] ? match[2].toLowerCase() : undefined;
-
-        return new AlphaNote(root, postfix);
-    }
-}
-
-/**
- * Represents a Nashville number notation (1-7).
- */
-export class NashvilleNote extends MusicNote {
-    public static readonly PATTERN = /^([1-7])(♮|#|♯|b|♭|[ei]s|s)?/i;
-
-    constructor(root: string, postfix?: string) {
-        super(root, postfix);
-    }
-
-    static test(noteString: string): boolean {
-        return NashvilleNote.PATTERN.test(noteString);
-    }
-
-    static parse(noteString: string): NashvilleNote {
-        const match = noteString.match(NashvilleNote.PATTERN);
-        
-        if (!match) {
-            throw new Error('Invalid note format');
-        }
-
-        const root = match[1];
-        const postfix = match[2] ? match[2].toLowerCase() : undefined;
-
-        return new NashvilleNote(root, postfix);
-    }
-}
+import { AbstractNote } from './music';
 
 export abstract class LineSegment {
     constructor() {}
@@ -157,9 +11,9 @@ export class ChordNotation extends LineSegment {
     public static readonly PATTERN = /^\[([A-G1-7](?:#|♯|b|♭|[ei]s|s)?)([^\/\]]*)?(?:\/(.+))?\]$/i;
 
     constructor(
-        public note: MusicNote,
+        public note: AbstractNote,
         public modifier?: string,
-        public bass?: MusicNote
+        public bass?: AbstractNote
     ) {
         super();
     }
@@ -179,8 +33,8 @@ export class ChordNotation extends LineSegment {
         const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
         const bassString = match[3] ? match[3].trim() : undefined;
 
-        const primaryNote = MusicNote.parse(noteString);
-        const bassNote = bassString ? MusicNote.parse(bassString) : undefined;
+        const primaryNote = AbstractNote.parse(noteString);
+        const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
 
         return new ChordNotation(primaryNote, modifier, bassNote);
     }
