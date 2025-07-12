@@ -8,7 +8,8 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "jest test/*.test.ts",
     "release": "npm run test && git push origin v$npm_package_version",
-    "version": "node version.mjs && git add manifest.json versions.json"
+    "version": "node version.mjs && git add manifest.json versions.json",
+    "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\""
   },
   "keywords": [
     "obsidian",
