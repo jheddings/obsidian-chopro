@@ -9,13 +9,7 @@ export enum Accidental {
     NATURAL = '♮'
 }
 
-/**
- * Musical key quality.
- */
-export enum KeyQuality {
-    MAJOR = "major",
-    MINOR = "minor",
-}
+
 
 /**
  * Scale types for different musical modes.
@@ -251,7 +245,7 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
 
         const root = match[1].toUpperCase();
         const accidental = match[2] || "";
-        const quality = match[3] ? KeyQuality.MINOR : KeyQuality.MAJOR;
+        const isMinor = !!match[3];
 
         let noteString = root;
         if (accidental) {
@@ -261,12 +255,11 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
         const rootNote = MusicNote.parse(noteString);
         const preferredAccidental = MusicTheory.getPreferredAccidental(noteString);
 
-        // Return appropriate subclass instance
-        if (quality === KeyQuality.MAJOR) {
-            return new MajorKeyInfo(rootNote, preferredAccidental);
-        } else {
+        if (isMinor) {
             return new MinorKeyInfo(rootNote, preferredAccidental);
         }
+
+        return new MajorKeyInfo(rootNote, preferredAccidental);
     }
 
     /**
