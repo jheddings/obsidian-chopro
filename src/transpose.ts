@@ -250,6 +250,11 @@ export class ChoproTransposer {
      */
     transpose(file: ChoproFile): void {
         file.blocks.forEach((block) => this.transposeBlock(block));
+
+        if (!file.frontmatter) {
+            file.frontmatter = new Frontmatter();
+        }
+
         this.transposeFrontmatter(file.frontmatter);
     }
 
@@ -355,13 +360,12 @@ export class ChoproTransposer {
     /**
      * Transpose frontmatter key property in place.
      */
-    private transposeFrontmatter(frontmatter?: Frontmatter): void {
-        if (!frontmatter || !this.options.toKey) {
-            return;
+    private transposeFrontmatter(frontmatter: Frontmatter): void {
+        if (this.options.toKey instanceof AbsoluteKeyInfo) {
+            frontmatter.set("key", this.options.toKey.toString());
+        } else {
+            frontmatter.remove("key");
         }
-
-        // Set the key property (add it if it doesn't exist)
-        frontmatter.set("key", this.options.toKey.toString());
     }
 
     /**
