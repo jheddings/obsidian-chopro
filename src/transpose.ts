@@ -164,8 +164,7 @@ export class NashvilleTransposer {
 
         // Pre-calculate key information
         const scaleDegrees = targetKey.getScaleDegrees();
-        const targetKeyNote = AbstractNote.parse(targetKey.root);
-        const targetKeyIndex = MusicTheory.getNoteIndex(targetKeyNote);
+        const targetKeyIndex = MusicTheory.getNoteIndex(targetKey.root);
 
         // Convert main note
         const degree = this.validateAndParseNashvilleDegree(nashvilleChord.note.root);
@@ -200,8 +199,7 @@ export class NashvilleTransposer {
 
         // Pre-calculate key information
         const scaleDegrees = sourceKey.getScaleDegrees();
-        const keyNote = AbstractNote.parse(sourceKey.root);
-        const keyIndex = MusicTheory.getNoteIndex(keyNote);
+        const keyIndex = MusicTheory.getNoteIndex(sourceKey.root);
 
         // Convert main note
         this.convertNoteToNashville(chord.note, keyIndex, scaleDegrees);

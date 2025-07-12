@@ -97,21 +97,20 @@ describe('KeyInfo', () => {
         test.each(majorKeyTestCases)(
             'should parse $input correctly',
             ({ input, root, accidental, minor }) => {
-                const key = KeyInfo.parse(input);
+                const key = MajorKeyInfo.parse(input);
 
                 expect(key).toBeInstanceOf(MajorKeyInfo);
                 expect(key.toString()).toEqual(input);
 
-                const majorKey = key as MajorKeyInfo;
-                expect(majorKey.root).toEqual(root);
-                expect(majorKey.accidental).toEqual(accidental);
+                expect(key.root.toString()).toEqual(root);
+                expect(key.accidental).toEqual(accidental);
 
                 // verify major key info properties
-                expect(majorKey.getScaleDegrees()).toEqual([0, 2, 4, 5, 7, 9, 11]);
+                expect(key.getScaleDegrees()).toEqual([0, 2, 4, 5, 7, 9, 11]);
 
                 // verify relative minor key
                 const expectedMinor = KeyInfo.parse(minor) as MinorKeyInfo;
-                const relativeMinor = majorKey.getRelativeMinor();
+                const relativeMinor = key.getRelativeMinor();
                 expect(relativeMinor).toEqual(expectedMinor);
             }
         );
@@ -131,21 +130,20 @@ describe('KeyInfo', () => {
         test.each(minorKeyTestCases)(
             'should parse $input correctly',
             ({ input, root, accidental, major }) => {
-                const key = KeyInfo.parse(input);
+                const key = MinorKeyInfo.parse(input);
 
                 expect(key).toBeInstanceOf(MinorKeyInfo);
                 expect(key.toString()).toEqual(input);
 
-                const minorKey = key as MinorKeyInfo;
-                expect(minorKey.root).toEqual(root);
-                expect(minorKey.accidental).toEqual(accidental);
+                expect(key.root.toString()).toEqual(root);
+                expect(key.accidental).toEqual(accidental);
 
                 // verify minor key info properties
-                expect(minorKey.getScaleDegrees()).toEqual([0, 2, 3, 5, 7, 8, 10]);
+                expect(key.getScaleDegrees()).toEqual([0, 2, 3, 5, 7, 8, 10]);
 
                 // verify relative major key
                 const expectedMajor = KeyInfo.parse(major) as MajorKeyInfo;
-                const relativeMajor = minorKey.getRelativeMajor();
+                const relativeMajor = key.getRelativeMajor();
                 expect(relativeMajor).toEqual(expectedMajor);
             }
         );

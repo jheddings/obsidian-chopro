@@ -198,7 +198,7 @@ export class NashvilleNumber extends AbstractNote {
  * Abstract base class for musical key information.
  */
 export abstract class KeyInfo {
-    constructor(public root: string, public accidental?: Accidental) {}
+    constructor(public root: AbstractNote, public accidental?: Accidental) {}
 
     /**
      * Parse a key string into a KeyInfo object.
@@ -225,7 +225,7 @@ export abstract class KeyInfo {
  * Abstract base class for absolute key information.
  */
 export abstract class AbsoluteKeyInfo extends KeyInfo {
-    constructor(public root: string, public accidental?: Accidental) {
+    constructor(public root: MusicNote, public accidental?: Accidental) {
         super(root, accidental);
     }
 
@@ -242,18 +242,19 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
         const accidental = match[2] || "";
         const quality = match[3] ? KeyQuality.MINOR : KeyQuality.MAJOR;
 
-        let fullRoot = root;
+        let noteString = root;
         if (accidental) {
-            fullRoot += accidental === "#" || accidental === "♯" ? "#" : "b";
+            noteString += accidental === "#" || accidental === "♯" ? "#" : "b";
         }
 
-        const preferredAccidental = MusicTheory.getPreferredAccidental(fullRoot);
+        const rootNote = MusicNote.parse(noteString);
+        const preferredAccidental = MusicTheory.getPreferredAccidental(noteString);
 
         // Return appropriate subclass instance
         if (quality === KeyQuality.MAJOR) {
-            return new MajorKeyInfo(fullRoot, preferredAccidental);
+            return new MajorKeyInfo(rootNote, preferredAccidental);
         } else {
-            return new MinorKeyInfo(fullRoot, preferredAccidental);
+            return new MinorKeyInfo(rootNote, preferredAccidental);
         }
     }
 
@@ -261,17 +262,14 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
      * Get the chromatic index of this key's root note.
      */
     getRootIndex(): number {
-        const rootNote = AbstractNote.parse(this.root);
-        return MusicTheory.getNoteIndex(rootNote);
+        return MusicTheory.getNoteIndex(this.root);
     }
 
     /**
      * Calculate the interval in semitones to another absolute key.
      */
     getIntervalTo(targetKey: AbsoluteKeyInfo): number {
-        const sourceNote = AbstractNote.parse(this.root);
-        const targetNote = AbstractNote.parse(targetKey.root);
-        return MusicTheory.getInterval(sourceNote, targetNote);
+        return MusicTheory.getInterval(this.root, targetKey.root);
     }
 
     /**
@@ -300,7 +298,7 @@ export abstract class RelativeKeyInfo extends KeyInfo {
 export class MajorKeyInfo extends AbsoluteKeyInfo {
     public static readonly SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
 
-    constructor(public root: string, public accidental?: Accidental) {
+    constructor(public root: MusicNote, public accidental?: Accidental) {
         super(root, accidental);
     }
 
@@ -318,14 +316,19 @@ export class MajorKeyInfo extends AbsoluteKeyInfo {
         const minorRootIndex = (this.getRootIndex() + 9) % 12; // Down a minor third
         const minorRootName = MusicTheory.getPreferredNoteName(minorRootIndex, this.accidental);
         const preferredAccidental = MusicTheory.getPreferredAccidental(minorRootName);
-        return new MinorKeyInfo(minorRootName, preferredAccidental);
+        const minorRootNote = MusicNote.parse(minorRootName);
+        return new MinorKeyInfo(minorRootNote, preferredAccidental);
     }
 
     /**
      * Get string representation of the major key.
      */
     toString(): string {
-        return this.root;
+        return this.root.toString();
+    }
+
+    static parse(keyString: string): MajorKeyInfo {
+        return AbsoluteKeyInfo.parse(keyString) as MajorKeyInfo;
     }
 }
 
@@ -335,7 +338,7 @@ export class MajorKeyInfo extends AbsoluteKeyInfo {
 export class MinorKeyInfo extends AbsoluteKeyInfo {
     public static readonly SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
 
-    constructor(root: string, accidental?: Accidental) {
+    constructor(root: MusicNote, accidental?: Accidental) {
         super(root, accidental);
     }
 
@@ -353,14 +356,19 @@ export class MinorKeyInfo extends AbsoluteKeyInfo {
         const majorRootIndex = (this.getRootIndex() + 3) % 12; // Up a minor third
         const majorRootName = MusicTheory.getPreferredNoteName(majorRootIndex, this.accidental);
         const preferredAccidental = MusicTheory.getPreferredAccidental(majorRootName);
-        return new MajorKeyInfo(majorRootName, preferredAccidental);
+        const majorRootNote = MusicNote.parse(majorRootName);
+        return new MajorKeyInfo(majorRootNote, preferredAccidental);
     }
 
     /**
      * Get string representation of the minor key.
      */
     toString(): string {
-        return this.root + 'm';
+        return this.root.toString() + 'm';
+    }
+
+    static parse(keyString: string): MinorKeyInfo {
+        return AbsoluteKeyInfo.parse(keyString) as MinorKeyInfo;
     }
 }
 
@@ -368,6 +376,7 @@ export class MinorKeyInfo extends AbsoluteKeyInfo {
  * Music theory constants and utilities.
  */
 export class MusicTheory {
+
     // chromatic scale with enharmonic equivalents
     public static readonly CHROMATIC_NOTES = [
         ["C"],        // 0
