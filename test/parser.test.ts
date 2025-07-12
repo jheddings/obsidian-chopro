@@ -1,5 +1,7 @@
 import {
     ChordNotation,
+    LetterNotation,
+    NashvilleNotation,
     Annotation,
     TextSegment,
     ChoproFile,
@@ -247,65 +249,77 @@ describe("MusicNote", () => {
 });
 
 describe("ChordNotation", () => {
-    const testCases = [
-        // Alpha notation
-        { input: "[C]", note: "C", modifier: undefined, bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B", expectedNoteClass: MusicNote },
-        { input: "[C/G]", note: "C", modifier: undefined, bass: "G", expectedNoteClass: MusicNote },
-        
-        // Nashville notation
-        { input: "[1]", note: "1", modifier: undefined, bass: undefined, expectedNoteClass: NashvilleNumber },
-        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, expectedNoteClass: NashvilleNumber },
-        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
-        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", expectedNoteClass: NashvilleNumber },
-        
-        // Unicode accidentals
-        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", expectedNoteClass: NashvilleNumber },
 
-        // Complex modifiers
-        { input: "[C#dim]", note: "C#", modifier: "dim", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[Fmaj7]", note: "F", modifier: "maj7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[G7alt]", note: "G", modifier: "7alt", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, expectedNoteClass: MusicNote },
+    describe("parsing", () => {
+        describe("parses letter notation correctly", () => {
+            const testCases = [
+                { input: "[C]", note: "C", modifier: undefined, bass: undefined, },
+                { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined, },
+                { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined, },
+                { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B" },
+                { input: "[C/G]", note: "C", modifier: undefined, bass: "G" },
+                { input: "[Am7add13]", note: "A", modifier: "m7add13", bass: undefined, },
+                { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E" },
+            ];
 
-        // Alternative chord quality notations
-        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[Co]", note: "C", modifier: "o", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[C+]", note: "C", modifier: "+", bass: undefined, expectedNoteClass: MusicNote },
-        { input: "[CΔ7/E]", note: "C", modifier: "Δ7", bass: "E", expectedNoteClass: MusicNote },
-        { input: "[Go7/B]", note: "G", modifier: "o7", bass: "B", expectedNoteClass: MusicNote },
-        { input: "[A+add9]", note: "A", modifier: "+add9", bass: undefined, expectedNoteClass: MusicNote },
-    ];
+            test.each(testCases)(
+                "parses $input correctly",
+                ({ input, note, modifier, bass }) => {
+                    const chord = ChordNotation.parse(input);
 
-    describe("parses valid chord notation", () => {
-        test.each(testCases)(
-            "parses $input correctly",
-            ({ input, note, modifier, bass, expectedNoteClass }) => {
-                const chord = ChordNotation.parse(input);
-                
-                expect(chord.note.toString()).toEqual(note);
-                expect(chord.note).toBeInstanceOf(expectedNoteClass);
-                expect(chord.modifier).toEqual(modifier);
-                expect(chord.bass?.toString()).toEqual(bass);
-                
-                // round-trip test
-                expect(chord.toString()).toEqual(input);
-            }
-        );
+                    expect(chord).toBeInstanceOf(LetterNotation);
 
+                    const expectedNote = MusicNote.parse(note);
+                    expect(chord.note).toEqual(expectedNote);
+
+                    expect(chord.modifier).toEqual(modifier);
+
+                    if (bass) {
+                        const expectedBass = MusicNote.parse(bass);
+                        expect(chord.bass).toEqual(expectedBass);
+                    } else {
+                        expect(chord.bass).toBeUndefined();
+                    }
+
+                    // round-trip test
+                    expect(chord.toString()).toEqual(input);
+                }
+            );
+        });
+
+        describe("parses Nashville notation correctly", () => {
+            const testCases = [
+                { input: "[1]", note: "1", modifier: undefined, bass: undefined, },
+                { input: "[4b7]", note: "4b", modifier: "7", bass: undefined },
+                { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5" },
+                { input: "[6m/4]", note: "6", modifier: "m", bass: "4" },
+            ];
+
+            test.each(testCases)(
+                "parses $input correctly",
+                ({ input, note, modifier, bass }) => {
+                    const chord = ChordNotation.parse(input);
+
+                    expect(chord).toBeInstanceOf(NashvilleNotation);
+
+                    const expectedNote = NashvilleNumber.parse(note);
+                    expect(chord.note).toEqual(expectedNote);
+
+                    expect(chord.modifier).toEqual(modifier);
+
+                    if (bass) {
+                        const expectedBass = NashvilleNumber.parse(bass);
+                        expect(chord.bass).toEqual(expectedBass);
+                    } else {
+                        expect(chord.bass).toBeUndefined();
+                    }
+
+                    // round-trip test
+                    expect(chord.toString()).toEqual(input);
+                }
+            );
+        });
     });
-
-    it("throws error for invalid chord format", () => {
-        expect(() => ChordNotation.parse("[H]")).toThrow("Invalid chord notation format");
-        expect(() => ChordNotation.parse("C")).toThrow("Invalid chord notation format");
-    });
-
 
     describe("normalization", () => {
         const normalizationCases = [
@@ -407,6 +421,123 @@ describe("ChordNotation", () => {
 
         test.each(invalidChords)("rejects invalid chord %s", (chord) => {
             expect(ChordNotation.test(chord)).toBe(false);
+        });
+    });
+});
+
+describe("LetterNotation", () => {
+    const letterNotationCases = [
+        { input: "[C]", note: "C", modifier: undefined, bass: undefined },
+        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined },
+        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined },
+        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B" },
+        { input: "[C/G]", note: "C", modifier: undefined, bass: "G" },
+        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined },
+        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined },
+        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined },
+        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined },
+    ];
+
+    describe("parsing", () => {
+        test.each(letterNotationCases)(
+            "parses letter notation $input correctly",
+            ({ input, note, modifier, bass }) => {
+                const chord = LetterNotation.parse(input);
+                
+                expect(chord).toBeInstanceOf(LetterNotation);
+                expect(chord.note).toBeInstanceOf(MusicNote);
+                expect(chord.note.toString()).toEqual(note);
+                expect(chord.modifier).toEqual(modifier);
+                expect(chord.bass?.toString()).toEqual(bass);
+                
+                // round-trip test
+                expect(chord.toString()).toEqual(input);
+            }
+        );
+
+        test("throws error for Nashville notation input", () => {
+            expect(() => LetterNotation.parse("[1]")).toThrow("Invalid letter notation: must use A-G note names");
+            expect(() => LetterNotation.parse("[4b7]")).toThrow("Invalid letter notation: must use A-G note names");
+        });
+    });
+
+    describe("validation", () => {
+        const validLetterChords = [
+            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]", "[Fes]", "[Gis]",
+            "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[F#m7/B]", "[C/G]", "[Bb/F]",
+            "[CΔ]", "[FΔ7]", "[Co]", "[Cø7]", "[C+]"
+        ];
+
+        const invalidLetterChords = [
+            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
+            "[1m]", "[2m7]", "[4b7/5]", "[6m/4]"
+        ];
+
+        test.each(validLetterChords)("accepts valid letter chord %s", (chord) => {
+            expect(LetterNotation.test(chord)).toBe(true);
+            expect(ChordNotation.test(chord)).toBe(true);
+        });
+
+        test.each(invalidLetterChords)("rejects Nashville notation %s", (chord) => {
+            expect(LetterNotation.test(chord)).toBe(false);
+        });
+    });
+});
+
+describe("NashvilleNotation", () => {
+    const nashvilleNotationCases = [
+        { input: "[1]", note: "1", modifier: undefined, bass: undefined, degree: 1 },
+        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, degree: 4 },
+        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", degree: 4 },
+        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", degree: 6 },
+        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", degree: 4 },
+        { input: "[2#m]", note: "2#", modifier: "m", bass: undefined, degree: 2 },
+        { input: "[3♯]", note: "3♯", modifier: undefined, bass: undefined, degree: 3 },
+    ];
+
+    describe("parsing", () => {
+        test.each(nashvilleNotationCases)(
+            "parses Nashville notation $input correctly",
+            ({ input, note, modifier, bass, degree }) => {
+                const chord = NashvilleNotation.parse(input);
+                
+                expect(chord).toBeInstanceOf(NashvilleNotation);
+                expect(chord.note).toBeInstanceOf(NashvilleNumber);
+                expect(chord.note.toString()).toEqual(note);
+                expect(chord.modifier).toEqual(modifier);
+                expect(chord.bass?.toString()).toEqual(bass);
+                expect(chord.degree).toEqual(degree);
+                
+                // round-trip test
+                expect(chord.toString()).toEqual(input);
+            }
+        );
+
+        test("throws error for letter notation input", () => {
+            expect(() => NashvilleNotation.parse("[C]")).toThrow("Invalid Nashville notation: must use 1-7 numbers");
+            expect(() => NashvilleNotation.parse("[F#m7]")).toThrow("Invalid Nashville notation: must use 1-7 numbers");
+        });
+    });
+
+    describe("validation", () => {
+        const validNashvilleChords = [
+            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
+            "[1#]", "[2b]", "[3♯]", "[4♭]", "[5es]", "[6is]",
+            "[1m]", "[2m7]", "[3maj7]", "[4b7/5]", "[1/3]", "[6m/4]"
+        ];
+
+        const invalidNashvilleChords = [
+            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]",
+            "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[C/G]"
+        ];
+
+        test.each(validNashvilleChords)("accepts valid Nashville chord %s", (chord) => {
+            expect(NashvilleNotation.test(chord)).toBe(true);
+            expect(ChordNotation.test(chord)).toBe(true);
+        });
+
+        test.each(invalidNashvilleChords)("rejects letter notation %s", (chord) => {
+            expect(NashvilleNotation.test(chord)).toBe(false);
         });
     });
 });

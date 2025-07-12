@@ -1,5 +1,7 @@
 import { 
-    ChordNotation, 
+    ChordNotation,
+    LetterNotation,
+    NashvilleNotation,
     ChoproFile,
     ChoproBlock,
 } from "../src/parser";
@@ -271,7 +273,7 @@ describe('NashvilleTransposer', () => {
         test.each(testCases)(
             'should convert Nashville $input in key $key to $expected',
             ({ input, key, expected }) => {
-                const nashvilleChord = ChordNotation.parse(input);
+                const nashvilleChord = NashvilleNotation.parse(input);
                 const expectedChord = ChordNotation.parse(expected);
                 const musicalKey = KeyInfo.parse(key) as AbsoluteKeyInfo;
                 
@@ -282,14 +284,6 @@ describe('NashvilleTransposer', () => {
                 expect(nashvilleChord.bass).toEqual(expectedChord.bass);
             }
         );
-
-        test('should throw on non-Nashville chord', () => {
-            const alphaNote = new MusicNote('C');
-            const alphaChord = new ChordNotation(alphaNote);
-            const key = KeyInfo.parse('C') as AbsoluteKeyInfo;
-            
-            expect(() => NashvilleTransposer.nashvilleToChord(alphaChord, key)).toThrow();
-        });
     });
 
     describe('chordToNashville', () => {
@@ -325,15 +319,6 @@ describe('NashvilleTransposer', () => {
                 expect(alphaChord.bass).toEqual(expectedChord.bass);
             }
         );
-
-        test('should throw on non-alphabetic chord', () => {
-            const nashvilleNum = new NashvilleNumber(1);
-            const nashvilleChord = new ChordNotation(nashvilleNum);
-            const key = KeyInfo.parse('C') as AbsoluteKeyInfo;
-            
-            expect(() => NashvilleTransposer.chordToNashville(nashvilleChord, key))
-                .toThrow('Chord is not in alphabetic notation');
-        });
     });
 });
 

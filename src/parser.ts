@@ -1,15 +1,13 @@
 // parser - ChoPro parsing elements and data structures
 
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
-import { AbstractNote } from './music';
+import { AbstractNote, MusicNote, NashvilleNumber } from './music';
 
 export abstract class LineSegment {
     constructor() {}
 }
 
 export class ChordNotation extends LineSegment {
-    public static readonly PATTERN = /^\[([A-G1-7](?:#|♯|b|♭|[ei]s|s)?)([^\/\]]*)?(?:\/(.+))?\]$/i;
-
     constructor(
         public note: AbstractNote,
         public modifier?: string,
@@ -19,24 +17,27 @@ export class ChordNotation extends LineSegment {
     }
 
     static test(content: string): boolean {
-        return ChordNotation.PATTERN.test(content);
+        if (LetterNotation.test(content)) {
+            return true;
+        }
+
+        if (NashvilleNotation.test(content)) {
+            return true;
+        }
+
+        return false;
     }
 
     static parse(content: string): ChordNotation {
-        const match = content.match(ChordNotation.PATTERN);
-
-        if (!match) {
-            throw new Error('Invalid chord notation format');
+        if (LetterNotation.test(content)) {
+            return LetterNotation.parse(content);
         }
 
-        const noteString = match[1];
-        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
-        const bassString = match[3] ? match[3].trim() : undefined;
+        if (NashvilleNotation.test(content)) {
+            return NashvilleNotation.parse(content);
+        }
 
-        const primaryNote = AbstractNote.parse(noteString);
-        const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
-
-        return new ChordNotation(primaryNote, modifier, bassNote);
+        throw new Error('Invalid chord notation format');
     }
 
     /**
@@ -93,6 +94,93 @@ export class ChordNotation extends LineSegment {
      */
     equals(other: ChordNotation): boolean {
         return this.toString(true) === other.toString(true);
+    }
+}
+
+/**
+ * Represents a chord notation using alphabetic note names (A-G).
+ */
+export class LetterNotation extends ChordNotation {
+    public static readonly PATTERN = /^\[([A-G](?:♮|#|♯|b|♭|[ei]s|s)?)([^\/\]]*)?(?:\/(.+))?\]$/;
+
+    constructor(
+        public note: MusicNote,
+        public modifier?: string,
+        public bass?: AbstractNote
+    ) {
+        super(note, modifier, bass);
+    }
+
+    static test(content: string): boolean {
+        return LetterNotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): LetterNotation {
+        const match = content.match(LetterNotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid letter notation: must use A-G note names');
+        }
+
+        const noteString = match[1];
+        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
+        const bassString = match[3] ? match[3].trim() : undefined;
+
+        if (!MusicNote.test(noteString)) {
+            throw new Error('Invalid letter notation: must use A-G note names');
+        }
+
+        const primaryNote = MusicNote.parse(noteString);
+        const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
+
+        return new LetterNotation(primaryNote, modifier, bassNote);
+    }
+}
+
+/**
+ * Represents a chord notation using Nashville number system (1-7).
+ */
+export class NashvilleNotation extends ChordNotation {
+    public static readonly PATTERN = /^\[([1-7](?:#|♯|b|♭)?)([^\/\]]*)?(?:\/(.+))?\]$/;
+
+    constructor(
+        public note: NashvilleNumber,
+        public modifier?: string,
+        public bass?: AbstractNote
+    ) {
+        super(note, modifier, bass);
+    }
+
+    static test(content: string): boolean {
+        return NashvilleNotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): NashvilleNotation {
+        const match = content.match(NashvilleNotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid Nashville notation: must use 1-7 numbers');
+        }
+
+        const noteString = match[1];
+        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
+        const bassString = match[3] ? match[3].trim() : undefined;
+
+        if (!NashvilleNumber.test(noteString)) {
+            throw new Error('Invalid Nashville notation: must use 1-7 numbers');
+        }
+
+        const primaryNote = NashvilleNumber.parse(noteString);
+        const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
+
+        return new NashvilleNotation(primaryNote, modifier, bassNote);
+    }
+
+    /**
+     * Get the numeric degree of the root note.
+     */
+    get degree(): number {
+        return this.note.degree;
     }
 }
 
@@ -301,6 +389,14 @@ export abstract class SegmentedLine extends ChoproLine {
     protected static parseLineSegment(marker: string): LineSegment {
         if (Annotation.test(marker)) {
             return Annotation.parse(marker);
+        }
+
+        if (LetterNotation.test(marker)) {
+            return LetterNotation.parse(marker);
+        }
+
+        if (NashvilleNotation.test(marker)) {
+            return NashvilleNotation.parse(marker);
         }
 
         if (ChordNotation.test(marker)) {
