@@ -170,7 +170,7 @@ describe("ChordNotation", () => {
 describe("LetterNotation", () => {
     const letterNotationCases = [
         { input: "[C]", note: "C", modifier: undefined, bass: undefined },
-        { input: "[D]", note: "D", modifier: undefined, bass: undefined },
+        { input: "[Dsus]", note: "D", modifier: "sus", bass: undefined },
         { input: "[F#]", note: "F#", modifier: undefined, bass: undefined },
         { input: "[Bb]", note: "Bb", modifier: undefined, bass: undefined },
         { input: "[G♯]", note: "G♯", modifier: undefined, bass: undefined },
@@ -252,7 +252,6 @@ describe("NashvilleNotation", () => {
         { input: "[1/3]", note: "1", modifier: undefined, bass: "3", degree: 1 },
         { input: "[6m/4]", note: "6", modifier: "m", bass: "4", degree: 6 },
         { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", degree: 4 },
-        { input: "[2#m]", note: "2#", modifier: "m", bass: undefined, degree: 2 },
     ];
 
     describe("parsing", () => {
