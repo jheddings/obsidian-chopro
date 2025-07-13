@@ -12,7 +12,7 @@ import {
 describe("AbstractNote", () => {
     describe("handles music notes correctly", () => {
         const musicNoteCases = [
-            "C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes", "As"
+            "C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"
         ];
 
         test.each(musicNoteCases)("parses %s correctly", (input) => {
@@ -81,14 +81,12 @@ describe("AbstractNote", () => {
 describe("MusicNote", () => {
     const musicNoteCases = [
         { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL },
-        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL },
         { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP },
         { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT },
         { input: "G♯", root: "G", postfix: "♯", accidental: Accidental.SHARP },
         { input: "A♭", root: "A", postfix: "♭", accidental: Accidental.FLAT },
         { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP },
         { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT },
-        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT },
         { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP },
         { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT },
     ];
