@@ -8,7 +8,7 @@ flow:
   - "#Turn"
   - "#Verse 2"
   - "#Turn"
-  - "#Verse 3" 
+  - "#Verse 3"
   - "#Turn"
   - "#Verse 4"
   - "#Turn"
