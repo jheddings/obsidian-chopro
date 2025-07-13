@@ -101,7 +101,7 @@ export class ChordNotation extends LineSegment {
  * Represents a chord notation using alphabetic note names (A-G).
  */
 export class LetterNotation extends ChordNotation {
-    public static readonly PATTERN = /^\[([A-G](?:♮|#|♯|b|♭|[ei]s|s)?)([^\/\]]+)?(?:\/(.+))?\]$/;
+    public static readonly PATTERN = /^\[([A-G](?:♮|#|♯|b|♭|[ei]s)?)([^\/\]]+)?(?:\/(.+))?\]$/;
 
     constructor(
         public note: MusicNote,

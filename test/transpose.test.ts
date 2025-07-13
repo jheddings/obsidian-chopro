@@ -133,6 +133,7 @@ describe('NashvilleTransposer', () => {
 
             // Chord with modifier
             { input: '[Dm7]', key: 'C', expected: '[2m7]' },
+            { input: '[Dsus]', key: 'G', expected: '[5sus]' },
 
             // Chord with bass note
             { input: '[C/E]', key: 'C', expected: '[1/3]' },

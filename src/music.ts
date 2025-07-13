@@ -116,7 +116,7 @@ export abstract class AbstractNote {
  * Represents an alphabetic musical note (A-G).
  */
 export class MusicNote extends AbstractNote {
-    public static readonly PATTERN = /^([A-G])(♮|#|♯|b|♭|[ei]s|s)?$/;
+    public static readonly PATTERN = /^([A-G])(♮|#|♯|b|♭|[ei]s)?$/;
 
     /**
      * Create a new MusicNote instance.
