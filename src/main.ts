@@ -10,6 +10,8 @@ import {
     Modal,
     ButtonComponent,
     Editor,
+    TFile,
+    FuzzySuggestModal,
 } from "obsidian";
 
 import { ChoproFile } from "./parser";
@@ -23,10 +25,6 @@ import {
     TransposeUtils,
 } from "./transpose";
 
-import {
-    KeyInfo,
-} from "./music";
-
 export interface ChoproPluginSettings {
     chordColor: string;
     chordSize: number;
@@ -34,6 +32,7 @@ export interface ChoproPluginSettings {
     chordDecorations: string;
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
+    flowFilesFolder: string;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
@@ -43,6 +42,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordDecorations: "none",
     normalizedChordDisplay: false,
     italicAnnotations: true,
+    flowFilesFolder: "",
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -63,6 +63,14 @@ export default class ChoproPlugin extends Plugin {
             name: "Transpose chords in current file",
             editorCallback: (editor: Editor, view: MarkdownView) => {
                 this.openTransposeModal(view);
+            },
+        });
+
+        this.addCommand({
+            id: "chopro-insert-flow",
+            name: "Insert flow content from file",
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.openFlowFileSelector(editor);
             },
         });
 
@@ -106,6 +114,60 @@ export default class ChoproPlugin extends Plugin {
         );
 
         modal.open();
+    }
+
+    private async openFlowFileSelector(editor: Editor) {
+        const modal = new FlowFileSelector(
+            this.app,
+            this.settings.flowFilesFolder,
+            async (file) => {
+                await this.insertFlowFromFile(file, editor);
+            }
+        );
+        modal.open();
+    }
+
+    private async insertFlowFromFile(file: TFile, editor: Editor) {
+        try {
+            const fileCache = this.app.metadataCache.getFileCache(file);
+            const flow = fileCache?.frontmatter?.flow;
+
+            if (!flow) {
+                new Notice("Selected file has no flow");
+                return;
+            }
+            
+            if (typeof flow === 'string') {
+                editor.replaceSelection(flow);
+                new Notice("Flow content inserted");
+
+            } else if (Array.isArray(flow)) {
+                const cursor = editor.getCursor();
+                let insertText = "";
+
+                for (const item of flow) {
+                    if (typeof item === 'string') {
+                        if (item.startsWith('#')) {
+                            // Section reference - create transclusion
+                            const sectionName = item.substring(1).trim();
+                            insertText += `![[${file.basename}${item}]]\n`;
+                        } else {
+                            // Markdown content
+                            insertText += `${item}\n`;
+                        }
+                    }
+                }
+
+                editor.replaceSelection(insertText.trim());
+                new Notice("Processed flow content");
+
+            } else {
+                new Notice("Flow property must be a string or array");
+            }
+        } catch (error) {
+            console.error("Error processing flow file:", error);
+            new Notice("Error processing flow file");
+        }
     }
 
     async loadSettings() {
@@ -234,6 +296,19 @@ class ChoproSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.italicAnnotations = value;
                         updatePreview();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName("Song Folder")
+            .setDesc("Folder to search for song files (leave empty for all files)")
+            .addText((text) =>
+                text
+                    .setPlaceholder("folder/path")
+                    .setValue(this.plugin.settings.flowFilesFolder)
+                    .onChange(async (value) => {
+                        this.plugin.settings.flowFilesFolder = value;
+                        this.plugin.saveSettings();
                     })
             );
 
@@ -383,5 +458,46 @@ class TransposeModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
+    }
+}
+
+class FlowFileSelector extends FuzzySuggestModal<TFile> {
+    private onSelect: (file: TFile) => Promise<void>;
+    private folderPath: string;
+
+    constructor(
+        app: App,
+        folderPath: string,
+        onSelect: (file: TFile) => Promise<void>
+    ) {
+        super(app);
+        this.onSelect = onSelect;
+        this.folderPath = folderPath;
+    }
+
+    getItems(): TFile[] {
+        let files = this.app.vault.getMarkdownFiles();
+        
+        if (this.folderPath && this.folderPath.trim() !== "") {
+            files = files.filter(file => 
+                file.path.startsWith(this.folderPath + "/") || 
+                file.path === this.folderPath
+            );
+        }
+        
+        // Only include files that have a flow property in frontmatter
+        return files.filter(file => {
+            const cache = this.app.metadataCache.getFileCache(file);
+            return cache?.frontmatter?.flow !== undefined;
+        });
+    }
+
+    onChooseItem(item: TFile, evt: MouseEvent | KeyboardEvent) {
+        this.close();
+        this.onSelect(item);
+    }
+
+    getItemText(item: TFile): string {
+        return item.path;
     }
 }
