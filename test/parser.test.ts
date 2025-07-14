@@ -71,8 +71,8 @@ describe("ChordNotation", () => {
     describe("handles Nashville notation correctly", () => {
         const nashvilleNotationCases = [
             "[1]",
-            "[4b7]",
-            "[4b7/5]",
+            "[b4m7]",
+            "[b4m7/5]",
             "[6m/4]",
         ];
 
@@ -89,8 +89,8 @@ describe("ChordNotation", () => {
             { input: "[F#m7]", normalized: "[F♯m7]" },
             { input: "[BbMAJ7]", normalized: "[B♭maj7]" },
             { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
-            { input: "[2#m]", normalized: "[2♯m]" },
-            { input: "[4b7/5#]", normalized: "[4♭7/5♯]" },
+            { input: "[#2m]", normalized: "[♯2m]" },
+            { input: "[b4m7/#5]", normalized: "[♭4m7/♯5]" },
             { input: "[Fes]", normalized: "[F♭]" },
             { input: "[Gis]", normalized: "[G♯]" },
             
@@ -170,7 +170,7 @@ describe("ChordNotation", () => {
 describe("LetterNotation", () => {
     const letterNotationCases = [
         { input: "[C]", note: "C", modifier: undefined, bass: undefined },
-        { input: "[D]", note: "D", modifier: undefined, bass: undefined },
+        { input: "[Dsus]", note: "D", modifier: "sus", bass: undefined },
         { input: "[F#]", note: "F#", modifier: undefined, bass: undefined },
         { input: "[Bb]", note: "Bb", modifier: undefined, bass: undefined },
         { input: "[G♯]", note: "G♯", modifier: undefined, bass: undefined },
@@ -221,7 +221,7 @@ describe("LetterNotation", () => {
     describe("error handling", () => {
         const invalidLetterChords = [
             "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
-            "[1m]", "[2m7]", "[4b7/5]", "[6m/4]"
+            "[1m]", "[2m7]", "[b4m7/5]", "[6m/4]"
         ];
 
         test.each(invalidLetterChords)("rejects Nashville notation %s", (chord) => {
@@ -240,19 +240,18 @@ describe("NashvilleNotation", () => {
         { input: "[5]", note: "5", modifier: undefined, bass: undefined, degree: 5 },
         { input: "[6]", note: "6", modifier: undefined, bass: undefined, degree: 6 },
         { input: "[7]", note: "7", modifier: undefined, bass: undefined, degree: 7 },
-        { input: "[1#]", note: "1#", modifier: undefined, bass: undefined, degree: 1 },
-        { input: "[2b]", note: "2b", modifier: undefined, bass: undefined, degree: 2 },
-        { input: "[3♯]", note: "3♯", modifier: undefined, bass: undefined, degree: 3 },
-        { input: "[4♭]", note: "4♭", modifier: undefined, bass: undefined, degree: 4 },
+        { input: "[#1]", note: "#1", modifier: undefined, bass: undefined, degree: 1 },
+        { input: "[b2]", note: "b2", modifier: undefined, bass: undefined, degree: 2 },
+        { input: "[♯3]", note: "♯3", modifier: undefined, bass: undefined, degree: 3 },
+        { input: "[♭4]", note: "♭4", modifier: undefined, bass: undefined, degree: 4 },
         { input: "[1m]", note: "1", modifier: "m", bass: undefined, degree: 1 },
         { input: "[2m7]", note: "2", modifier: "m7", bass: undefined, degree: 2 },
         { input: "[3maj7]", note: "3", modifier: "maj7", bass: undefined, degree: 3 },
-        { input: "[4b7]", note: "4b", modifier: "7", bass: undefined, degree: 4 },
-        { input: "[4b7/5]", note: "4b", modifier: "7", bass: "5", degree: 4 },
+        { input: "[b4m7]", note: "b4", modifier: "m7", bass: undefined, degree: 4 },
+        { input: "[b4m7/5]", note: "b4", modifier: "m7", bass: "5", degree: 4 },
         { input: "[1/3]", note: "1", modifier: undefined, bass: "3", degree: 1 },
         { input: "[6m/4]", note: "6", modifier: "m", bass: "4", degree: 6 },
-        { input: "[4♭7/5]", note: "4♭", modifier: "7", bass: "5", degree: 4 },
-        { input: "[2#m]", note: "2#", modifier: "m", bass: undefined, degree: 2 },
+        { input: "[♭4m7/5]", note: "♭4", modifier: "m7", bass: "5", degree: 4 },
     ];
 
     describe("parsing", () => {

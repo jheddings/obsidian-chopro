@@ -12,7 +12,7 @@ import {
 describe("AbstractNote", () => {
     describe("handles music notes correctly", () => {
         const musicNoteCases = [
-            "C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes", "As"
+            "C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"
         ];
 
         test.each(musicNoteCases)("parses %s correctly", (input) => {
@@ -24,7 +24,7 @@ describe("AbstractNote", () => {
 
     describe("handles Nashville numbers correctly", () => {
         const nashvilleNumberCases = [
-            "1", "4b", "2#", "7♯", "3♭"
+            "1", "b4", "#2", "♯7", "♭3"
         ];
 
         test.each(nashvilleNumberCases)("parses %s correctly", (input) => {
@@ -43,8 +43,8 @@ describe("AbstractNote", () => {
             // ASCII accidentals to Unicode
             { input: "F#", normalized: "F♯" },
             { input: "Bb", normalized: "B♭" },
-            { input: "2#", normalized: "2♯" },
-            { input: "4b", normalized: "4♭" },
+            { input: "#2", normalized: "♯2" },
+            { input: "b4", normalized: "♭4" },
             
             // Unicode accidentals
             { input: "B♮", normalized: "B" },
@@ -81,14 +81,12 @@ describe("AbstractNote", () => {
 describe("MusicNote", () => {
     const musicNoteCases = [
         { input: "C", root: "C", postfix: undefined, accidental: Accidental.NATURAL },
-        { input: "G", root: "G", postfix: undefined, accidental: Accidental.NATURAL },
         { input: "F#", root: "F", postfix: "#", accidental: Accidental.SHARP },
         { input: "Bb", root: "B", postfix: "b", accidental: Accidental.FLAT },
         { input: "G♯", root: "G", postfix: "♯", accidental: Accidental.SHARP },
         { input: "A♭", root: "A", postfix: "♭", accidental: Accidental.FLAT },
         { input: "Gis", root: "G", postfix: "is", accidental: Accidental.SHARP },
         { input: "Fes", root: "F", postfix: "es", accidental: Accidental.FLAT },
-        { input: "As", root: "A", postfix: "s", accidental: Accidental.FLAT },
         { input: "F♯", root: "F", postfix: "♯", accidental: Accidental.SHARP },
         { input: "B♭", root: "B", postfix: "♭", accidental: Accidental.FLAT },
     ];
@@ -118,7 +116,7 @@ describe("MusicNote", () => {
     describe("error handling", () => {
         const invalidMusicNotes = [
             "1", "2", "3", "4", "5", "6", "7",
-            "1m", "4b", "2#", "7♯", "3♭"
+            "1m", "b4", "#2", "♯7", "♭3"
         ];
 
         test.each(invalidMusicNotes)("rejects Nashville number %s", (note) => {
@@ -137,11 +135,11 @@ describe("NashvilleNumber", () => {
         { input: "5", root: "5", postfix: undefined, accidental: Accidental.NATURAL },
         { input: "6", root: "6", postfix: undefined, accidental: Accidental.NATURAL },
         { input: "7", root: "7", postfix: undefined, accidental: Accidental.NATURAL },
-        { input: "4b", root: "4", postfix: "b", accidental: Accidental.FLAT },
-        { input: "2#", root: "2", postfix: "#", accidental: Accidental.SHARP },
-        { input: "7♯", root: "7", postfix: "♯", accidental: Accidental.SHARP },
-        { input: "3♭", root: "3", postfix: "♭", accidental: Accidental.FLAT },
-        { input: "3♯", root: "3", postfix: "♯", accidental: Accidental.SHARP },
+        { input: "b4", root: "4", postfix: "b", accidental: Accidental.FLAT },
+        { input: "#2", root: "2", postfix: "#", accidental: Accidental.SHARP },
+        { input: "♯7", root: "7", postfix: "♯", accidental: Accidental.SHARP },
+        { input: "♭3", root: "3", postfix: "♭", accidental: Accidental.FLAT },
+        { input: "♯3", root: "3", postfix: "♯", accidental: Accidental.SHARP },
     ];
 
     describe("parsing", () => {

@@ -33,6 +33,48 @@ Was [C]blind but [Am]now I [F]see[C]
 These actions are available using the Command Palette.
 
 - **Transpose chords in current file**: open the transpose dialog for the current file
+- **Insert flow content from file**: insert song flow content from files with flow properties
+
+## Flow Content
+
+The plugin supports a powerful flow system for organizing and reusing song content across different files. This feature allows you to define the structure of a song in one file and then insert that flow into other documents.
+
+### Setting Up Flow Files
+
+Add a `flow` property to your song files' frontmatter. The flow can be either a string or an array:
+
+#### String Flow
+```yaml
+---
+title: Simple Song
+flow: "This is direct content to insert"
+---
+```
+
+#### Array Flow
+```yaml
+---
+title: Amazing Grace
+flow:
+  - "#Verse 1"
+  - "#Verse 2" 
+  - "#Verse 3"
+  - "#Verse 4"
+---
+```
+
+### How Flow Works
+
+When you use the "Insert flow content from file" command:
+
+1. **Section References**: Items starting with `#` create transclusion links to sections in the selected file
+   - `"#Verse 1"` becomes `![[filename#Verse 1]]`
+   - These will display the actual section content inline
+
+2. **Direct Content**: Items not starting with `#` are inserted as literal text
+   - `"Repeat chorus twice"` is inserted exactly as written
+
+Only files containing a `flow` property in their frontmatter will appear in the file selector.
 
 ## Configuration
 
@@ -43,6 +85,7 @@ Access settings via Settings → Community Plugins → ChordPro Viewer:
 - **Superscript Chord Modifiers**: Display chord modifiers (7, maj7, sus4, etc.) as superscript
 - **Chord Decoration**: Wrap chords with bracket pairs for emphasis (None, [ ], ( ), { }, < >)
 - **Italic Annotations**: Display annotations (text starting with asterisk) in italics
+- **Song Folder**: Limit song file selection to a specific folder (e.g., "Songs/")
 
 The settings panel includes a live preview that updates as you change configuration options.
 

@@ -10,22 +10,20 @@ import {
     Modal,
     ButtonComponent,
     Editor,
+    TFile,
 } from "obsidian";
 
 import { ChoproFile } from "./parser";
 import { ChoproRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
+import { FlowGenerator } from "./flow";
 
 import {
     ChoproTransposer,
     TransposeOptions,
     TransposeUtils,
 } from "./transpose";
-
-import {
-    KeyInfo,
-} from "./music";
 
 export interface ChoproPluginSettings {
     chordColor: string;
@@ -34,6 +32,7 @@ export interface ChoproPluginSettings {
     chordDecorations: string;
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
+    flowFilesFolder: string;
 }
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
@@ -43,6 +42,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordDecorations: "none",
     normalizedChordDisplay: false,
     italicAnnotations: true,
+    flowFilesFolder: "",
 };
 
 export default class ChoproPlugin extends Plugin {
@@ -63,6 +63,14 @@ export default class ChoproPlugin extends Plugin {
             name: "Transpose chords in current file",
             editorCallback: (editor: Editor, view: MarkdownView) => {
                 this.openTransposeModal(view);
+            },
+        });
+
+        this.addCommand({
+            id: "chopro-insert-flow",
+            name: "Insert flow content from file",
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.openFlowFileSelector(editor);
             },
         });
 
@@ -106,6 +114,11 @@ export default class ChoproPlugin extends Plugin {
         );
 
         modal.open();
+    }
+
+    private async openFlowFileSelector(editor: Editor) {
+        const flowGenerator = new FlowGenerator(this.app, this.settings);
+        await flowGenerator.openFlowFileSelector(editor);
     }
 
     async loadSettings(): Promise<void> {
@@ -243,6 +256,19 @@ class ChoproSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.italicAnnotations = value;
                         updatePreview();
+                    })
+            );
+
+        new Setting(containerEl)
+            .setName("Song Folder")
+            .setDesc("Folder to search for song files (leave empty for all files)")
+            .addText((text) =>
+                text
+                    .setPlaceholder("folder/path")
+                    .setValue(this.plugin.settings.flowFilesFolder)
+                    .onChange(async (value) => {
+                        this.plugin.settings.flowFilesFolder = value;
+                        this.plugin.saveSettings();
                     })
             );
 
