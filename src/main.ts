@@ -79,7 +79,7 @@ export default class ChoproPlugin extends Plugin {
         ChoproStyleManager.applyStyles(this.settings);
     }
 
-    private async openTransposeModal(activeView: MarkdownView) {
+    private async openTransposeModal(activeView: MarkdownView): Promise<void> {
         const file = activeView.file;
 
         if (!file) {
@@ -121,7 +121,7 @@ export default class ChoproPlugin extends Plugin {
         await flowGenerator.openFlowFileSelector(editor);
     }
 
-    async loadSettings() {
+    async loadSettings(): Promise<void> {
         this.settings = Object.assign(
             {},
             DEFAULT_SETTINGS,
@@ -129,25 +129,34 @@ export default class ChoproPlugin extends Plugin {
         );
     }
 
-    async saveSettings() {
+    async saveSettings(): Promise<void> {
         await this.saveData(this.settings);
 
-        // Update the renderer with new settings
-        this.renderer = new ChoproRenderer(this.settings);
+        // Update the renderer with new settings instead of creating new instance
+        this.renderer.updateSettings(this.settings);
 
         // reapply the current styles
         ChoproStyleManager.applyStyles(this.settings);
     }
 
-    processChoproBlock(source: string, el: HTMLElement) {
-        el.empty();
+    processChoproBlock(source: string, el: HTMLElement): void {
+        try {
+            el.empty();
 
-        const container = el.createDiv({ cls: "chopro-container" });
-        const block = ChoproBlock.parse(source);
-        this.renderer.renderBlock(block, container);
+            const container = el.createDiv({ cls: "chopro-container" });
+            const block = ChoproBlock.parse(source);
+            this.renderer.renderBlock(block, container);
+        } catch (error) {
+            console.error('Failed to process ChoPro block:', error);
+            el.empty();
+            el.createDiv({ 
+                cls: "chopro-error",
+                text: "Error parsing ChoPro content" 
+            });
+        }
     }
 
-    onunload() {
+    onunload(): void {
         ChoproStyleManager.removeStyles();
     }
 }
@@ -296,7 +305,7 @@ class ChoproSettingTab extends PluginSettingTab {
 class TransposeModal extends Modal {
     private fromKey: string | null = null;
     private toKey: string = "C";
-    private chordType: string = "alpha"; // Use string instead of NoteType enum - why?
+    private chordType: string = "alpha";
     private onConfirm: (options: TransposeOptions) => void;
 
     constructor(
@@ -310,7 +319,7 @@ class TransposeModal extends Modal {
         this.onConfirm = onConfirm;
     }
 
-    onOpen() {
+    onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
 
@@ -323,7 +332,7 @@ class TransposeModal extends Modal {
                 TransposeUtils.getAllKeys().forEach((key) =>
                     dropdown.addOption(key, key)
                 );
-                if (this.fromKey) {
+                if (this.fromKey && TransposeUtils.isValidKey(this.fromKey)) {
                     dropdown.setValue(this.fromKey);
                 }
                 dropdown.onChange((value) => {
@@ -391,22 +400,27 @@ class TransposeModal extends Modal {
             .setButtonText("Transpose")
             .setCta()
             .onClick(() => {
-                if (this.chordType === "alpha" && !this.fromKey) {
-                    new Notice("Cannot transpose without the current key.");
-                    return;
+                try {
+                    if (this.chordType === "alpha" && !this.fromKey) {
+                        new Notice("Cannot transpose without the current key.");
+                        return;
+                    }
+
+                    const options: TransposeOptions = {
+                        fromKey: this.fromKey ? TransposeUtils.parseKey(this.fromKey) : undefined,
+                        toKey: TransposeUtils.parseKey(this.toKey),
+                    };
+
+                    this.onConfirm(options);
+                    this.close();
+                } catch (error) {
+                    console.error('Transpose validation error:', error);
+                    new Notice('Invalid transposition parameters');
                 }
-
-                const options: TransposeOptions = {
-                    fromKey: this.fromKey ? TransposeUtils.parseKey(this.fromKey) : undefined,
-                    toKey: TransposeUtils.parseKey(this.toKey),
-                };
-
-                this.onConfirm(options);
-                this.close();
             });
     }
 
-    onClose() {
+    onClose(): void {
         const { contentEl } = this;
         contentEl.empty();
     }
