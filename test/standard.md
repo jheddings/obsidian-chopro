@@ -4,6 +4,14 @@ artist: John Newton
 time: 3/4
 key: C
 tempo: 80
+flow:
+  - "#Verse 1"
+  - "#Verse 2"
+  - "#Verse 3"
+  - ""
+  - ">[!note] Key Change"
+  - ""
+  - "#Verse 4"
 ---
 
 # Amazing Grace
@@ -30,8 +38,6 @@ Through [C]many dangers [F]toils and [C]snares, I [Am]have al[C]ready [G]come
 ```
 
 ## Verse 4
-
->[!note] Key Change
 
 ```chopro
 When [D]we've been there ten [G]thousand [D]years, bright [Bm]shining [D]as the [A]sun
