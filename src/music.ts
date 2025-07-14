@@ -68,32 +68,35 @@ export abstract class AbstractNote {
     }
 
     /**
+     * Protected helper method to get the normalized accidental string.
+     * @param normalize If true, return Unicode symbols, otherwise return original postfix
+     */
+    protected accidentalToString(normalize: boolean): string {
+        if (!this.postfix) {
+            return "";
+        }
+
+        if (normalize) {
+            switch (this.accidental) {
+                case Accidental.SHARP:
+                    return '♯';
+                case Accidental.FLAT:
+                    return '♭';
+                case Accidental.NATURAL:
+                default:
+                    return ""; // no symbol for natural notes
+            }
+        }
+        
+        return this.postfix;
+    }
+
+    /**
      * Convert the note to its string representation.
      * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
     toString(normalize: boolean = false): string {
-        let noteString = this.root;
-        
-        if (this.postfix) {
-            if (normalize) {
-                switch (this.accidental) {
-                    case Accidental.SHARP:
-                        noteString += '♯';
-                        break;
-                    case Accidental.FLAT:
-                        noteString += '♭';
-                        break;
-                    case Accidental.NATURAL:
-                    default:
-                        // no postfix for natural notes
-                        break;
-                }
-            } else {
-                noteString += this.postfix;
-            }
-        }
-        
-        return noteString;
+        return this.root + this.accidentalToString(normalize);
     }
 
     /**
@@ -197,30 +200,7 @@ export class NashvilleNumber extends AbstractNote {
      * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
     toString(normalize: boolean = false): string {
-        let noteString = "";
-        
-        if (this.postfix) {
-            if (normalize) {
-                switch (this.accidental) {
-                    case Accidental.SHARP:
-                        noteString += '♯';
-                        break;
-                    case Accidental.FLAT:
-                        noteString += '♭';
-                        break;
-                    case Accidental.NATURAL:
-                    default:
-                        // no prefix for natural notes
-                        break;
-                }
-            } else {
-                noteString += this.postfix;
-            }
-        }
-        
-        noteString += this.root;
-        
-        return noteString;
+        return this.accidentalToString(normalize) + this.root;
     }
 }
 
