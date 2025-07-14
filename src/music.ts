@@ -153,7 +153,7 @@ export class MusicNote extends AbstractNote {
  * Represents a Nashville number notation (1-7).
  */
 export class NashvilleNumber extends AbstractNote {
-    public static readonly PATTERN = /^([1-7])(#|♯|b|♭)?$/;
+    public static readonly PATTERN = /^(#|♯|b|♭)?([1-7])$/;
 
     /**
      * Create a new NashvilleNumber instance.
@@ -186,10 +186,41 @@ export class NashvilleNumber extends AbstractNote {
             throw new Error('Invalid note format');
         }
 
-        const root = match[1];
-        const postfix = match[2];
+        const prefix = match[1];
+        const root = match[2];
 
-        return new NashvilleNumber(parseInt(root), postfix);
+        return new NashvilleNumber(parseInt(root), prefix);
+    }
+
+    /**
+     * Convert the Nashville number to its string representation with accidental prefix.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     */
+    toString(normalize: boolean = false): string {
+        let noteString = "";
+        
+        if (this.postfix) {
+            if (normalize) {
+                switch (this.accidental) {
+                    case Accidental.SHARP:
+                        noteString += '♯';
+                        break;
+                    case Accidental.FLAT:
+                        noteString += '♭';
+                        break;
+                    case Accidental.NATURAL:
+                    default:
+                        // no prefix for natural notes
+                        break;
+                }
+            } else {
+                noteString += this.postfix;
+            }
+        }
+        
+        noteString += this.root;
+        
+        return noteString;
     }
 }
 
