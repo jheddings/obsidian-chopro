@@ -68,32 +68,35 @@ export abstract class AbstractNote {
     }
 
     /**
+     * Protected helper method to get the normalized accidental string.
+     * @param normalize If true, return Unicode symbols, otherwise return original postfix
+     */
+    protected accidentalToString(normalize: boolean): string {
+        if (!this.postfix) {
+            return "";
+        }
+
+        if (normalize) {
+            switch (this.accidental) {
+                case Accidental.SHARP:
+                    return '♯';
+                case Accidental.FLAT:
+                    return '♭';
+                case Accidental.NATURAL:
+                default:
+                    return ""; // no symbol for natural notes
+            }
+        }
+        
+        return this.postfix;
+    }
+
+    /**
      * Convert the note to its string representation.
      * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
      */
     toString(normalize: boolean = false): string {
-        let noteString = this.root;
-        
-        if (this.postfix) {
-            if (normalize) {
-                switch (this.accidental) {
-                    case Accidental.SHARP:
-                        noteString += '♯';
-                        break;
-                    case Accidental.FLAT:
-                        noteString += '♭';
-                        break;
-                    case Accidental.NATURAL:
-                    default:
-                        // no postfix for natural notes
-                        break;
-                }
-            } else {
-                noteString += this.postfix;
-            }
-        }
-        
-        return noteString;
+        return this.root + this.accidentalToString(normalize);
     }
 
     /**
@@ -153,7 +156,7 @@ export class MusicNote extends AbstractNote {
  * Represents a Nashville number notation (1-7).
  */
 export class NashvilleNumber extends AbstractNote {
-    public static readonly PATTERN = /^([1-7])(#|♯|b|♭)?$/;
+    public static readonly PATTERN = /^(#|♯|b|♭)?([1-7])$/;
 
     /**
      * Create a new NashvilleNumber instance.
@@ -186,10 +189,18 @@ export class NashvilleNumber extends AbstractNote {
             throw new Error('Invalid note format');
         }
 
-        const root = match[1];
-        const postfix = match[2];
+        const prefix = match[1];
+        const root = match[2];
 
-        return new NashvilleNumber(parseInt(root), postfix);
+        return new NashvilleNumber(parseInt(root), prefix);
+    }
+
+    /**
+     * Convert the Nashville number to its string representation with accidental prefix.
+     * @param normalize If true, normalize accidentals to Unicode symbols (default: false)
+     */
+    toString(normalize: boolean = false): string {
+        return this.accidentalToString(normalize) + this.root;
     }
 }
 

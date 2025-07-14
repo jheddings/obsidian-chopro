@@ -141,7 +141,7 @@ export class LetterNotation extends ChordNotation {
  * Represents a chord notation using Nashville number system (1-7).
  */
 export class NashvilleNotation extends ChordNotation {
-    public static readonly PATTERN = /^\[([1-7](?:#|♯|b|♭)?)([^\/\]]+)?(?:\/(.+))?\]$/;
+    public static readonly PATTERN = /^\[((#|♯|b|♭)?[1-7])([^\/\]]+)?(?:\/(.+))?\]$/;
 
     constructor(
         public note: NashvilleNumber,
@@ -163,8 +163,8 @@ export class NashvilleNotation extends ChordNotation {
         }
 
         const noteString = match[1];
-        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
-        const bassString = match[3] ? match[3].trim() : undefined;
+        const modifier = match[3] && match[3].trim() !== '' ? match[3].trim() : undefined;
+        const bassString = match[4] ? match[4].trim() : undefined;
 
         if (!NashvilleNumber.test(noteString)) {
             throw new Error('Invalid Nashville notation: must use 1-7 numbers');
