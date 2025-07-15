@@ -20,9 +20,7 @@ import {
     TransposeUtils,
 } from "../src/transpose";
 
-import { verifyChordsInBlock } from "./parser.test";
-
-
+import { verifyChordsInBlock } from "./util";
 
 describe('NoteTransposer', () => {
     describe('transposeNote', () => {
