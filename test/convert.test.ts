@@ -117,6 +117,31 @@ describe('ChordLineConverter', () => {
 
             expect(result?.toString()).toBe("[A#]Speci[F#m7b5]al chords[*Pause] here.");
         });
+
+        it('converts chord line with empty lyrics to InstrumentalLine', () => {
+            const chordLine = new TextLine("C    G    Am    F");
+            const lyricLine = new TextLine("");
+
+            const converter = new ChordLineConverter();
+            const result = converter.combine(chordLine, lyricLine);
+
+            expect(result).toBeDefined();
+            expect(result).toBeInstanceOf(InstrumentalLine);
+            expect(result?.toString()).toBe("[C]    [G]    [Am]    [F]");
+        });
+
+        it('converts chord line with only whitespace lyrics to InstrumentalLine', () => {
+            const chordLine = new TextLine("Dm   F   C   G");
+            const lyricLine = new TextLine("   ");
+
+            const converter = new ChordLineConverter();
+            const result = converter.combine(chordLine, lyricLine);
+
+            expect(result).toBeDefined();
+            expect(result).toBeInstanceOf(InstrumentalLine);
+            expect(result?.toString()).toBe("[Dm]   [F]   [C]   [G]");
+        });
+
     });
 
     describe('convertLines', () => {
