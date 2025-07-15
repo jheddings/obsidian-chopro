@@ -330,7 +330,7 @@ export class CommentLine extends ChoproLine {
 export abstract class SegmentedLine extends ChoproLine {
     public static readonly INLINE_MARKER_PATTERN = /\[([^\]]+)\]/;
 
-    constructor(public content: string, public segments: LineSegment[]) {
+    constructor(public segments: LineSegment[]) {
         super();
     }
 
@@ -433,7 +433,7 @@ export class ChordLyricsLine extends SegmentedLine {
 
     static parse(line: string): ChordLyricsLine {
         const segments = SegmentedLine.parseLineSegments(line);
-        return new ChordLyricsLine(line, segments);
+        return new ChordLyricsLine(segments);
     }
 }
 
@@ -450,7 +450,7 @@ export class InstrumentalLine extends SegmentedLine {
 
     static parse(line: string): InstrumentalLine {
         const segments = SegmentedLine.parseLineSegments(line);
-        return new InstrumentalLine(line, segments);
+        return new InstrumentalLine(segments);
     }
 }
 
