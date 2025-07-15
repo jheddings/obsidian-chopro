@@ -5,219 +5,194 @@ import { TextLine, ChordLyricsLine, InstrumentalLine, EmptyLine } from '../src/p
 
 describe('ChordLineConverter', () => {
     describe('combine', () => {
-        it('should convert basic chord-over-lyrics format to bracketed chords', () => {
-            const chordLine = new TextLine("      D          G    D");
-            const lyricLine = new TextLine("Basic chord line with lyrics.");
 
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
+        const lyricsOnlyCases = [
+            {
+                chords: "    ",
+                lyrics: "No chords here.",
+            },
+            {
+                chords: "",
+                lyrics: "Lyrics only.",
+            }
+        ];
 
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(ChordLyricsLine);
+        test.each(lyricsOnlyCases)(
+            'should handle lyrics only lines -- $lyrics',
+            ({ chords, lyrics }) => {
+                const chordLine = new TextLine(chords);
+                const lyricLine = new TextLine(lyrics);
 
-            expect(result?.toString()).toBe("Basic [D]chord line [G]with [D]lyrics.");
+                const converter = new ChordLineConverter();
+                const result = converter.combine(chordLine, lyricLine);
 
-        });
+                expect(result).toBeDefined();
+                expect(result).toBeInstanceOf(TextLine);
+                expect(result?.toString()).toBe(lyrics);
+            }
+        );
 
-        it('handles invalid chords as Annotations', () => {
-            const chordLine = new TextLine("            Rit.           A7");
-            const lyricLine = new TextLine("Final line, slowing to a close.");
+        const instrumentalCases = [
+            {
+                chords: "C    G    Am    F",
+                lyrics: "",
+                expected: "[C]    [G]    [Am]    [F]"
+            },
+            {
+                chords: "Dm   F   C   G",
+                lyrics: "   ",
+                expected: "[Dm]   [F]   [C]   [G]"
+            }
+        ];
 
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
+        test.each(instrumentalCases)(
+            'should parse instrumental line -- $expected',
+            ({ chords, lyrics, expected}) => {
+                const chordLine = new TextLine(chords);
+                const lyricLine = new TextLine(lyrics);
 
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(ChordLyricsLine);
+                const converter = new ChordLineConverter();
+                const result = converter.combine(chordLine, lyricLine);
 
-            expect(result?.toString()).toBe("Final line, [*Rit.]slowing to a cl[A7]ose.");
-        });
+                expect(result).toBeDefined();
+                expect(result).toBeInstanceOf(InstrumentalLine);
+                expect(result?.toString()).toBe(expected);
+            }
+        );
 
-        it('handles chord placement before lyrice', () => {
-            const chordLine = new TextLine("D");
-            const lyricLine = new TextLine("  Delayed lyrics.");
+        const combineTestCases = [
+            {
+                chords: "      D          G    D",
+                lyrics: "Basic chord line with lyrics.",
+                expected: "Basic [D]chord line [G]with [D]lyrics.",
+            },
+            {
+                chords: "            Rit.           A7",
+                lyrics: "Final line, slowing to a close.",
+                expected: "Final line, [*Rit.]slowing to a cl[A7]ose.",
+            },
+            {
+                chords: "D",
+                lyrics: "  Delayed lyrics.",
+                expected: "[D]  Delayed lyrics.",
+            },
+            {
+                chords: "                       D  G  C",
+                lyrics: "Chord after all lyrics.",
+                expected: "Chord after all lyrics.[D]  [G]  [C]",
+            },
+            {
+                chords: "   F#     Bm",
+                lyrics: "Misaligned test.",
+                expected: "Mis[F#]aligned[Bm] test.",
+            },
+            {
+                chords: "G\t\tC    D",
+                lyrics: "Tabs and spaces.",
+                expected: "[G]Tab[C]s and[D] spaces.",
+            },
+            {
+                chords: "A#   F#m7b5   *Pause",
+                lyrics: "Special chords here.",
+                expected: "[A#]Speci[F#m7b5]al chords[*Pause] here.",
+            }
+        ];
 
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
+        test.each(combineTestCases)(
+            'should combine lines -- $expected',
+            ({ chords, lyrics, expected }) => {
+                const chordLine = new TextLine(chords);
+                const lyricLine = new TextLine(lyrics);
 
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(ChordLyricsLine);
+                const converter = new ChordLineConverter();
+                const result = converter.combine(chordLine, lyricLine);
 
-            expect(result?.toString()).toBe("[D]  Delayed lyrics.");
-        });
-
-        it('handles chord placement at the end of the line', () => {
-            const chordLine = new TextLine("                       D  G  C");
-            const lyricLine = new TextLine("Chord after all lyrics.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(ChordLyricsLine);
-
-            expect(result?.toString()).toBe("Chord after all lyrics.[D]  [G]  [C]");
-        });
-
-        it('handles chord line with only spaces', () => {
-            const chordLine = new TextLine("    ");
-            const lyricLine = new TextLine("No chords here.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("No chords here.");
-        });
-
-        it('handles empty lyric line', () => {
-            const chordLine = new TextLine("A   D   E");
-            const lyricLine = new TextLine("");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("[A]   [D]   [E]");
-        });
-
-        it('handles empty chord line', () => {
-            const chordLine = new TextLine("");
-            const lyricLine = new TextLine("Lyrics only.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("Lyrics only.");
-        });
-
-        it('handles misaligned chord and lyric lines', () => {
-            const chordLine = new TextLine("   F#     Bm");
-            const lyricLine = new TextLine("Misaligned test.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("Mis[F#]aligned[Bm] test.");
-        });
-
-        it('handles chord line with tabs and multiple spaces', () => {
-            const chordLine = new TextLine("G\t\tC    D");
-            const lyricLine = new TextLine("Tabs and spaces.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("[G]Tab[C]s and[D] spaces.");
-        });
-
-        it('handles chord line with special characters', () => {
-            const chordLine = new TextLine("A#   F#m7b5   *Pause");
-            const lyricLine = new TextLine("Special chords here.");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result?.toString()).toBe("[A#]Speci[F#m7b5]al chords[*Pause] here.");
-        });
-
-        it('converts chord line with empty lyrics to InstrumentalLine', () => {
-            const chordLine = new TextLine("C    G    Am    F");
-            const lyricLine = new TextLine("");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(InstrumentalLine);
-            expect(result?.toString()).toBe("[C]    [G]    [Am]    [F]");
-        });
-
-        it('converts chord line with only whitespace lyrics to InstrumentalLine', () => {
-            const chordLine = new TextLine("Dm   F   C   G");
-            const lyricLine = new TextLine("   ");
-
-            const converter = new ChordLineConverter();
-            const result = converter.combine(chordLine, lyricLine);
-
-            expect(result).toBeDefined();
-            expect(result).toBeInstanceOf(InstrumentalLine);
-            expect(result?.toString()).toBe("[Dm]   [F]   [C]   [G]");
-        });
+                expect(result).toBeDefined();
+                expect(result).toBeInstanceOf(ChordLyricsLine);
+                expect(result?.toString()).toBe(expected);
+            }
+        );
 
     });
 
     describe('convertLines', () => {
-        it('does not change multiple lines with lyrics', () => {
-            const lines = [
-                new TextLine("There are no chords here,"),
-                new TextLine("just some lyrics to test."),
-                new TextLine("Even if A line has G chord-like text."),
-            ];
-
-            const converter = new ChordLineConverter();
-            const result = converter.convertLines(lines);
-
-            expect(result).toBeDefined();
-            expect(result.length).toBe(lines.length);
-
-            for (let i = 0; i < lines.length; i++) {
-                expect(result[i]).toBeInstanceOf(TextLine);
-                expect(result[i].toString()).toBe(lines[i].content);
+        const convertLinesTestCases = [
+            {
+                description: 'does not change multiple lines with lyrics',
+                inputLines: [
+                    "There are no chords here,",
+                    "just some lyrics to test.",
+                    "Even if A line has G chord-like text."
+                ],
+                expectedLength: 3,
+                expectedTypes: [TextLine, TextLine, TextLine],
+                expectedResults: [
+                    "There are no chords here,",
+                    "just some lyrics to test.",
+                    "Even if A line has G chord-like text."
+                ]
+            },
+            {
+                description: 'converts line pairs to a single ChordLyricsLine',
+                inputLines: [
+                    "      D          G    D",
+                    "Basic chord line with lyrics."
+                ],
+                expectedLength: 1,
+                expectedTypes: [ChordLyricsLine],
+                expectedResults: ["Basic [D]chord line [G]with [D]lyrics."]
+            },
+            {
+                description: 'converts subsequent chord lines to Instrumentals',
+                inputLines: [
+                    "C    G    Am    F",
+                    "C    G    F     F",
+                    "C              G            Am            F  ",
+                    "I woke up to the sound of rain upon the window"
+                ],
+                expectedLength: 3,
+                expectedTypes: [InstrumentalLine, InstrumentalLine, ChordLyricsLine],
+                expectedResults: [
+                    "[C]    [G]    [Am]    [F]",
+                    "[C]    [G]    [F]     [F]",
+                    "[C]I woke up to th[G]e sound of ra[Am]in upon the wi[F]ndow"
+                ]
+            },
+            {
+                description: 'preserves empty lines',
+                inputLines: [
+                    "C         D",
+                    "  Opening lyrics.",
+                    "",
+                    "        C",
+                    "Closing lyrics."
+                ],
+                expectedLength: 3,
+                expectedTypes: [ChordLyricsLine, EmptyLine, ChordLyricsLine],
+                expectedResults: [
+                    "[C]  Opening [D]lyrics.",
+                    "",
+                    "Closing [C]lyrics."
+                ]
             }
-        });
+        ];
 
+        test.each(convertLinesTestCases)(
+            '$description',
+            ({ inputLines, expectedLength, expectedTypes, expectedResults }) => {
+                const lines = inputLines.map(content => new TextLine(content));
 
-        it('converts line pairs to a single ChordLyricsLine', () => {
-            const lines = [
-                new TextLine("      D          G    D"),
-                new TextLine("Basic chord line with lyrics.")
-            ];
+                const converter = new ChordLineConverter();
+                const result = converter.convertLines(lines);
 
-            const converter = new ChordLineConverter();
-            const result = converter.convertLines(lines);
+                expect(result).toBeDefined();
+                expect(result.length).toBe(expectedLength);
 
-            expect(result).toBeDefined();
-            expect(result.length).toBe(1);
-            expect(result[0]).toBeInstanceOf(ChordLyricsLine);
-            expect(result[0].toString()).toBe("Basic [D]chord line [G]with [D]lyrics.");
-        });
-
-        it('converts subsequent chord lines to Instrumentals', () => {
-            const lines = [
-                new TextLine("C    G    Am    F"),
-                new TextLine("C    G    F     F"),
-                new TextLine("C              G            Am            F  "),
-                new TextLine("I woke up to the sound of rain upon the window")
-            ];
-
-            const converter = new ChordLineConverter();
-            const result = converter.convertLines(lines);
-
-            expect(result).toBeDefined();
-            expect(result.length).toBe(3);
-            expect(result[0]).toBeInstanceOf(InstrumentalLine);
-            expect(result[1]).toBeInstanceOf(InstrumentalLine);
-            expect(result[2]).toBeInstanceOf(ChordLyricsLine);
-        });
-
-        it('preserves empty lines', () => {
-            const lines = [
-                new TextLine("C         D"),
-                new TextLine("  Opening lyrics."),
-                new TextLine(""),
-                new TextLine("        C"),
-                new TextLine("Closing lyrics."),
-            ];
-
-            const converter = new ChordLineConverter();
-            const result = converter.convertLines(lines);
-
-            expect(result).toBeDefined();
-            expect(result.length).toBe(3);
-            expect(result[0]).toBeInstanceOf(ChordLyricsLine);
-            expect(result[0].toString()).toBe("[C]  Opening [D]lyrics.");
-            expect(result[1]).toBeInstanceOf(EmptyLine);
-            expect(result[2]).toBeInstanceOf(ChordLyricsLine);
-            expect(result[2].toString()).toBe("Closing [C]lyrics.");
-        });
-
+                for (let i = 0; i < expectedLength; i++) {
+                    expect(result[i]).toBeInstanceOf(expectedTypes[i]);
+                    expect(result[i].toString()).toBe(expectedResults[i]);
+                }
+            }
+        );
     });
 });
