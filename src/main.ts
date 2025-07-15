@@ -10,7 +10,6 @@ import {
     Modal,
     ButtonComponent,
     Editor,
-    TFile,
 } from "obsidian";
 
 import { ChoproFile } from "./parser";
@@ -18,6 +17,7 @@ import { ChoproRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
 import { FlowGenerator } from "./flow";
+import { ChordConverter, ChordLineConverter } from "./convert";
 
 import {
     ChoproTransposer,
@@ -71,6 +71,14 @@ export default class ChoproPlugin extends Plugin {
             name: "Insert flow content from file",
             editorCallback: (editor: Editor, view: MarkdownView) => {
                 this.openFlowFileSelector(editor);
+            },
+        });
+
+        this.addCommand({
+            id: "chopro-convert-chord-over-lyrics",
+            name: "Convert chord-over-lyrics to bracketed chords",
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.convertChordOverLyrics(view);
             },
         });
 
@@ -153,6 +161,29 @@ export default class ChoproPlugin extends Plugin {
                 cls: "chopro-error",
                 text: "Error parsing ChoPro content" 
             });
+        }
+    }
+
+    async convertChordOverLyrics(view: MarkdownView): Promise<void> {
+        const file = view.file;
+
+        if (!file) {
+            new Notice("No file is currently open");
+            return;
+        }
+
+        const content = await this.app.vault.read(file);
+        const choproFile = ChoproFile.parse(content);
+        
+        const converter = new ChordLineConverter();
+        const changed = converter.convert(choproFile);
+        
+        if (changed) {
+            const convertedContent = choproFile.toString();
+            await this.app.vault.modify(file, convertedContent);
+            new Notice("Converted chord-over-lyrics format successfully");
+        } else {
+            new Notice("No chord-over-lyrics format found to convert");
         }
     }
 
