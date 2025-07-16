@@ -4,7 +4,7 @@ const typescriptParser = require("@typescript-eslint/parser");
 
 module.exports = [
     {
-        // Ignore generated and build files
+        // ignore generated and build files
         ignores: ["main.js", "dist/**", "node_modules/**", "*.d.ts"],
     },
     {
@@ -19,11 +19,13 @@ module.exports = [
         },
         plugins: {
             "@typescript-eslint": typescriptEslint,
-            prettier,
         },
         rules: {
-            "prettier/prettier": "error",
-            semi: ["warn", "always"],
+            semi: "off",
+            "@typescript-eslint/member-delimiter-style": "off",
+            "@typescript-eslint/quotes": "off",
+            "@typescript-eslint/indent": "off",
+            "@typescript-eslint/comma-dangle": "off",
             "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
             "@typescript-eslint/explicit-function-return-type": "off",
             "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -36,12 +38,8 @@ module.exports = [
             ecmaVersion: 2021,
             sourceType: "module",
         },
-        plugins: {
-            prettier,
-        },
         rules: {
-            "prettier/prettier": "error",
-            semi: ["warn", "always"],
+            semi: "off",
         },
     },
 ];
