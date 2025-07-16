@@ -62,9 +62,9 @@ describe('ChordLineConverter', () => {
                 expected: "Mis[F#]aligned[Bm] test.",
             },
             {
-                chords: "G\t\tC    D",
-                lyrics: "Tabs and spaces.",
-                expected: "[G]Tab[C]s and[D] spaces.",
+                chords: "G\t\tC                D",
+                lyrics: "Tabs and spaces are each one space.",
+                expected: "[G]Tab[C]s and spaces are [D]each one space.",
             },
             {
                 chords: "A#   F#m7b5   Pause",

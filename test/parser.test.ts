@@ -1,5 +1,5 @@
 import {
-    ChordNotation,
+    BracketChord,
     LetterNotation,
     NashvilleNotation,
     Annotation,
@@ -13,10 +13,76 @@ import {
     Frontmatter,
     SegmentedLine,
     ChordLine,
+    ChordSegment,
 } from "../src/parser";
 import { verifyChordsInLine } from "./util";
 
-describe("ChordNotation", () => {
+describe("ChordSegment", () => {
+    describe("normalization", () => {
+        const normalizationCases = [
+            // Basic accidental normalization
+            { input: "F#m7", normalized: "F♯m7" },
+            { input: "BbMAJ7", normalized: "B♭maj7" },
+            { input: "F#m7/Bb", normalized: "F♯m7/B♭" },
+            { input: "#2m", normalized: "♯2m" },
+            { input: "b4m7/#5", normalized: "♭4m7/♯5" },
+            { input: "Fes", normalized: "F♭" },
+            { input: "Gis", normalized: "G♯" },
+
+            // Alternative chord quality normalization
+            { input: "CΔ", normalized: "Cmaj" },
+            { input: "FΔ7", normalized: "Fmaj7" },
+            { input: "BbΔ9", normalized: "B♭maj9" },
+            { input: "DΔ#11", normalized: "Dmaj♯11" },
+            { input: "Co", normalized: "Cdim" },
+            { input: "Co7", normalized: "Cdim7" },
+            { input: "F#o", normalized: "F♯dim" },
+            { input: "Go7/B", normalized: "Gdim7/B" },
+            { input: "Cø", normalized: "Cm7♭5" },
+            { input: "Cø7", normalized: "Cm7♭5" },
+            { input: "F#ø7", normalized: "F♯m7♭5" },
+            { input: "Amø", normalized: "Amm7♭5" },
+            { input: "C+7", normalized: "Caug7" },
+            { input: "F+", normalized: "Faug" },
+            { input: "A+add9", normalized: "Aaugadd9" },
+        ];
+
+        test.each(normalizationCases)(
+            "normalizes $input correctly",
+            ({ input, normalized }) => {
+                const chord = ChordSegment.parse(input);
+                expect(chord.toString()).toEqual(input);
+                expect(chord.toString(false)).toEqual(input);
+                expect(chord.toString(true)).toEqual(normalized);
+            }
+        );
+
+        // Test the quality property specifically
+        const qualityTests = [
+            { input: "CΔ7", expectedQuality: "maj7" },
+            { input: "Co", expectedQuality: "dim" },
+            { input: "Cø7", expectedQuality: "m7♭5" },
+            { input: "C+", expectedQuality: "aug" },
+            { input: "C", expectedQuality: undefined },
+            { input: "Cmaj7", expectedQuality: "maj7" },
+            { input: "C#Δ9", expectedQuality: "maj9" },
+            { input: "F#o7", expectedQuality: "dim7" },
+            { input: "Bbø", expectedQuality: "m7♭5" },
+            { input: "D+add9", expectedQuality: "augadd9" },
+        ];
+
+        test.each(qualityTests)(
+            "exposes correct quality property for $input",
+            ({ input, expectedQuality }) => {
+                const chord = ChordSegment.parse(input);
+                expect(chord.quality).toEqual(expectedQuality);
+            }
+        );
+    });
+
+});
+
+describe("BracketChord", () => {
     describe("handles letter notation correctly", () => {
         const letterNotationCases = [
             "[C]",
@@ -29,8 +95,8 @@ describe("ChordNotation", () => {
         ];
 
         test.each(letterNotationCases)("parses $input correctly", (input) => {
-            const chord = ChordNotation.parse(input);
-            expect(chord).toBeInstanceOf(LetterNotation);
+            const chord = BracketChord.parse(input);
+            expect(chord.chord).toBeInstanceOf(LetterNotation);
             expect(chord.toString()).toEqual(input);
         });
     });
@@ -44,72 +110,10 @@ describe("ChordNotation", () => {
         ];
 
         test.each(nashvilleNotationCases)("parses $input correctly", (input) => {
-            const chord = ChordNotation.parse(input);
-            expect(chord).toBeInstanceOf(NashvilleNotation);
+            const chord = BracketChord.parse(input);
+            expect(chord.chord).toBeInstanceOf(NashvilleNotation);
             expect(chord.toString()).toEqual(input);
         });
-    });
-
-    describe("normalization", () => {
-        const normalizationCases = [
-            // Basic accidental normalization
-            { input: "[F#m7]", normalized: "[F♯m7]" },
-            { input: "[BbMAJ7]", normalized: "[B♭maj7]" },
-            { input: "[F#m7/Bb]", normalized: "[F♯m7/B♭]" },
-            { input: "[#2m]", normalized: "[♯2m]" },
-            { input: "[b4m7/#5]", normalized: "[♭4m7/♯5]" },
-            { input: "[Fes]", normalized: "[F♭]" },
-            { input: "[Gis]", normalized: "[G♯]" },
-            
-            // Alternative chord quality normalization
-            { input: "[CΔ]", normalized: "[Cmaj]" },
-            { input: "[FΔ7]", normalized: "[Fmaj7]" },
-            { input: "[BbΔ9]", normalized: "[B♭maj9]" },
-            { input: "[DΔ#11]", normalized: "[Dmaj♯11]" },
-            { input: "[Co]", normalized: "[Cdim]" },
-            { input: "[Co7]", normalized: "[Cdim7]" },
-            { input: "[F#o]", normalized: "[F♯dim]" },
-            { input: "[Go7/B]", normalized: "[Gdim7/B]" },
-            { input: "[Cø]", normalized: "[Cm7♭5]" },
-            { input: "[Cø7]", normalized: "[Cm7♭5]" },
-            { input: "[F#ø7]", normalized: "[F♯m7♭5]" },
-            { input: "[Amø]", normalized: "[Amm7♭5]" },
-            { input: "[C+7]", normalized: "[Caug7]" },
-            { input: "[F+]", normalized: "[Faug]" },
-            { input: "[A+add9]", normalized: "[Aaugadd9]" },
-        ];
-
-        test.each(normalizationCases)(
-            "normalizes $input correctly",
-            ({ input, normalized }) => {
-                const chord = ChordNotation.parse(input);
-                expect(chord.toString()).toEqual(input);
-                expect(chord.toString(false)).toEqual(input);
-                expect(chord.toString(true)).toEqual(normalized);
-            }
-        );
-
-        // Test the quality property specifically
-        const qualityTests = [
-            { input: "[CΔ7]", expectedQuality: "maj7" },
-            { input: "[Co]", expectedQuality: "dim" },
-            { input: "[Cø7]", expectedQuality: "m7♭5" },
-            { input: "[C+]", expectedQuality: "aug" },
-            { input: "[C]", expectedQuality: undefined },
-            { input: "[Cmaj7]", expectedQuality: "maj7" },
-            { input: "[C#Δ9]", expectedQuality: "maj9" },
-            { input: "[F#o7]", expectedQuality: "dim7" },
-            { input: "[Bbø]", expectedQuality: "m7♭5" },
-            { input: "[D+add9]", expectedQuality: "augadd9" },
-        ];
-
-        test.each(qualityTests)(
-            "exposes correct quality property for $input",
-            ({ input, expectedQuality }) => {
-                const chord = ChordNotation.parse(input);
-                expect(chord.quality).toEqual(expectedQuality);
-            }
-        );
     });
 
     describe("error handling", () => {
@@ -128,38 +132,38 @@ describe("ChordNotation", () => {
         ];
 
         test.each(invalidChords)("rejects invalid chord %s", (chord) => {
-            expect(ChordNotation.test(chord)).toBe(false);
-            expect(() => ChordNotation.parse(chord)).toThrow();
+            expect(BracketChord.test(chord)).toBe(false);
+            expect(() => BracketChord.parse(chord)).toThrow();
         });
     });
 });
 
 describe("LetterNotation", () => {
     const letterNotationCases = [
-        { input: "[C]", note: "C", modifier: undefined, bass: undefined },
-        { input: "[Dsus]", note: "D", modifier: "sus", bass: undefined },
-        { input: "[F#]", note: "F#", modifier: undefined, bass: undefined },
-        { input: "[Bb]", note: "Bb", modifier: undefined, bass: undefined },
-        { input: "[G♯]", note: "G♯", modifier: undefined, bass: undefined },
-        { input: "[A♭]", note: "A♭", modifier: undefined, bass: undefined },
-        { input: "[Fes]", note: "Fes", modifier: undefined, bass: undefined },
-        { input: "[Gis]", note: "Gis", modifier: undefined, bass: undefined },
-        { input: "[Em]", note: "E", modifier: "m", bass: undefined },
-        { input: "[F#m7]", note: "F#", modifier: "m7", bass: undefined },
-        { input: "[C7]", note: "C", modifier: "7", bass: undefined },
-        { input: "[Dm7]", note: "D", modifier: "m7", bass: undefined },
-        { input: "[F#m7/B]", note: "F#", modifier: "m7", bass: "B" },
-        { input: "[C/G]", note: "C", modifier: undefined, bass: "G" },
-        { input: "[Bb/F]", note: "Bb", modifier: undefined, bass: "F" },
-        { input: "[F6add9]", note: "F", modifier: "6add9", bass: undefined },
-        { input: "[Bbmaj7]", note: "Bb", modifier: "maj7", bass: undefined },
-        { input: "[F♯m7]", note: "F♯", modifier: "m7", bass: undefined },
-        { input: "[B♭maj7]", note: "B♭", modifier: "maj7", bass: undefined },
-        { input: "[CΔ]", note: "C", modifier: "Δ", bass: undefined },
-        { input: "[FΔ7]", note: "F", modifier: "Δ7", bass: undefined },
-        { input: "[Co]", note: "C", modifier: "o", bass: undefined },
-        { input: "[Cø7]", note: "C", modifier: "ø7", bass: undefined },
-        { input: "[C+]", note: "C", modifier: "+", bass: undefined },
+        { input: "C", note: "C", modifier: undefined, bass: undefined },
+        { input: "Dsus", note: "D", modifier: "sus", bass: undefined },
+        { input: "F#", note: "F#", modifier: undefined, bass: undefined },
+        { input: "Bb", note: "Bb", modifier: undefined, bass: undefined },
+        { input: "G♯", note: "G♯", modifier: undefined, bass: undefined },
+        { input: "A♭", note: "A♭", modifier: undefined, bass: undefined },
+        { input: "Fes", note: "Fes", modifier: undefined, bass: undefined },
+        { input: "Gis", note: "Gis", modifier: undefined, bass: undefined },
+        { input: "Em", note: "E", modifier: "m", bass: undefined },
+        { input: "F#m7", note: "F#", modifier: "m7", bass: undefined },
+        { input: "C7", note: "C", modifier: "7", bass: undefined },
+        { input: "Dm7", note: "D", modifier: "m7", bass: undefined },
+        { input: "F#m7/B", note: "F#", modifier: "m7", bass: "B" },
+        { input: "C/G", note: "C", modifier: undefined, bass: "G" },
+        { input: "Bb/F", note: "Bb", modifier: undefined, bass: "F" },
+        { input: "F6add9", note: "F", modifier: "6add9", bass: undefined },
+        { input: "Bbmaj7", note: "Bb", modifier: "maj7", bass: undefined },
+        { input: "F♯m7", note: "F♯", modifier: "m7", bass: undefined },
+        { input: "B♭maj7", note: "B♭", modifier: "maj7", bass: undefined },
+        { input: "CΔ", note: "C", modifier: "Δ", bass: undefined },
+        { input: "FΔ7", note: "F", modifier: "Δ7", bass: undefined },
+        { input: "Co", note: "C", modifier: "o", bass: undefined },
+        { input: "Cø7", note: "C", modifier: "ø7", bass: undefined },
+        { input: "C+", note: "C", modifier: "+", bass: undefined },
     ];
 
     describe("parsing", () => {
@@ -179,19 +183,20 @@ describe("LetterNotation", () => {
     });
 
     describe("validation", () => {
-        test.each(letterNotationCases)("accepts valid letter chord %s", ({ input }) => {
+        test.each(letterNotationCases)("accepts valid letter chord -- %s", ({ input }) => {
             expect(LetterNotation.test(input)).toBe(true);
-            expect(ChordNotation.test(input)).toBe(true);
+            expect(ChordSegment.test(input)).toBe(true);
         });
     });
 
     describe("error handling", () => {
         const invalidLetterChords = [
-            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]",
-            "[1m]", "[2m7]", "[b4m7/5]", "[6m/4]"
+            "1", "2", "3", "4", "5", "6", "7",
+            "", "H", "0", "\n",
+            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]",
         ];
 
-        test.each(invalidLetterChords)("rejects Nashville notation %s", (chord) => {
+        test.each(invalidLetterChords)("rejects invalid letter chord -- %s", (chord) => {
             expect(LetterNotation.test(chord)).toBe(false);
             expect(() => LetterNotation.parse(chord)).toThrow();
         });
@@ -200,25 +205,25 @@ describe("LetterNotation", () => {
 
 describe("NashvilleNotation", () => {
     const nashvilleNotationCases = [
-        { input: "[1]", note: "1", modifier: undefined, bass: undefined, degree: 1 },
-        { input: "[2]", note: "2", modifier: undefined, bass: undefined, degree: 2 },
-        { input: "[3]", note: "3", modifier: undefined, bass: undefined, degree: 3 },
-        { input: "[4]", note: "4", modifier: undefined, bass: undefined, degree: 4 },
-        { input: "[5]", note: "5", modifier: undefined, bass: undefined, degree: 5 },
-        { input: "[6]", note: "6", modifier: undefined, bass: undefined, degree: 6 },
-        { input: "[7]", note: "7", modifier: undefined, bass: undefined, degree: 7 },
-        { input: "[#1]", note: "#1", modifier: undefined, bass: undefined, degree: 1 },
-        { input: "[b2]", note: "b2", modifier: undefined, bass: undefined, degree: 2 },
-        { input: "[♯3]", note: "♯3", modifier: undefined, bass: undefined, degree: 3 },
-        { input: "[♭4]", note: "♭4", modifier: undefined, bass: undefined, degree: 4 },
-        { input: "[1m]", note: "1", modifier: "m", bass: undefined, degree: 1 },
-        { input: "[2m7]", note: "2", modifier: "m7", bass: undefined, degree: 2 },
-        { input: "[3maj7]", note: "3", modifier: "maj7", bass: undefined, degree: 3 },
-        { input: "[b4m7]", note: "b4", modifier: "m7", bass: undefined, degree: 4 },
-        { input: "[b4m7/5]", note: "b4", modifier: "m7", bass: "5", degree: 4 },
-        { input: "[1/3]", note: "1", modifier: undefined, bass: "3", degree: 1 },
-        { input: "[6m/4]", note: "6", modifier: "m", bass: "4", degree: 6 },
-        { input: "[♭4m7/5]", note: "♭4", modifier: "m7", bass: "5", degree: 4 },
+        { input: "1", note: "1", modifier: undefined, bass: undefined, degree: 1 },
+        { input: "2", note: "2", modifier: undefined, bass: undefined, degree: 2 },
+        { input: "3", note: "3", modifier: undefined, bass: undefined, degree: 3 },
+        { input: "4", note: "4", modifier: undefined, bass: undefined, degree: 4 },
+        { input: "5", note: "5", modifier: undefined, bass: undefined, degree: 5 },
+        { input: "6", note: "6", modifier: undefined, bass: undefined, degree: 6 },
+        { input: "7", note: "7", modifier: undefined, bass: undefined, degree: 7 },
+        { input: "#1", note: "#1", modifier: undefined, bass: undefined, degree: 1 },
+        { input: "b2", note: "b2", modifier: undefined, bass: undefined, degree: 2 },
+        { input: "♯3", note: "♯3", modifier: undefined, bass: undefined, degree: 3 },
+        { input: "♭4", note: "♭4", modifier: undefined, bass: undefined, degree: 4 },
+        { input: "1m", note: "1", modifier: "m", bass: undefined, degree: 1 },
+        { input: "2m7", note: "2", modifier: "m7", bass: undefined, degree: 2 },
+        { input: "3maj7", note: "3", modifier: "maj7", bass: undefined, degree: 3 },
+        { input: "b4m7", note: "b4", modifier: "m7", bass: undefined, degree: 4 },
+        { input: "b4m7/5", note: "b4", modifier: "m7", bass: "5", degree: 4 },
+        { input: "1/3", note: "1", modifier: undefined, bass: "3", degree: 1 },
+        { input: "6m/4", note: "6", modifier: "m", bass: "4", degree: 6 },
+        { input: "♭4m7/5", note: "♭4", modifier: "m7", bass: "5", degree: 4 },
     ];
 
     describe("parsing", () => {
@@ -239,19 +244,20 @@ describe("NashvilleNotation", () => {
     });
 
     describe("validation", () => {
-        test.each(nashvilleNotationCases)("accepts valid Nashville chord %s", ({ input }) => {
+        test.each(nashvilleNotationCases)("accepts valid Nashville chord -- %s", ({ input }) => {
             expect(NashvilleNotation.test(input)).toBe(true);
-            expect(ChordNotation.test(input)).toBe(true);
+            expect(ChordSegment.test(input)).toBe(true);
         });
     });
 
     describe("error handling", () => {
         const invalidNashvilleChords = [
-            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]", 
-            "[Em]", "[F#m7]", "[C7]", "[Dm7]", "[C/G]"
+            "C", "D", "F#", "Bb", "G♯", "A♭", 
+            "Em", "F#m7", "C7", "Dm7", "C/G",
+            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]"
         ];
 
-        test.each(invalidNashvilleChords)("rejects letter notation %s", (chord) => {
+        test.each(invalidNashvilleChords)("rejects invalid Nashville chord -- %s", (chord) => {
             expect(NashvilleNotation.test(chord)).toBe(false);
             expect(() => NashvilleNotation.parse(chord)).toThrow();
         });
@@ -463,23 +469,23 @@ describe("SegmentedLine", () => {
         const testCases = [
             {
                 input: "[C]Hello [G]world",
-                expected: ["[C]", "[G]"],
+                expected: ["C", "G"],
             },
             {
                 input: "[Am]Just one chord with lyrics",
-                expected: ["[Am]"],
+                expected: ["Am"],
             },
             {
                 input: "[C] [G] [Am] [F]",
-                expected: ["[C]", "[G]", "[Am]", "[F]"],
+                expected: ["C", "G", "Am", "F"],
             },
             {
                 input: "[*verse] [C]Hello [*bridge] [G]world",
-                expected: ["[C]", "[G]"],
+                expected: ["C", "G"],
             },
             {
                 input: "[F#m7/B]Complex [Bb7add9]chord [C/G]notation",
-                expected: ["[F#m7/B]", "[Bb7add9]", "[C/G]"],
+                expected: ["F#m7/B", "Bb7add9", "C/G"],
             }
         ];
 

@@ -7,12 +7,13 @@ import {
     InstrumentalLine, 
     TextLine, 
     ChoproLine, 
-    ChordNotation, 
+    BracketChord, 
     TextSegment,
     Annotation,
     LineSegment,
     ChordLine,
     ChordSegment,
+    IndexedSegment,
 } from "./parser";
 
 export abstract class ChordConverter {
@@ -100,7 +101,7 @@ export class ChordLineConverter extends ChordConverter {
      */
     combine(chordLine: ChordLine, lyricLine: TextLine): ChoproLine {
         const lyricStr = lyricLine.content;
-        const indexedSegments = chordLine.segments as ChordSegment[];
+        const indexedSegments = chordLine.segments as IndexedSegment[];
 
         // if no chords were found, return just the lyrics
         if (indexedSegments.length === 0) return lyricLine;
@@ -120,8 +121,12 @@ export class ChordLineConverter extends ChordConverter {
                 }
             }
 
-            // Add the chord or annotation
-            segments.push(segment);
+            // Convert the indexed segment to the appropriate type
+            if (segment instanceof ChordSegment) {
+                segments.push(new BracketChord(segment));
+            } else if (segment instanceof TextSegment) {
+                segments.push(new Annotation(segment.content));
+            }
 
             // Update position and handle spacing for instrumental sections
             currentLyricPos = lineIndex;
@@ -129,7 +134,7 @@ export class ChordLineConverter extends ChordConverter {
             // If we're beyond the lyrics and there's another chord coming, add spacing
             if (currentLyricPos >= lyricStr.length && i < indexedSegments.length - 1) {
                 const nextChordPos = indexedSegments[i + 1].lineIndex;
-                const chordLength = this.getChordDisplayLength(segment);
+                const chordLength = segment.toString().length;
                 const spacingNeeded = nextChordPos - lineIndex - chordLength;
                 
                 if (spacingNeeded > 0) {
@@ -150,17 +155,5 @@ export class ChordLineConverter extends ChordConverter {
         );
 
         return hasLyrics ? new ChordLyricsLine(segments) : new InstrumentalLine(segments);
-    }
-
-    /**
-     * Get the display length of a chord or annotation segment.
-     */
-    private getChordDisplayLength(segment: LineSegment): number {
-        if (segment instanceof ChordNotation) {
-            return segment.toString().length - 2;
-        } else if (segment instanceof Annotation) {
-            return segment.content.length;
-        }
-        return 0;
     }
 }

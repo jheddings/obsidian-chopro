@@ -1,30 +1,32 @@
-import { ChoproBlock, ChordNotation, SegmentedLine } from "../src/parser";
+import { ChoproBlock, BracketChord, SegmentedLine, ChordSegment } from "../src/parser";
 
 /**
  * Helper function to verify that a SegmentedLine contains the expected chords.
- * Expected chords can be provided as either strings or ChordNotation objects.
+ * Expected chords can be provided as either strings or chord objects.
  */
 export function verifyChordsInLine(
     line: SegmentedLine,
-    expected: (string | ChordNotation)[]
+    expected: (string | ChordSegment)[]
 ): void {
     const actualChords = line.chords;
 
     expect(actualChords).toHaveLength(expected.length);
 
     const expectedChords = expected.map((chord) =>
-        typeof chord === "string" ? ChordNotation.parse(chord) : chord
+        (typeof chord === "string") ? ChordSegment.parse(chord) : chord
     );
 
     actualChords.forEach((actualChord, index) => {
-        expect(actualChord).toBeInstanceOf(ChordNotation);
-        expect(actualChord).toEqual(expectedChords[index]);
+        const expected = expectedChords[index];
+
+        expect(actualChord).toBeInstanceOf(BracketChord);
+        expect(actualChord.chord).toEqual(expected);
     });
 }
 
 export function verifyChordsInBlock(
     block: ChoproBlock,
-    expected: (string[] | ChordNotation[])[]
+    expected: (string[] | ChordSegment[])[]
 ): void {
     const lines = block.lines;
 
