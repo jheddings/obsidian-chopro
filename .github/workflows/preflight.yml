@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Preflight Checks
 
 on:
     pull_request:
@@ -27,8 +27,5 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Run TypeScript type checking
-              run: npm run build
-
-            - name: Run tests
-              run: npm test
+            - name: Run preflight checks
+              run: npm run preflight

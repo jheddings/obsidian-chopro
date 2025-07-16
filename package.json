@@ -12,7 +12,7 @@
         "test": "jest test/*.test.ts",
         "format": "prettier --write .",
         "lint": "eslint --fix .",
-        "preflight": "npm run test && npm run format && npm run lint",
+        "preflight": "npm run build && npm test && npm run format && npm run lint",
         "release": "npm run preflight && git push origin v$npm_package_version",
         "version": "node version.mjs && git add manifest.json versions.json",
         "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\""
