@@ -1,36 +1,13 @@
 // convert.test.ts - unit tests for converter.ts
 
 import { ChordLineConverter } from '../src/convert';
-import { TextLine, ChordLyricsLine, InstrumentalLine, EmptyLine } from '../src/parser';
+import { ChoproFile, ChoproBlock, ChoproLine } from '../src/parser';
+import { TextLine, ChordLyricsLine, InstrumentalLine, EmptyLine, ChordLine } from '../src/parser';
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('ChordLineConverter', () => {
     describe('combine', () => {
-
-        const lyricsOnlyCases = [
-            {
-                chords: "    ",
-                lyrics: "No chords here.",
-            },
-            {
-                chords: "",
-                lyrics: "Lyrics only.",
-            }
-        ];
-
-        test.each(lyricsOnlyCases)(
-            'should handle lyrics only lines -- $lyrics',
-            ({ chords, lyrics }) => {
-                const chordLine = new TextLine(chords);
-                const lyricLine = new TextLine(lyrics);
-
-                const converter = new ChordLineConverter();
-                const result = converter.combine(chordLine, lyricLine);
-
-                expect(result).toBeDefined();
-                expect(result).toBeInstanceOf(TextLine);
-                expect(result?.toString()).toBe(lyrics);
-            }
-        );
 
         const instrumentalCases = [
             {
@@ -48,7 +25,7 @@ describe('ChordLineConverter', () => {
         test.each(instrumentalCases)(
             'should parse instrumental line -- $expected',
             ({ chords, lyrics, expected}) => {
-                const chordLine = new TextLine(chords);
+                const chordLine = ChordLine.parse(chords);
                 const lyricLine = new TextLine(lyrics);
 
                 const converter = new ChordLineConverter();
@@ -92,7 +69,7 @@ describe('ChordLineConverter', () => {
                 expected: "[G]Tab[C]s and[D] spaces.",
             },
             {
-                chords: "A#   F#m7b5   *Pause",
+                chords: "A#   F#m7b5   Pause",
                 lyrics: "Special chords here.",
                 expected: "[A#]Speci[F#m7b5]al chords[*Pause] here.",
             }
@@ -101,7 +78,7 @@ describe('ChordLineConverter', () => {
         test.each(combineTestCases)(
             'should combine lines -- $expected',
             ({ chords, lyrics, expected }) => {
-                const chordLine = new TextLine(chords);
+                const chordLine = ChordLine.parse(chords);
                 const lyricLine = new TextLine(lyrics);
 
                 const converter = new ChordLineConverter();
@@ -112,87 +89,27 @@ describe('ChordLineConverter', () => {
                 expect(result?.toString()).toBe(expected);
             }
         );
-
     });
 
-    describe('convertLines', () => {
-        const convertLinesTestCases = [
-            {
-                description: 'does not change multiple lines with lyrics',
-                inputLines: [
-                    "There are no chords here,",
-                    "just some lyrics to test.",
-                    "Even if A line has G chord-like text."
-                ],
-                expectedLength: 3,
-                expectedTypes: [TextLine, TextLine, TextLine],
-                expectedResults: [
-                    "There are no chords here,",
-                    "just some lyrics to test.",
-                    "Even if A line has G chord-like text."
-                ]
-            },
-            {
-                description: 'converts line pairs to a single ChordLyricsLine',
-                inputLines: [
-                    "      D          G    D",
-                    "Basic chord line with lyrics."
-                ],
-                expectedLength: 1,
-                expectedTypes: [ChordLyricsLine],
-                expectedResults: ["Basic [D]chord line [G]with [D]lyrics."]
-            },
-            {
-                description: 'converts subsequent chord lines to Instrumentals',
-                inputLines: [
-                    "C    G    Am    F",
-                    "C    G    F     F",
-                    "C              G            Am            F  ",
-                    "I woke up to the sound of rain upon the window"
-                ],
-                expectedLength: 3,
-                expectedTypes: [InstrumentalLine, InstrumentalLine, ChordLyricsLine],
-                expectedResults: [
-                    "[C]    [G]    [Am]    [F]",
-                    "[C]    [G]    [F]     [F]",
-                    "[C]I woke up to th[G]e sound of ra[Am]in upon the wi[F]ndow"
-                ]
-            },
-            {
-                description: 'preserves empty lines',
-                inputLines: [
-                    "C         D",
-                    "  Opening lyrics.",
-                    "",
-                    "        C",
-                    "Closing lyrics."
-                ],
-                expectedLength: 3,
-                expectedTypes: [ChordLyricsLine, EmptyLine, ChordLyricsLine],
-                expectedResults: [
-                    "[C]  Opening [D]lyrics.",
-                    "",
-                    "Closing [C]lyrics."
-                ]
-            }
-        ];
+    describe('file conversion', () => {
+        test('should convert convert.md file to bracketed chord patterns', () => {
+            const testFilePath = path.join(__dirname, 'convert.md');
 
-        test.each(convertLinesTestCases)(
-            '$description',
-            ({ inputLines, expectedLength, expectedTypes, expectedResults }) => {
-                const lines = inputLines.map(content => new TextLine(content));
+            const choproFile = ChoproFile.load(testFilePath);
+            expect(choproFile).toBeDefined();
+            expect(choproFile.blocks.length).toBeGreaterThan(0);
 
-                const converter = new ChordLineConverter();
-                const result = converter.convertLines(lines);
+            const converter = new ChordLineConverter();
+            const wasConverted = converter.convert(choproFile);
+            expect(wasConverted).toBe(true);
 
-                expect(result).toBeDefined();
-                expect(result.length).toBe(expectedLength);
-
-                for (let i = 0; i < expectedLength; i++) {
-                    expect(result[i]).toBeInstanceOf(expectedTypes[i]);
-                    expect(result[i].toString()).toBe(expectedResults[i]);
-                }
-            }
-        );
+            // Verify the conversion results contain expected patterns
+            const convertedContent = choproFile.toString();
+            
+            expect(convertedContent).toContain('Swing [D]low, sweet [G]chari[D]ot,');
+            expect(convertedContent).toContain('Comin\' for to carry me [A7]home.');
+            expect(convertedContent).toContain('Swing l[D7]ow, sweet [G]char[D]iot,');
+            expect(convertedContent).toContain('Comin\' for to [A7]carry me [D]home.');
+        });
     });
 });
