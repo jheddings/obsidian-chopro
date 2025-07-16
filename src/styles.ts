@@ -1,9 +1,9 @@
 // styles - Style Manager for the ChoPro plugin in Obsidian
 
-import { ChoproPluginSettings } from './main';
+import { ChoproPluginSettings } from "./main";
 
 export class ChoproStyleManager {
-    private static readonly STYLE_ID = 'chopro-plugin-user-overrides';
+    private static readonly STYLE_ID = "chopro-plugin-user-overrides";
 
     static removeStyles(): void {
         try {
@@ -12,7 +12,7 @@ export class ChoproStyleManager {
                 existingStyle.remove();
             }
         } catch (error) {
-            console.warn('Failed to remove ChoPro styles:', error);
+            console.warn("Failed to remove ChoPro styles:", error);
         }
     }
 
@@ -21,10 +21,10 @@ export class ChoproStyleManager {
             this.removeStyles();
 
             // Only apply user setting overrides
-            const style = document.createElement('style');
+            const style = document.createElement("style");
             style.id = this.STYLE_ID;
-            
-            let overrides = '';
+
+            let overrides = "";
 
             // Validate and sanitize color value
             const colorValue = this.sanitizeColorValue(settings.chordColor);
@@ -64,24 +64,24 @@ export class ChoproStyleManager {
             style.textContent = overrides;
             document.head.appendChild(style);
         } catch (error) {
-            console.error('Failed to apply ChoPro styles:', error);
+            console.error("Failed to apply ChoPro styles:", error);
         }
     }
 
     private static sanitizeColorValue(color: string): string {
         // Basic CSS color validation
-        if (!color || typeof color !== 'string') {
-            return '#2563eb'; // Default blue
+        if (!color || typeof color !== "string") {
+            return "#2563eb"; // Default blue
         }
-        
+
         // Allow hex colors, CSS named colors, rgb(), hsl(), etc.
         const colorPattern = /^(#([0-9a-fA-F]{3}){1,2}|rgb\(.*\)|hsl\(.*\)|[a-zA-Z]+)$/;
-        return colorPattern.test(color.trim()) ? color.trim() : '#2563eb';
+        return colorPattern.test(color.trim()) ? color.trim() : "#2563eb";
     }
 
     private static sanitizeSizeValue(size: number): number {
         // Ensure size is within reasonable bounds
-        if (typeof size !== 'number' || isNaN(size)) {
+        if (typeof size !== "number" || isNaN(size)) {
             return 1.0;
         }
         return Math.max(0.5, Math.min(3.0, size));

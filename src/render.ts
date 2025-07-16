@@ -1,6 +1,6 @@
 // chopro - Chord Pro Processor for Obsidian
 
-import { ChoproPluginSettings } from './main';
+import { ChoproPluginSettings } from "./main";
 import {
     BracketChord,
     Annotation,
@@ -13,7 +13,7 @@ import {
     InstrumentalLine,
     ChoproBlock,
     ChordSegment,
-} from './parser';
+} from "./parser";
 
 /**
  * Renderer for converting ChordPro AST into DOM elements
@@ -42,7 +42,7 @@ export class ChoproRenderer {
      */
     private renderLine(container: HTMLElement, line: ChoproLine): void {
         if (line instanceof EmptyLine) {
-            container.createEl('br');
+            container.createEl("br");
         } else if (line instanceof ChordLyricsLine) {
             this.renderChordLine(container, line.segments);
         } else if (line instanceof InstrumentalLine) {
@@ -58,7 +58,7 @@ export class ChoproRenderer {
      * Render a line with chords and/or lyrics
      */
     private renderChordLine(container: HTMLElement, segments: LineSegment[]): void {
-        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        const lineDiv = container.createDiv({ cls: "chopro-line" });
         this.renderSegments(lineDiv, segments);
     }
 
@@ -66,7 +66,7 @@ export class ChoproRenderer {
      * Render an instrumental line with chords only (inline)
      */
     private renderInstrumentalLine(container: HTMLElement, segments: LineSegment[]): void {
-        const lineDiv = container.createDiv({ cls: 'chopro-line' });
+        const lineDiv = container.createDiv({ cls: "chopro-line" });
         this.renderInstrumental(lineDiv, segments);
     }
 
@@ -74,8 +74,8 @@ export class ChoproRenderer {
      * Render a lyrics-only line
      */
     private renderTextLine(container: HTMLElement, content: string): void {
-        const lineDiv = container.createDiv({ cls: 'chopro-line' });
-        lineDiv.createSpan({ text: content, cls: 'chopro-lyrics' });
+        const lineDiv = container.createDiv({ cls: "chopro-line" });
+        lineDiv.createSpan({ text: content, cls: "chopro-lyrics" });
     }
 
     /**
@@ -92,7 +92,6 @@ export class ChoproRenderer {
                 if (this.renderLineSegment(container, segment, nextSegment)) {
                     i++;
                 }
-
             } else {
                 this.renderTextSegment(container, segment as TextSegment);
             }
@@ -119,7 +118,7 @@ export class ChoproRenderer {
     private renderTextSegment(container: HTMLElement, segment: TextSegment): void {
         container.createSpan({
             text: segment.content,
-            cls: 'chopro-lyrics'
+            cls: "chopro-lyrics",
         });
     }
 
@@ -128,10 +127,10 @@ export class ChoproRenderer {
      */
     private renderLineSegment(
         container: HTMLElement,
-        segment: BracketChord | Annotation, 
+        segment: BracketChord | Annotation,
         nextSegment: LineSegment | null
     ): boolean {
-        const pairSpan = container.createSpan({ cls: 'chopro-pair' });
+        const pairSpan = container.createSpan({ cls: "chopro-pair" });
 
         if (segment instanceof BracketChord) {
             this.renderChord(pairSpan, segment);
@@ -140,7 +139,7 @@ export class ChoproRenderer {
         }
 
         // Check if there's text immediately following
-        let textContent = '';
+        let textContent = "";
         let textConsumed = false;
         if (nextSegment && this.isTextSegment(nextSegment) && nextSegment instanceof TextSegment) {
             textContent = nextSegment.content;
@@ -148,13 +147,13 @@ export class ChoproRenderer {
         }
 
         const textSpan = pairSpan.createSpan({
-            text: textContent || '\u00A0',
-            cls: 'chopro-lyrics'
+            text: textContent || "\u00A0",
+            cls: "chopro-lyrics",
         });
 
         // ensure minimum width for positioning
-        if (!textContent || textContent.trim() === '') {
-            textSpan.style.minWidth = '1ch';
+        if (!textContent || textContent.trim() === "") {
+            textSpan.style.minWidth = "1ch";
         }
 
         return textConsumed;
@@ -179,7 +178,7 @@ export class ChoproRenderer {
      * Create a chord span with decorations and styling.
      */
     private renderChord(container: HTMLElement, segment: BracketChord): void {
-        const chordSpan = container.createSpan({ cls: 'chopro-chord' });
+        const chordSpan = container.createSpan({ cls: "chopro-chord" });
         const totalChordLength = this.applyChordDecorations(chordSpan, segment.chord);
         this.setMinimumWidth(container, totalChordLength);
     }
@@ -188,7 +187,7 @@ export class ChoproRenderer {
      * Create an annotation span with styling.
      */
     private renderAnnotation(container: HTMLElement, segment: Annotation): void {
-        const annotationSpan = container.createSpan({ cls: 'chopro-annotation' });
+        const annotationSpan = container.createSpan({ cls: "chopro-annotation" });
         annotationSpan.textContent = segment.content;
         this.setMinimumWidth(container, segment.content.length);
     }
@@ -210,11 +209,11 @@ export class ChoproRenderer {
         totalChordLength += note.length;
 
         if (chord.modifier) {
-            const mod = this.settings.normalizedChordDisplay ?
-                (chord.quality || chord.modifier.toLowerCase()) :
-                chord.modifier;
+            const mod = this.settings.normalizedChordDisplay
+                ? chord.quality || chord.modifier.toLowerCase()
+                : chord.modifier;
 
-            container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
+            container.createSpan({ text: mod, cls: "chopro-chord-modifier" });
             totalChordLength += mod.length;
         }
 
@@ -237,16 +236,16 @@ export class ChoproRenderer {
      */
     private getChordDecorations(): { prefix: string; suffix: string } {
         switch (this.settings.chordDecorations) {
-            case 'square':
-                return { prefix: '[', suffix: ']' };
-            case 'round':
-                return { prefix: '(', suffix: ')' };
-            case 'curly':
-                return { prefix: '{', suffix: '}' };
-            case 'angle':
-                return { prefix: '<', suffix: '>' };
+            case "square":
+                return { prefix: "[", suffix: "]" };
+            case "round":
+                return { prefix: "(", suffix: ")" };
+            case "curly":
+                return { prefix: "{", suffix: "}" };
+            case "angle":
+                return { prefix: "<", suffix: ">" };
             default:
-                return { prefix: '', suffix: '' };
+                return { prefix: "", suffix: "" };
         }
     }
 
@@ -255,6 +254,6 @@ export class ChoproRenderer {
      */
     private setMinimumWidth(container: HTMLElement, lengthInChars: number): void {
         const adjustedWidth = lengthInChars * this.settings.chordSize;
-        container.style.setProperty('--chord-min-width', `${adjustedWidth}ch`);
+        container.style.setProperty("--chord-min-width", `${adjustedWidth}ch`);
     }
 }

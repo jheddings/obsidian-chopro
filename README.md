@@ -19,14 +19,14 @@ An Obsidian plugin that renders ChordPro format chord sheets with accurate chord
 
 Create a code block with the `chopro` language identifier:
 
-~~~markdown
+````markdown
 ```chopro
 [C]Amazing [F]grace how [G]sweet the sound
 That [C]saved a [Am]wretch like [F]me[G]
 [C]I once was [F]lost but [G]now am found
 Was [C]blind but [Am]now I [F]see[C]
 ```
-~~~
+````
 
 ## Commands
 
@@ -44,6 +44,7 @@ The plugin supports a powerful flow system for organizing and reusing song conte
 Add a `flow` property to your song files' frontmatter. The flow can be either a string or an array:
 
 #### String Flow
+
 ```yaml
 ---
 title: Simple Song
@@ -52,14 +53,15 @@ flow: "This is direct content to insert"
 ```
 
 #### Array Flow
+
 ```yaml
 ---
 title: Amazing Grace
 flow:
-  - "#Verse 1"
-  - "#Verse 2" 
-  - "#Verse 3"
-  - "#Verse 4"
+    - "#Verse 1"
+    - "#Verse 2"
+    - "#Verse 3"
+    - "#Verse 4"
 ---
 ```
 
@@ -68,11 +70,11 @@ flow:
 When you use the "Insert flow content from file" command:
 
 1. **Section References**: Items starting with `#` create transclusion links to sections in the selected file
-   - `"#Verse 1"` becomes `![[filename#Verse 1]]`
-   - These will display the actual section content inline
+    - `"#Verse 1"` becomes `![[filename#Verse 1]]`
+    - These will display the actual section content inline
 
 2. **Direct Content**: Items not starting with `#` are inserted as literal text
-   - `"Repeat chorus twice"` is inserted exactly as written
+    - `"Repeat chorus twice"` is inserted exactly as written
 
 Only files containing a `flow` property in their frontmatter will appear in the file selector.
 
@@ -92,6 +94,7 @@ The settings panel includes a live preview that updates as you change configurat
 ## Supported ChordPro Features
 
 ### Chords
+
 - **Basic chords**: `[C]`, `[F]`, `[G]`, `[Am]`, etc.
 - **Complex chords**: `[Am7]`, `[Bmaj7]`, `[C#dim]`, `[F/A]`, `[Gsus4]`
 - **Nashville numbers**: `[1]`, `[4]`, `[5]`, `[6m]`, `[1maj7]`, `[5/7]`, etc.
@@ -100,6 +103,7 @@ The settings panel includes a live preview that updates as you change configurat
 - **Chord modifiers**: Support for superscript display of extensions (7, maj7, sus4, etc.)
 
 ### Annotations
+
 - **Performance markings**: `[*Rit.]`, `[*Forte]`, `[*Andante]`
 - **Dynamic markings**: `[*pp]`, `[*ff]`, `[*Crescendo]`
 - **Structural annotations**: `[*Fine]`, `[*D.C. al Fine]`, `[*Begin softly]`

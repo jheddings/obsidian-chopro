@@ -1,13 +1,13 @@
 // convert - chord format converter for the Obsidian ChoPro plugin
 
-import { 
-    ChoproFile, 
-    ChoproBlock, 
-    ChordLyricsLine, 
-    InstrumentalLine, 
-    TextLine, 
-    ChoproLine, 
-    BracketChord, 
+import {
+    ChoproFile,
+    ChoproBlock,
+    ChordLyricsLine,
+    InstrumentalLine,
+    TextLine,
+    ChoproLine,
+    BracketChord,
     TextSegment,
     Annotation,
     LineSegment,
@@ -45,7 +45,6 @@ export abstract class ChordConverter {
 }
 
 export class ChordLineConverter extends ChordConverter {
-
     constructor() {
         super();
     }
@@ -78,14 +77,12 @@ export class ChordLineConverter extends ChordConverter {
                     // chord line followed by a lyrics line - combine them
                     const combined = this.combine(currentLine, nextLine);
                     newLines.push(combined);
-                    i++;  // skip the next line since we've consumed it
-
+                    i++; // skip the next line since we've consumed it
                 } else {
                     // chord line without lyrics - make it an instrumental
-                    const instr = this.combine(currentLine, new TextLine(''));
+                    const instr = this.combine(currentLine, new TextLine(""));
                     newLines.push(instr);
                 }
-
             } else {
                 // fallback - keep the line as-is
                 newLines.push(currentLine);
@@ -130,15 +127,15 @@ export class ChordLineConverter extends ChordConverter {
 
             // Update position and handle spacing for instrumental sections
             currentLyricPos = lineIndex;
-            
+
             // If we're beyond the lyrics and there's another chord coming, add spacing
             if (currentLyricPos >= lyricStr.length && i < indexedSegments.length - 1) {
                 const nextChordPos = indexedSegments[i + 1].lineIndex;
                 const chordLength = segment.toString().length;
                 const spacingNeeded = nextChordPos - lineIndex - chordLength;
-                
+
                 if (spacingNeeded > 0) {
-                    segments.push(new TextSegment(' '.repeat(spacingNeeded)));
+                    segments.push(new TextSegment(" ".repeat(spacingNeeded)));
                 }
             }
         }
@@ -150,8 +147,8 @@ export class ChordLineConverter extends ChordConverter {
         }
 
         // Determine if this is instrumental (only chords/annotations with no meaningful lyrics)
-        const hasLyrics = segments.some(segment => 
-            segment instanceof TextSegment && segment.content.trim() !== ''
+        const hasLyrics = segments.some(
+            (segment) => segment instanceof TextSegment && segment.content.trim() !== ""
         );
 
         return hasLyrics ? new ChordLyricsLine(segments) : new InstrumentalLine(segments);

@@ -1,39 +1,60 @@
 {
-  "name": "obsidian-chopro-plugin",
-  "version": "0.5.0",
-  "description": "Render ChoPro format chord sheets in Obsidian",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "jest test/*.test.ts",
-    "release": "npm run test && git push origin v$npm_package_version",
-    "version": "node version.mjs && git add manifest.json versions.json",
-    "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\""
-  },
-  "keywords": [
-    "obsidian",
-    "plugin",
-    "chopro",
-    "chords",
-    "music"
-  ],
-  "author": "Jason Heddings",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "^22.16.4",
-    "@typescript-eslint/eslint-plugin": "8.36.0",
-    "@typescript-eslint/parser": "8.36.0",
-    "builtin-modules": "5.0.0",
-    "esbuild": "0.25.6",
-    "jest": "^30.0.4",
-    "obsidian": "latest",
-    "ts-jest": "^29.4.0",
-    "tslib": "2.8.1",
-    "typescript": "5.8.3"
-  },
-  "dependencies": {
-    "yaml": "^2.8.0"
-  }
+    "name": "obsidian-chopro-plugin",
+    "version": "0.5.0",
+    "description": "Render ChoPro format chord sheets in Obsidian",
+    "author": "Jason Heddings",
+    "license": "MIT",
+    "main": "main.js",
+    "scripts": {
+        "prepare": "husky install",
+        "dev": "node esbuild.config.mjs",
+        "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "test": "jest test/*.test.ts",
+        "format": "prettier --write .",
+        "lint": "eslint --fix .",
+        "preflight": "npm run build && npm test && npm run format && npm run lint",
+        "release": "npm run preflight && git push origin v$npm_package_version",
+        "version": "node version.mjs && git add manifest.json versions.json",
+        "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\""
+    },
+    "keywords": [
+        "obsidian",
+        "plugin",
+        "chopro",
+        "chords",
+        "music"
+    ],
+    "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "@types/node": "^22.16.4",
+        "@typescript-eslint/eslint-plugin": "^8.36.0",
+        "@typescript-eslint/parser": "^8.36.0",
+        "builtin-modules": "5.0.0",
+        "esbuild": "0.25.6",
+        "eslint": "^9.31.0",
+        "eslint-config-prettier": "^10.1.5",
+        "eslint-plugin-prettier": "^5.5.1",
+        "husky": "^8.0.0",
+        "jest": "^30.0.4",
+        "lint-staged": "^16.1.2",
+        "obsidian": "latest",
+        "prettier": "^3.6.2",
+        "ts-jest": "^29.4.0",
+        "tslib": "2.8.1",
+        "typescript": "5.8.3"
+    },
+    "dependencies": {
+        "yaml": "^2.8.0"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx,json,css,scss}": [
+            "prettier --write",
+            "eslint --fix"
+        ]
+    }
 }

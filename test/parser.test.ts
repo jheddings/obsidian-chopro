@@ -47,15 +47,12 @@ describe("ChordSegment", () => {
             { input: "A+add9", normalized: "Aaugadd9" },
         ];
 
-        test.each(normalizationCases)(
-            "normalizes $input correctly",
-            ({ input, normalized }) => {
-                const chord = ChordSegment.parse(input);
-                expect(chord.toString()).toEqual(input);
-                expect(chord.toString(false)).toEqual(input);
-                expect(chord.toString(true)).toEqual(normalized);
-            }
-        );
+        test.each(normalizationCases)("normalizes $input correctly", ({ input, normalized }) => {
+            const chord = ChordSegment.parse(input);
+            expect(chord.toString()).toEqual(input);
+            expect(chord.toString(false)).toEqual(input);
+            expect(chord.toString(true)).toEqual(normalized);
+        });
 
         // Test the quality property specifically
         const qualityTests = [
@@ -79,7 +76,6 @@ describe("ChordSegment", () => {
             }
         );
     });
-
 });
 
 describe("BracketChord", () => {
@@ -102,12 +98,7 @@ describe("BracketChord", () => {
     });
 
     describe("handles Nashville notation correctly", () => {
-        const nashvilleNotationCases = [
-            "[1]",
-            "[b4m7]",
-            "[b4m7/5]",
-            "[6m/4]",
-        ];
+        const nashvilleNotationCases = ["[1]", "[b4m7]", "[b4m7/5]", "[6m/4]"];
 
         test.each(nashvilleNotationCases)("parses $input correctly", (input) => {
             const chord = BracketChord.parse(input);
@@ -119,16 +110,26 @@ describe("BracketChord", () => {
     describe("error handling", () => {
         const invalidChords = [
             // Missing brackets or malformed
-            "C", "[C", "C]", "[]",
-            
+            "C",
+            "[C",
+            "C]",
+            "[]",
+
             // Invalid note names
-            "[H]", "[0]", "[8]",
-            
+            "[H]",
+            "[0]",
+            "[8]",
+
             // Other notation types
-            "[*Annotation]", "(Instruction)", "{capo: 2]", "# Comment", "",
-            
+            "[*Annotation]",
+            "(Instruction)",
+            "{capo: 2]",
+            "# Comment",
+            "",
+
             // Nashville specific invalid
-            "[*1]", "(1)"
+            "[*1]",
+            "(1)",
         ];
 
         test.each(invalidChords)("rejects invalid chord %s", (chord) => {
@@ -171,11 +172,11 @@ describe("LetterNotation", () => {
             "parses letter notation $input correctly",
             ({ input, note, modifier, bass }) => {
                 const chord = LetterNotation.parse(input);
-                
+
                 expect(chord.note.toString()).toEqual(note);
                 expect(chord.modifier).toEqual(modifier);
                 expect(chord.bass?.toString()).toEqual(bass);
-                
+
                 // round-trip test
                 expect(chord.toString()).toEqual(input);
             }
@@ -191,9 +192,23 @@ describe("LetterNotation", () => {
 
     describe("error handling", () => {
         const invalidLetterChords = [
-            "1", "2", "3", "4", "5", "6", "7",
-            "", "H", "0", "\n",
-            "[C]", "[D]", "[F#]", "[Bb]", "[G♯]", "[A♭]",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "",
+            "H",
+            "0",
+            "\n",
+            "[C]",
+            "[D]",
+            "[F#]",
+            "[Bb]",
+            "[G♯]",
+            "[A♭]",
         ];
 
         test.each(invalidLetterChords)("rejects invalid letter chord -- %s", (chord) => {
@@ -231,12 +246,12 @@ describe("NashvilleNotation", () => {
             "parses Nashville notation $input correctly",
             ({ input, note, modifier, bass, degree }) => {
                 const chord = NashvilleNotation.parse(input);
-                
+
                 expect(chord.note.toString()).toEqual(note);
                 expect(chord.modifier).toEqual(modifier);
                 expect(chord.bass?.toString()).toEqual(bass);
                 expect(chord.degree).toEqual(degree);
-                
+
                 // round-trip test
                 expect(chord.toString()).toEqual(input);
             }
@@ -252,9 +267,24 @@ describe("NashvilleNotation", () => {
 
     describe("error handling", () => {
         const invalidNashvilleChords = [
-            "C", "D", "F#", "Bb", "G♯", "A♭", 
-            "Em", "F#m7", "C7", "Dm7", "C/G",
-            "[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]"
+            "C",
+            "D",
+            "F#",
+            "Bb",
+            "G♯",
+            "A♭",
+            "Em",
+            "F#m7",
+            "C7",
+            "Dm7",
+            "C/G",
+            "[1]",
+            "[2]",
+            "[3]",
+            "[4]",
+            "[5]",
+            "[6]",
+            "[7]",
         ];
 
         test.each(invalidNashvilleChords)("rejects invalid Nashville chord -- %s", (chord) => {
@@ -284,13 +314,21 @@ describe("Annotation", () => {
             "[*Simple annotation]",
             "[*Complex annotation with numbers 123]",
             "[*Annotation with punctuation!@#$%]",
-            "[*Multi-word annotation with spaces]"
+            "[*Multi-word annotation with spaces]",
         ];
 
         const invalidAnnotations = [
-            "[*]", "Simple annotation", "[Simple annotation]", "*Simple annotation",
-            "[*Simple annotation", "Simple annotation]", "", "[C]", "(Instruction)",
-            "{title: Annotation}", "# Comment"
+            "[*]",
+            "Simple annotation",
+            "[Simple annotation]",
+            "*Simple annotation",
+            "[*Simple annotation",
+            "Simple annotation]",
+            "",
+            "[C]",
+            "(Instruction)",
+            "{title: Annotation}",
+            "# Comment",
         ];
 
         test.each(validAnnotations)("accepts valid annotation %s", (annotation) => {
@@ -314,46 +352,43 @@ describe("TextSegment", () => {
 
 describe("CommentLine", () => {
     const testCases = [
-        { input: "# This is a comment", content: "This is a comment", output: "# This is a comment" },
-        { input: "### Multiple hashes comment", content: "Multiple hashes comment", output: "# Multiple hashes comment" },
+        {
+            input: "# This is a comment",
+            content: "This is a comment",
+            output: "# This is a comment",
+        },
+        {
+            input: "### Multiple hashes comment",
+            content: "Multiple hashes comment",
+            output: "# Multiple hashes comment",
+        },
         { input: "#No space comment", content: "No space comment", output: "# No space comment" },
         { input: "#", content: "", output: "# " },
         { input: "## Another comment", content: "Another comment", output: "# Another comment" },
     ];
 
     describe("parsing", () => {
-        test.each(testCases)(
-            "parses $input correctly",
-            ({ input, content, output }) => {
-                const comment = CommentLine.parse(input);
-                expect(comment.content).toEqual(content);
+        test.each(testCases)("parses $input correctly", ({ input, content, output }) => {
+            const comment = CommentLine.parse(input);
+            expect(comment.content).toEqual(content);
 
-                const roundTrip = comment.toString();
-                expect(roundTrip).toEqual(output);
+            const roundTrip = comment.toString();
+            expect(roundTrip).toEqual(output);
 
-                // parse again to ensure round-trip compatibility
-                const takeTwo = CommentLine.parse(roundTrip);
-                expect(takeTwo.content).toEqual(comment.content);
-            }
-        );
+            // parse again to ensure round-trip compatibility
+            const takeTwo = CommentLine.parse(roundTrip);
+            expect(takeTwo.content).toEqual(comment.content);
+        });
     });
 
     describe("validation", () => {
-        const validComments = [
-            "# This is a comment",
-            "## Another comment",
-            "#",
-            "#No space",
-        ];
+        const validComments = ["# This is a comment", "## Another comment", "#", "#No space"];
 
         test.each(validComments)("accepts valid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(true);
         });
 
-        const invalidComments = [
-            "This is not a comment",
-            "(Instruction)", ""
-        ];
+        const invalidComments = ["This is not a comment", "(Instruction)", ""];
 
         test.each(invalidComments)("rejects invalid comment %s", (comment) => {
             expect(CommentLine.test(comment)).toBe(false);
@@ -362,31 +397,21 @@ describe("CommentLine", () => {
 });
 
 describe("EmptyLine", () => {
-    const testCases = [
-        { input: "" },
-        { input: "   " },
-        { input: "\t" },
-        { input: " \t " },
-    ];
+    const testCases = [{ input: "" }, { input: "   " }, { input: "\t" }, { input: " \t " }];
 
     describe("parsing", () => {
-        test.each(testCases)(
-            "parses '$input' correctly",
-            ({ input }) => {
-                const emptyLine = EmptyLine.parse(input);
+        test.each(testCases)("parses '$input' correctly", ({ input }) => {
+            const emptyLine = EmptyLine.parse(input);
 
-                const roundTrip = emptyLine.toString();
-                expect(roundTrip).toEqual("");
+            const roundTrip = emptyLine.toString();
+            expect(roundTrip).toEqual("");
 
-                // parse again to ensure round-trip compatibility
-                const takeTwo = EmptyLine.parse(roundTrip);
-                expect(takeTwo.toString()).toEqual(emptyLine.toString());
-            }
-        );
+            // parse again to ensure round-trip compatibility
+            const takeTwo = EmptyLine.parse(roundTrip);
+            expect(takeTwo.toString()).toEqual(emptyLine.toString());
+        });
 
-        const invalidCases = [
-            "Not empty", "# Comment", "(Instruction)"
-        ];
+        const invalidCases = ["Not empty", "# Comment", "(Instruction)"];
 
         test.each(invalidCases)("throws errors for non-empty line '%s'", (input) => {
             expect(() => EmptyLine.parse(input)).toThrow();
@@ -394,13 +419,9 @@ describe("EmptyLine", () => {
     });
 
     describe("validation", () => {
-        const validEmptyLines = [
-            "", "   ", "\t"
-        ];
+        const validEmptyLines = ["", "   ", "\t"];
 
-        const invalidEmptyLines = [
-            "Not empty", "# Comment", "(Instruction)", "  \n  "
-        ];
+        const invalidEmptyLines = ["Not empty", "# Comment", "(Instruction)", "  \n  "];
 
         test.each(validEmptyLines)("accepts valid empty line '%s'", (line) => {
             expect(EmptyLine.test(line)).toBe(true);
@@ -427,32 +448,31 @@ describe("TextLine", () => {
     ];
 
     describe("parsing", () => {
-        test.each(testCases)(
-            "parses '$input' correctly",
-            ({ input }) => {
-                const textLine = TextLine.parse(input);
-                expect(textLine.content).toEqual(input);
+        test.each(testCases)("parses '$input' correctly", ({ input }) => {
+            const textLine = TextLine.parse(input);
+            expect(textLine.content).toEqual(input);
 
-                const roundTrip = textLine.toString();
-                expect(roundTrip).toEqual(input);
+            const roundTrip = textLine.toString();
+            expect(roundTrip).toEqual(input);
 
-                // parse again to ensure round-trip compatibility
-                const takeTwo = TextLine.parse(roundTrip);
-                expect(takeTwo.content).toEqual(textLine.content);
-            }
-        );
+            // parse again to ensure round-trip compatibility
+            const takeTwo = TextLine.parse(roundTrip);
+            expect(takeTwo.content).toEqual(textLine.content);
+        });
     });
 
     describe("validation", () => {
         const validTextLines = [
-            "Simple text", "Text with numbers 123", "Text with punctuation!",
-            "  Text with leading spaces", "Text with trailing spaces  ", "123",
-            "Special chars: àáâãäå"
+            "Simple text",
+            "Text with numbers 123",
+            "Text with punctuation!",
+            "  Text with leading spaces",
+            "Text with trailing spaces  ",
+            "123",
+            "Special chars: àáâãäå",
         ];
 
-        const invalidTextLines = [
-            "", "   ", "\t", "  \n  "
-        ];
+        const invalidTextLines = ["", "   ", "\t", "  \n  "];
 
         test.each(validTextLines)("accepts valid text line '%s'", (line) => {
             expect(TextLine.test(line)).toBe(true);
@@ -486,16 +506,13 @@ describe("SegmentedLine", () => {
             {
                 input: "[F#m7/B]Complex [Bb7add9]chord [C/G]notation",
                 expected: ["F#m7/B", "Bb7add9", "C/G"],
-            }
+            },
         ];
 
-        test.each(testCases)(
-            "parses chord segments from $input",
-            ({ input, expected }) => {
-                const line = SegmentedLine.parse(input);
-                verifyChordsInLine(line, expected);
-            }
-        );
+        test.each(testCases)("parses chord segments from $input", ({ input, expected }) => {
+            const line = SegmentedLine.parse(input);
+            verifyChordsInLine(line, expected);
+        });
     });
 
     describe("lyrics getter", () => {
@@ -519,27 +536,24 @@ describe("SegmentedLine", () => {
             {
                 input: "Start [C]middle [G]end",
                 expected: ["Start ", "middle ", "end"],
-            }
+            },
         ];
 
-        test.each(testCases)(
-            "parses lyrics segments from $input",
-            ({ input, expected }) => {
-                const line = SegmentedLine.parse(input);
-                
-                const lyrics = line.lyrics;
-                
-                expect(lyrics).toHaveLength(expected.length);
+        test.each(testCases)("parses lyrics segments from $input", ({ input, expected }) => {
+            const line = SegmentedLine.parse(input);
 
-                lyrics.forEach(segment => {
-                    expect(segment).toBeInstanceOf(TextSegment);
-                });
+            const lyrics = line.lyrics;
 
-                const segments = expected.map(text => new TextSegment(text));
+            expect(lyrics).toHaveLength(expected.length);
 
-                expect(lyrics).toEqual(segments);
-            }
-        );
+            lyrics.forEach((segment) => {
+                expect(segment).toBeInstanceOf(TextSegment);
+            });
+
+            const segments = expected.map((text) => new TextSegment(text));
+
+            expect(lyrics).toEqual(segments);
+        });
     });
 });
 
@@ -637,7 +651,8 @@ describe("MarkdownBlock", () => {
         });
 
         it("handles round-trip parsing", () => {
-            const originalContent = "**Bold text** and *italic text*\n\n> Blockquote\n\n```\nCode block\n```";
+            const originalContent =
+                "**Bold text** and *italic text*\n\n> Blockquote\n\n```\nCode block\n```";
             const block = MarkdownBlock.parse(originalContent);
             const serialized = block.toString();
             const reparsed = MarkdownBlock.parse(serialized);
@@ -682,15 +697,15 @@ describe("Frontmatter", () => {
     describe("property management", () => {
         it("manages properties correctly", () => {
             const frontmatter = new Frontmatter();
-            
+
             frontmatter.set("title", "Test Song");
             expect(frontmatter.has("title")).toBe(true);
             expect(frontmatter.get("title")).toEqual("Test Song");
-            
+
             frontmatter.set("tempo", 100);
             expect(frontmatter.keys()).toContain("title");
             expect(frontmatter.keys()).toContain("tempo");
-            
+
             frontmatter.remove("title");
             expect(frontmatter.has("title")).toBe(false);
             expect(frontmatter.get("title")).toBeUndefined();
@@ -779,9 +794,7 @@ describe("ChoproFile", () => {
         });
 
         it("parses frontmatter correctly", () => {
-            expect(file.frontmatter?.get("title")).toEqual(
-                "Amazing Grace (Traditional)"
-            );
+            expect(file.frontmatter?.get("title")).toEqual("Amazing Grace (Traditional)");
             expect(file.frontmatter?.get("artist")).toEqual("John Newton");
             expect(file.frontmatter?.get("time")).toEqual("3/4");
             expect(file.frontmatter?.get("tempo")).toEqual(80);
@@ -808,17 +821,11 @@ describe("ChoproFile", () => {
                 "[C]Amazing grace, how [F]sweet the [C]sound"
             );
             expect(file.blocks[2].toString()).toContain("## Verse 2");
-            expect(file.blocks[3].toString()).toContain(
-                "'Twas [C]grace that taught my [F]heart"
-            );
+            expect(file.blocks[3].toString()).toContain("'Twas [C]grace that taught my [F]heart");
             expect(file.blocks[4].toString()).toContain("## Verse 3");
-            expect(file.blocks[5].toString()).toContain(
-                "Through [C]many dangers"
-            );
+            expect(file.blocks[5].toString()).toContain("Through [C]many dangers");
             expect(file.blocks[6].toString()).toContain("## Verse 4");
-            expect(file.blocks[7].toString()).toContain(
-                "When [D]we've been there"
-            );
+            expect(file.blocks[7].toString()).toContain("When [D]we've been there");
             expect(file.blocks[8].toString()).toEqual("");
         });
     });
@@ -857,9 +864,7 @@ describe("ChoproFile", () => {
         it("parses file structure correctly", () => {
             expect(file.blocks).toHaveLength(19);
             expect(file.frontmatter).toBeDefined();
-            expect(file.frontmatter?.get("title")).toEqual(
-                "House of the Rising Sun"
-            );
+            expect(file.frontmatter?.get("title")).toEqual("House of the Rising Sun");
         });
 
         it("identifies block types correctly", () => {
@@ -895,32 +900,20 @@ describe("ChoproFile", () => {
                 "There [1m]is a house in [3]New Or[4]leans"
             );
             expect(file.blocks[4].toString()).toContain("# Turn");
-            expect(file.blocks[5].toString()).toContain(
-                "[3] [4] [6] [1m] [5] [1m] [5]"
-            );
+            expect(file.blocks[5].toString()).toContain("[3] [4] [6] [1m] [5] [1m] [5]");
             expect(file.blocks[6].toString()).toContain("# Verse 2");
-            expect(file.blocks[7].toString()).toContain(
-                "My [1m]mother was a [3]tailor"
-            );
+            expect(file.blocks[7].toString()).toContain("My [1m]mother was a [3]tailor");
             expect(file.blocks[8].toString()).toContain("# Verse 3");
-            expect(file.blocks[9].toString()).toContain(
-                "Now the [1m]only thing a [3]gambler"
-            );
+            expect(file.blocks[9].toString()).toContain("Now the [1m]only thing a [3]gambler");
             expect(file.blocks[10].toString()).toContain("# Verse 4");
-            expect(file.blocks[11].toString()).toContain(
-                "Oh [1m]mother, tell your [3]children"
-            );
+            expect(file.blocks[11].toString()).toContain("Oh [1m]mother, tell your [3]children");
             expect(file.blocks[12].toString()).toContain("# Verse 5");
-            expect(file.blocks[13].toString()).toContain(
-                "Well, I [1m]got one foot on"
-            );
+            expect(file.blocks[13].toString()).toContain("Well, I [1m]got one foot on");
         });
 
         it("parses outro and ending correctly", () => {
             expect(file.blocks[14].toString()).toContain("# Outro");
-            expect(file.blocks[15].toString()).toContain(
-                "there [1m]is a house "
-            );
+            expect(file.blocks[15].toString()).toContain("there [1m]is a house ");
             expect(file.blocks[16].toString()).toContain("# Ending");
             expect(file.blocks[17].toString()).toContain("[3] [4] [6]");
             expect(file.blocks[18].toString()).toEqual("");
@@ -959,9 +952,7 @@ describe("ChoproFile", () => {
         });
 
         it("preserves multiple empty line spacing correctly", () => {
-            expect(file.blocks[7].toString()).toContain(
-                "## Multiple Empty Lines"
-            );
+            expect(file.blocks[7].toString()).toContain("## Multiple Empty Lines");
 
             expect(file.blocks[7]).toBeInstanceOf(MarkdownBlock);
             expect(file.blocks[8]).toBeInstanceOf(ChoproBlock);
@@ -972,9 +963,7 @@ describe("ChoproFile", () => {
         });
 
         it("handles extra markdown spacing correctly", () => {
-            expect(file.blocks[11].toString()).toContain(
-                "## Extra Markdown Spacing"
-            );
+            expect(file.blocks[11].toString()).toContain("## Extra Markdown Spacing");
 
             expect(file.blocks[11]).toBeInstanceOf(MarkdownBlock);
             expect(file.blocks[12]).toBeInstanceOf(ChoproBlock);
@@ -998,9 +987,7 @@ describe("ChoproFile", () => {
 
         it("identifies single markdown block correctly", () => {
             expect(file.blocks[0]).toBeInstanceOf(MarkdownBlock);
-            expect(file.blocks[0].toString()).toContain(
-                "# No `chopro` Blocks in Here"
-            );
+            expect(file.blocks[0].toString()).toContain("# No `chopro` Blocks in Here");
         });
     });
 

@@ -76,7 +76,7 @@
 }
 
 .chopro-pair .chopro-lyrics:empty::after {
-    content: '\00A0';
+    content: "\00A0";
     min-width: 1ch;
 }
 

@@ -1,12 +1,6 @@
 // flow - Flow content processing for ChoPro Obsidian Plugin
 
-import {
-    App,
-    Editor,
-    TFile,
-    Notice,
-    FuzzySuggestModal,
-} from "obsidian";
+import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
 
 import { ChoproPluginSettings } from "./main";
 
@@ -45,16 +39,14 @@ export class FlowGenerator {
                 new Notice("Selected file has no flow");
                 return;
             }
-            
-            if (typeof flow === 'string') {
+
+            if (typeof flow === "string") {
                 editor.replaceSelection(flow);
                 new Notice("Flow content inserted");
-
             } else if (Array.isArray(flow)) {
                 const insertText = this.processFlowArray(flow, file);
                 editor.replaceSelection(insertText.trim());
                 new Notice("Processed flow content");
-
             } else {
                 new Notice("Flow property must be a string or array");
             }
@@ -67,12 +59,12 @@ export class FlowGenerator {
     /**
      * Processes an array of flow items into formatted text
      */
-    private processFlowArray(flow: any[], file: TFile): string {
+    private processFlowArray(flow: string[], file: TFile): string {
         let insertText = "";
 
         for (const item of flow) {
-            if (typeof item === 'string') {
-                if (item.startsWith('#')) {
+            if (typeof item === "string") {
+                if (item.startsWith("#")) {
                     // Section reference - create transclusion
                     insertText += `![[${file.basename}${item}]]\n`;
                 } else {
@@ -93,11 +85,7 @@ export class FlowFileSelector extends FuzzySuggestModal<TFile> {
     private onSelect: (file: TFile) => Promise<void>;
     private folderPath: string;
 
-    constructor(
-        app: App,
-        folderPath: string,
-        onSelect: (file: TFile) => Promise<void>
-    ) {
+    constructor(app: App, folderPath: string, onSelect: (file: TFile) => Promise<void>) {
         super(app);
         this.onSelect = onSelect;
         this.folderPath = folderPath;
@@ -105,22 +93,22 @@ export class FlowFileSelector extends FuzzySuggestModal<TFile> {
 
     getItems(): TFile[] {
         let files = this.app.vault.getMarkdownFiles();
-        
+
         if (this.folderPath && this.folderPath.trim() !== "") {
-            files = files.filter(file => 
-                file.path.startsWith(this.folderPath + "/") || 
-                file.path === this.folderPath
+            files = files.filter(
+                (file) =>
+                    file.path.startsWith(this.folderPath + "/") || file.path === this.folderPath
             );
         }
-        
+
         // Only include files that have a flow property in frontmatter
-        return files.filter(file => {
+        return files.filter((file) => {
             const cache = this.app.metadataCache.getFileCache(file);
             return cache?.frontmatter?.flow !== undefined;
         });
     }
 
-    onChooseItem(item: TFile, evt: MouseEvent | KeyboardEvent): void {
+    onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
         this.close();
         this.onSelect(item);
     }
