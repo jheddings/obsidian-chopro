@@ -324,7 +324,7 @@ class ChoproSettingTab extends PluginSettingTab {
             this.plugin.saveSettings();
 
             const sample = choproPreview.replace(/^\s+/m, "");
-            const block = ChoproBlock.parse(sample);
+            const block = ChoproBlock.parseRaw(sample);
             this.plugin.renderer.renderBlock(block, preview);
         };
 
