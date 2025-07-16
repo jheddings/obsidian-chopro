@@ -1,7 +1,7 @@
 // transpose - chord conversion for the ChoPro Plugin
 
 import {
-    ChordNotation,
+    BracketChord,
     LetterNotation,
     NashvilleNotation,
     ChoproFile,
@@ -11,6 +11,7 @@ import {
     LineSegment,
     ContentBlock,
     ChoproLine,
+    ChordSegment,
 } from "./parser";
 
 import {
@@ -63,7 +64,7 @@ export class NoteTransposer {
      * Transpose all notes in a chord notation.
      */
     static transposeChord(
-        chord: ChordNotation,
+        chord: ChordSegment,
         interval: number,
         preferredAccidental?: Accidental
     ): void {
@@ -195,7 +196,7 @@ export class ChoproTransposer {
     }
 
     /**
-     * Transpose a complete ChoPro file in place.
+     * Transpose a complete ChordPro file in place.
      */
     async transposeAsync(file: ChoproFile): Promise<TransposeResult> {
         try {
@@ -218,7 +219,7 @@ export class ChoproTransposer {
     }
 
     /**
-     * Transpose a complete ChoPro file in place.
+     * Transpose a complete ChordPro file in place.
      */
     transpose(file: ChoproFile): void {
         file.blocks.forEach((block) => this.transposeBlock(block));
@@ -256,8 +257,10 @@ export class ChoproTransposer {
      * Transpose a line segment in place
      */
     private transposeSegment(segment: LineSegment): void {
-        if (segment instanceof ChordNotation) {
+        if (segment instanceof ChordSegment) {
             this.transposeChordSegment(segment);
+        } else if (segment instanceof BracketChord) {
+            this.transposeChordSegment(segment.chord);
         }
 
         // other segment types (e.g., TextSegment) are not transposed
@@ -266,8 +269,7 @@ export class ChoproTransposer {
     /**
      * Transpose a chord segment in place
      */
-    private transposeChordSegment(chord: ChordNotation): void {
-
+    private transposeChordSegment(chord: ChordSegment): void {
         if (chord instanceof LetterNotation) {
             this.transposeAlphaChordSegment(chord);
 
@@ -412,7 +414,7 @@ export class TransposeUtils {
     }
 
     /**
-     * Detect the key from a ChoPro file.
+     * Detect the key from a ChordPro file.
      */
     static detectKey(file: ChoproFile): KeyInfo | undefined {
         const keyString = file.key;

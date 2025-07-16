@@ -2,7 +2,7 @@
 
 import { ChoproPluginSettings } from './main';
 import {
-    ChordNotation,
+    BracketChord,
     Annotation,
     TextSegment,
     ChoproLine,
@@ -12,10 +12,11 @@ import {
     ChordLyricsLine,
     InstrumentalLine,
     ChoproBlock,
+    ChordSegment,
 } from './parser';
 
 /**
- * Renderer for converting ChoPro AST into DOM elements
+ * Renderer for converting ChordPro AST into DOM elements
  */
 export class ChoproRenderer {
     constructor(private settings: ChoproPluginSettings) {}
@@ -28,7 +29,7 @@ export class ChoproRenderer {
     }
 
     /**
-     * Render a ChoPro block into DOM elements
+     * Render a ChordPro block into DOM elements
      */
     renderBlock(block: ChoproBlock, container: HTMLElement): void {
         for (const line of block.lines) {
@@ -101,8 +102,8 @@ export class ChoproRenderer {
     /**
      * Check if a segment is a chord or annotation
      */
-    private isSegmentPair(segment: LineSegment): segment is ChordNotation | Annotation {
-        return segment instanceof ChordNotation || segment instanceof Annotation;
+    private isSegmentPair(segment: LineSegment): segment is BracketChord | Annotation {
+        return segment instanceof BracketChord || segment instanceof Annotation;
     }
 
     /**
@@ -127,12 +128,12 @@ export class ChoproRenderer {
      */
     private renderLineSegment(
         container: HTMLElement,
-        segment: ChordNotation | Annotation, 
+        segment: BracketChord | Annotation, 
         nextSegment: LineSegment | null
     ): boolean {
         const pairSpan = container.createSpan({ cls: 'chopro-pair' });
 
-        if (segment instanceof ChordNotation) {
+        if (segment instanceof BracketChord) {
             this.renderChord(pairSpan, segment);
         } else if (segment instanceof Annotation) {
             this.renderAnnotation(pairSpan, segment);
@@ -164,7 +165,7 @@ export class ChoproRenderer {
      */
     private renderInstrumental(container: HTMLElement, segments: LineSegment[]): void {
         for (const segment of segments) {
-            if (segment instanceof ChordNotation) {
+            if (segment instanceof BracketChord) {
                 this.renderChord(container, segment);
             } else if (segment instanceof Annotation) {
                 this.renderAnnotation(container, segment);
@@ -177,9 +178,9 @@ export class ChoproRenderer {
     /**
      * Create a chord span with decorations and styling.
      */
-    private renderChord(container: HTMLElement, segment: ChordNotation): void {
+    private renderChord(container: HTMLElement, segment: BracketChord): void {
         const chordSpan = container.createSpan({ cls: 'chopro-chord' });
-        const totalChordLength = this.applyChordDecorations(chordSpan, segment);
+        const totalChordLength = this.applyChordDecorations(chordSpan, segment.chord);
         this.setMinimumWidth(container, totalChordLength);
     }
 
@@ -195,30 +196,30 @@ export class ChoproRenderer {
     /**
      * Apply chord decorations and calculate total width of the notation.
      */
-    private applyChordDecorations(container: HTMLElement, segment: ChordNotation): number {
+    private applyChordDecorations(container: HTMLElement, chord: ChordSegment): number {
         let totalChordLength = 0;
         const { prefix, suffix } = this.getChordDecorations();
-        
+
         if (prefix) {
             container.createSpan({ text: prefix });
             totalChordLength += prefix.length;
         }
 
-        const note = segment.note.toString(this.settings.normalizedChordDisplay);
+        const note = chord.note.toString(this.settings.normalizedChordDisplay);
         container.createSpan({ text: note });
         totalChordLength += note.length;
 
-        if (segment.modifier) {
+        if (chord.modifier) {
             const mod = this.settings.normalizedChordDisplay ?
-                (segment.quality || segment.modifier.toLowerCase()) :
-                segment.modifier;
+                (chord.quality || chord.modifier.toLowerCase()) :
+                chord.modifier;
 
             container.createSpan({ text: mod, cls: 'chopro-chord-modifier' });
             totalChordLength += mod.length;
         }
 
-        if (segment.bass) {
-            const bass = segment.bass.toString(this.settings.normalizedChordDisplay);
+        if (chord.bass) {
+            const bass = chord.bass.toString(this.settings.normalizedChordDisplay);
             container.createSpan({ text: `/${bass}` });
             totalChordLength += 1 + bass.length; // +1 for the slash
         }

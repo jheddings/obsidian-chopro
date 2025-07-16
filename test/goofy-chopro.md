@@ -8,3 +8,11 @@ _This is an empty block with no content_
 
 ```chopro
 ```
+
+## Blank `chopro` Blocks
+
+_This is an empty block with one blank line_
+
+```chopro
+
+```

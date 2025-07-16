@@ -116,10 +116,11 @@ describe("MusicNote", () => {
     describe("error handling", () => {
         const invalidMusicNotes = [
             "1", "2", "3", "4", "5", "6", "7",
-            "1m", "b4", "#2", "♯7", "♭3"
+            "1m", "b4", "#2", "♯7", "♭3",
+            "[G]", "[Am]", "C♪", "Do"
         ];
 
-        test.each(invalidMusicNotes)("rejects Nashville number %s", (note) => {
+        test.each(invalidMusicNotes)("rejects invalid note %s", (note) => {
             expect(MusicNote.test(note)).toBe(false);
             expect(() => MusicNote.parse(note)).toThrow();
         });
@@ -166,11 +167,11 @@ describe("NashvilleNumber", () => {
 
     describe("error handling", () => {
         const invalidNashvilleNumbers = [
-            "C", "D", "F#", "Bb", "G♯", "A♭", 
-            "Gis", "Fes", "As", "8", "0"
+            "7b", "4#", "C", "D", "F#", "Bb", "G♯", "A♭", 
+            "Gis", "Fes", "As", "8", "0", "[1]"
         ];
 
-        test.each(invalidNashvilleNumbers)("rejects music note %s", (note) => {
+        test.each(invalidNashvilleNumbers)("rejects invalid number %s", (note) => {
             expect(NashvilleNumber.test(note)).toBe(false);
             expect(() => NashvilleNumber.parse(note)).toThrow();
         });

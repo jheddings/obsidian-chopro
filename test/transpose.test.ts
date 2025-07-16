@@ -1,8 +1,8 @@
 import { 
-    ChordNotation,
     NashvilleNotation,
     ChoproFile,
     ChoproBlock,
+    ChordSegment,
 } from "../src/parser";
 
 import {
@@ -20,9 +20,7 @@ import {
     TransposeUtils,
 } from "../src/transpose";
 
-import { verifyChordsInBlock } from "./parser.test";
-
-
+import { verifyChordsInBlock } from "./util";
 
 describe('NoteTransposer', () => {
     describe('transposeNote', () => {
@@ -59,21 +57,21 @@ describe('NoteTransposer', () => {
     describe('transposeChord', () => {
         const testCases = [
             // Basic chord
-            { input: '[C]', interval: 2, expected: '[D]' },
+            { input: 'C', interval: 2, expected: 'D' },
             
             // Chord with modifier
-            { input: '[Cmaj7]', interval: 7, expected: '[Gmaj7]' },
+            { input: 'Cmaj7', interval: 7, expected: 'Gmaj7' },
             
             // Chord with bass note
-            { input: '[C/E]', interval: 2, expected: '[D/F#]' },
+            { input: 'C/E', interval: 2, expected: 'D/F#' },
         ];
 
         test.each(testCases)(
             'should transpose $input by $interval semitones to $expected',
             ({ input, interval, expected }) => {
-                const inputChord = ChordNotation.parse(input);
-                const expectedChord = ChordNotation.parse(expected);
-                
+                const inputChord = ChordSegment.parse(input);
+                const expectedChord = ChordSegment.parse(expected);
+
                 NoteTransposer.transposeChord(inputChord, interval);
                 
                 expect(inputChord.note).toEqual(expectedChord.note);
@@ -88,27 +86,27 @@ describe('NashvilleTransposer', () => {
     describe('nashvilleToChord', () => {
         const testCases = [
             // Basic conversions
-            { input: '[1]', key: 'C', expected: '[C]' },
-            { input: '[5]', key: 'G', expected: '[D]' },
-            { input: '[4]', key: 'F', expected: '[Bb]' },
-            { input: '[2]', key: 'D', expected: '[E]' },
-            { input: '[3]', key: 'A', expected: '[C#]' },
-            { input: '[6]', key: 'Bb', expected: '[G]' },
-            { input: '[7]', key: 'E', expected: '[D#]' },
+            { input: '1', key: 'C', expected: 'C' },
+            { input: '5', key: 'G', expected: 'D' },
+            { input: '4', key: 'F', expected: 'Bb' },
+            { input: '2', key: 'D', expected: 'E' },
+            { input: '3', key: 'A', expected: 'C#' },
+            { input: '6', key: 'Bb', expected: 'G' },
+            { input: '7', key: 'E', expected: 'D#' },
 
             // Chord with modifier
-            { input: '[2m7]', key: 'C', expected: '[Dm7]' },
+            { input: '2m7', key: 'C', expected: 'Dm7' },
 
             // Chord with bass note
-            { input: '[1/3]', key: 'Bb', expected: '[Bb/D]' },
-            { input: '[6m/5]', key: 'C', expected: '[Am/G]' },
+            { input: '1/3', key: 'Bb', expected: 'Bb/D' },
+            { input: '6m/5', key: 'C', expected: 'Am/G' },
         ];
 
         test.each(testCases)(
             'should convert Nashville $input in key $key to $expected',
             ({ input, key, expected }) => {
                 const nashvilleChord = NashvilleNotation.parse(input);
-                const expectedChord = ChordNotation.parse(expected);
+                const expectedChord = ChordSegment.parse(expected);
                 const musicalKey = KeyInfo.parse(key) as AbsoluteKeyInfo;
                 
                 NashvilleTransposer.nashvilleToChord(nashvilleChord, musicalKey);
@@ -123,28 +121,28 @@ describe('NashvilleTransposer', () => {
     describe('chordToNashville', () => {
         const testCases = [
             // Basic conversions
-            { input: '[C]', key: 'C', expected: '[1]' },
-            { input: '[D]', key: 'G', expected: '[5]' },
-            { input: '[Bb]', key: 'F', expected: '[4]' },
-            { input: '[E]', key: 'D', expected: '[2]' },
-            { input: '[C#]', key: 'A', expected: '[3]' },
-            { input: '[G]', key: 'Bb', expected: '[6]' },
-            { input: '[D#]', key: 'E', expected: '[7]' },
+            { input: 'C', key: 'C', expected: '1' },
+            { input: 'D', key: 'G', expected: '5' },
+            { input: 'Bb', key: 'F', expected: '4' },
+            { input: 'E', key: 'D', expected: '2' },
+            { input: 'C#', key: 'A', expected: '3' },
+            { input: 'G', key: 'Bb', expected: '6' },
+            { input: 'D#', key: 'E', expected: '7' },
 
             // Chord with modifier
-            { input: '[Dm7]', key: 'C', expected: '[2m7]' },
-            { input: '[Dsus]', key: 'G', expected: '[5sus]' },
+            { input: 'Dm7', key: 'C', expected: '2m7' },
+            { input: 'Dsus', key: 'G', expected: '5sus' },
 
             // Chord with bass note
-            { input: '[C/E]', key: 'C', expected: '[1/3]' },
-            { input: '[G/B]', key: 'C', expected: '[5/7]' },
+            { input: 'C/E', key: 'C', expected: '1/3' },
+            { input: 'G/B', key: 'C', expected: '5/7' },
         ];
 
         test.each(testCases)(
             'should convert chord $input in key $key to Nashville $expected',
             ({ input, key, expected }) => {
-                const alphaChord = ChordNotation.parse(input);
-                const expectedChord = ChordNotation.parse(expected);
+                const alphaChord = ChordSegment.parse(input);
+                const expectedChord = ChordSegment.parse(expected);
                 const musicalKey = KeyInfo.parse(key) as AbsoluteKeyInfo;
                 
                 NashvilleTransposer.chordToNashville(alphaChord, musicalKey);
@@ -269,16 +267,16 @@ describe('ChoproTransposer', () => {
             it("transposes verse 1 correctly", () => {
                 expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
-                    [ "[G]", "[C]", "[G]", "[Em]", "[G]", "[D]" ],
-                    [ "[G]", "[C]", "[G]", "[Em]", "[D]", "[C]", "[G]" ],
+                    [ "G", "C", "G", "Em", "G", "D" ],
+                    [ "G", "C", "G", "Em", "D", "C", "G" ],
                 ]);
             });
 
             it("transposes verse 4 correctly", () => {
                 expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[7] as ChoproBlock, [
-                    [ "[A]", "[D]", "[A]", "[F#m]", "[A]", "[E]" ],
-                    [ "[A]", "[D]", "[A]", "[F#m]", "[E]", "[D]", "[A]" ],
+                    [ "A", "D", "A", "F#m", "A", "E" ],
+                    [ "A", "D", "A", "F#m", "E", "D", "A" ],
                 ]);
             });
         });
@@ -302,8 +300,8 @@ describe('ChoproTransposer', () => {
             it("transposes verse 1 correctly", () => {
                 expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
-                    [ "[Bb]", "[Eb]", "[Bb]", "[Gm]", "[Bb]", "[F]" ],
-                    [ "[Bb]", "[Eb]", "[Bb]", "[Gm]", "[F]", "[Eb]", "[Bb]" ],
+                    [ "Bb", "Eb", "Bb", "Gm", "Bb", "F" ],
+                    [ "Bb", "Eb", "Bb", "Gm", "F", "Eb", "Bb" ],
                 ]);
             });
         });
@@ -327,8 +325,8 @@ describe('ChoproTransposer', () => {
             it("transposes verse 1 correctly", () => {
                 expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
-                    [ "[F#]", "[B]", "[F#]", "[D#m]", "[F#]", "[C#]" ],
-                    [ "[F#]", "[B]", "[F#]", "[D#m]", "[C#]", "[B]", "[F#]" ],
+                    [ "F#", "B", "F#", "D#m", "F#", "C#" ],
+                    [ "F#", "B", "F#", "D#m", "C#", "B", "F#" ],
                 ]);
             });
         });
@@ -352,16 +350,16 @@ describe('ChoproTransposer', () => {
             it("transposes verse 1 correctly", () => {
                 expect(file.blocks[1]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[1] as ChoproBlock, [
-                    [ "[1]", "[4]", "[1]", "[6m]", "[1]", "[5]" ],
-                    [ "[1]", "[4]", "[1]", "[6m]", "[5]", "[4]", "[1]" ],
+                    [ "1", "4", "1", "6m", "1", "5" ],
+                    [ "1", "4", "1", "6m", "5", "4", "1" ],
                 ]);
             });
 
             it("transposes verse 4 correctly", () => {
                 expect(file.blocks[7]).toBeInstanceOf(ChoproBlock);
                 verifyChordsInBlock(file.blocks[7] as ChoproBlock, [
-                    [ "[2]", "[5]", "[2]", "[7m]", "[2]", "[6]" ],
-                    [ "[2]", "[5]", "[2]", "[7m]", "[6]", "[5]", "[2]" ],
+                    [ "2", "5", "2", "7m", "2", "6" ],
+                    [ "2", "5", "2", "7m", "6", "5", "2" ],
                 ]);
             });
         });
