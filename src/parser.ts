@@ -7,6 +7,64 @@ export abstract class LineSegment {
     constructor() {}
 }
 
+export class TextSegment extends LineSegment {
+    constructor(public content: string) {
+        super();
+    }
+
+    /**
+     * Convert the text segment to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return this.content;
+    }
+}
+
+export class Annotation extends LineSegment {
+    public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
+
+    constructor(public content: string) {
+        super();
+    }
+
+    static test(content: string): boolean {
+        return Annotation.PATTERN.test(content);
+    }
+
+    static parse(content: string): Annotation {
+        const match = content.match(Annotation.PATTERN);
+
+        if (!match) {
+            throw new Error('Invalid annotation format');
+        }
+
+        return new Annotation(match[1]);
+    }
+
+    /**
+     * Convert the annotation to its normalized ChoPro representation.
+     */
+    toString(): string {
+        return `[*${this.content}]`;
+    }
+}
+
+/**
+ * Line segments that retain position information.
+ */
+export class ChordSegment extends LineSegment {
+    constructor(public segment: LineSegment, public lineIndex: number) {
+        super();
+    }
+
+    /**
+     * Return the text-only of this line segment.
+     */
+    toString(): string {
+        return this.segment.toString();
+    }
+}
+
 export class ChordNotation extends LineSegment {
     constructor(
         public note: AbstractNote,
@@ -181,64 +239,6 @@ export class NashvilleNotation extends ChordNotation {
      */
     get degree(): number {
         return this.note.degree;
-    }
-}
-
-export class Annotation extends LineSegment {
-    public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
-
-    constructor(public content: string) {
-        super();
-    }
-
-    static test(content: string): boolean {
-        return Annotation.PATTERN.test(content);
-    }
-
-    static parse(content: string): Annotation {
-        const match = content.match(Annotation.PATTERN);
-
-        if (!match) {
-            throw new Error('Invalid annotation format');
-        }
-
-        return new Annotation(match[1]);
-    }
-
-    /**
-     * Convert the annotation to its normalized ChoPro representation.
-     */
-    toString(): string {
-        return `[*${this.content}]`;
-    }
-}
-
-export class TextSegment extends LineSegment {
-    constructor(public content: string) {
-        super();
-    }
-
-    /**
-     * Convert the text segment to its normalized ChoPro representation.
-     */
-    toString(): string {
-        return this.content;
-    }
-}
-
-/**
- * Line segments that retain position information.
- */
-export class IndexedSegment extends LineSegment {
-    constructor(public segment: LineSegment, public lineIndex: number) {
-        super();
-    }
-
-    /**
-     * Return the text-only of this line segment.
-     */
-    toString(): string {
-        return this.segment.toString();
     }
 }
 
@@ -509,7 +509,7 @@ export class ChordLine extends ChoproLine {
     }
 
     static parse(line: string): ChordLine {
-        const segments: IndexedSegment[] = [];
+        const segments: ChordSegment[] = [];
         let match: RegExpExecArray | null;
 
         while ((match = ChordLine.CHORD_PATTERN.exec(line)) !== null) {
@@ -522,7 +522,7 @@ export class ChordLine extends ChoproLine {
                 segment = new Annotation(segmentText);
             }
 
-            segments.push(new IndexedSegment(segment, match.index));
+            segments.push(new ChordSegment(segment, match.index));
         }
 
         return new ChordLine(segments);
@@ -536,9 +536,9 @@ export class ChordLine extends ChoproLine {
             return '';
         }
 
-        const indexedSegments = this.segments as IndexedSegment[];
+        const indexedSegments = this.segments as ChordSegment[];
         
-        const getSegmentContent = (seg: IndexedSegment): string => {
+        const getSegmentContent = (seg: ChordSegment): string => {
             if (seg.segment instanceof ChordNotation) {
                 return seg.segment.toString().slice(1, -1);
             } else if (seg.segment instanceof Annotation) {

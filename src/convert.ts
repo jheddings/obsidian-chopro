@@ -12,109 +12,8 @@ import {
     Annotation,
     LineSegment,
     ChordLine,
-    IndexedSegment
+    ChordSegment,
 } from "./parser";
-
-/**
- * A stateful buffer for building chord line segments.
- */
-class ChordLineBuffer {
-    private segments: LineSegment[] = [];
-    private lyricIdx: number = 0;
-
-    constructor(private lyricStr: string) {}
-
-    /**
-     * Add a lyric segment if there's text in the specified range.
-     */
-    addLyricSegment(endIdx: number): void {
-        if (endIdx > this.lyricIdx) {
-            const lyricSegment = this.lyricStr.slice(this.lyricIdx, endIdx);
-            if (lyricSegment) {
-                this.segments.push(new TextSegment(lyricSegment));
-            }
-        }
-    }
-
-    /**
-     * Add a chord or annotation segment directly.
-     */
-    addSegment(segment: LineSegment): void {
-        this.segments.push(segment);
-    }
-
-    /**
-     * Add spacing between chords when there are no lyrics to fill the gap.
-     */
-    addChordSpacing(
-        indexedSegments: IndexedSegment[], 
-        currentIndex: number,
-    ): void {
-        const currentSegment = indexedSegments[currentIndex];
-        const currentEnd = currentSegment.lineIndex + this.getSegmentLength(currentSegment);
-
-        if (currentIndex < indexedSegments.length - 1) {
-            const nextSegmentStart = indexedSegments[currentIndex + 1].lineIndex;
-            
-            // If there's space between chords and no lyrics to fill it, add spacing
-            if (currentEnd < nextSegmentStart && this.lyricIdx >= this.lyricStr.length) {
-                const spacingLength = nextSegmentStart - currentEnd;
-                if (spacingLength > 0) {
-                    this.segments.push(new TextSegment(' '.repeat(spacingLength)));
-                }
-            }
-        }
-    }
-
-    /**
-     * Get the display length of a segment.
-     */
-    private getSegmentLength(indexedSegment: IndexedSegment): number {
-        if (indexedSegment.segment instanceof ChordNotation) {
-            return indexedSegment.segment.toString().length - 2; // Remove brackets
-        } else if (indexedSegment.segment instanceof Annotation) {
-            return indexedSegment.segment.content.length;
-        }
-        return 0;
-    }
-
-    /**
-     * Add any remaining content after the last chord.
-     */
-    finalize(): LineSegment[] {
-        // Add any remaining lyric text after the last chord
-        if (this.lyricIdx < this.lyricStr.length) {
-            const remainingLyrics = this.lyricStr.slice(this.lyricIdx);
-            if (remainingLyrics) {
-                this.segments.push(new TextSegment(remainingLyrics));
-            }
-        }
-
-        return this.segments;
-    }
-
-    /**
-     * Advance the lyric index to the specified position.
-     */
-    advanceLyricIndex(index: number): void {
-        this.lyricIdx = index;
-    }
-
-    /**
-     * Check if the segments contain only chords, annotations, and whitespace (no meaningful lyrics).
-     */
-    isInstrumental(): boolean {
-        return this.segments.every(segment => {
-            if (segment instanceof ChordNotation || segment instanceof Annotation) {
-                return true;
-            }
-            if (segment instanceof TextSegment) {
-                return segment.content.trim() === '';
-            }
-            return false;
-        });
-    }
-}
 
 export abstract class ChordConverter {
     constructor() {}
@@ -165,7 +64,7 @@ export class ChordLineConverter extends ChordConverter {
         return false;
     }
 
-    protected convertLines(lines: ChoproLine[]): ChoproLine[] {
+    private convertLines(lines: ChoproLine[]): ChoproLine[] {
         const newLines: ChoproLine[] = [];
 
         for (let i = 0; i < lines.length; i++) {
@@ -201,36 +100,67 @@ export class ChordLineConverter extends ChordConverter {
      */
     combine(chordLine: ChordLine, lyricLine: TextLine): ChoproLine {
         const lyricStr = lyricLine.content;
-        const indexedSegments = chordLine.segments as IndexedSegment[];
+        const indexedSegments = chordLine.segments as ChordSegment[];
 
         // if no chords were found, return just the lyrics
         if (indexedSegments.length === 0) return lyricLine;
 
-        const buffer = new ChordLineBuffer(lyricStr);
+        const segments: LineSegment[] = [];
+        let currentLyricPos = 0;
 
+        // Process each chord/annotation in order
         for (let i = 0; i < indexedSegments.length; i++) {
-            const indexedSegment = indexedSegments[i];
-            const chordStart = indexedSegment.lineIndex;
+            const { segment, lineIndex } = indexedSegments[i];
 
-            // Add lyric text before this chord position
-            buffer.addLyricSegment(chordStart);
+            // Add lyrics before this chord position
+            if (lineIndex > currentLyricPos) {
+                const lyricText = lyricStr.slice(currentLyricPos, lineIndex);
+                if (lyricText) {
+                    segments.push(new TextSegment(lyricText));
+                }
+            }
 
-            // Add the chord or annotation segment directly
-            buffer.addSegment(indexedSegment.segment);
+            // Add the chord or annotation
+            segments.push(segment);
 
-            // Advance lyric index to after this chord position
-            buffer.advanceLyricIndex(chordStart);
-
-            // Add spacing between chords if needed
-            buffer.addChordSpacing(indexedSegments, i);
+            // Update position and handle spacing for instrumental sections
+            currentLyricPos = lineIndex;
+            
+            // If we're beyond the lyrics and there's another chord coming, add spacing
+            if (currentLyricPos >= lyricStr.length && i < indexedSegments.length - 1) {
+                const nextChordPos = indexedSegments[i + 1].lineIndex;
+                const chordLength = this.getChordDisplayLength(segment);
+                const spacingNeeded = nextChordPos - lineIndex - chordLength;
+                
+                if (spacingNeeded > 0) {
+                    segments.push(new TextSegment(' '.repeat(spacingNeeded)));
+                }
+            }
         }
 
-        const segments = buffer.finalize();
-
-        if (buffer.isInstrumental()) {
-            return new InstrumentalLine(segments);
+        // Add any remaining lyrics after the last chord
+        if (currentLyricPos < lyricStr.length) {
+            const remainingLyrics = lyricStr.slice(currentLyricPos);
+            segments.push(new TextSegment(remainingLyrics));
         }
 
-        return new ChordLyricsLine(segments);
+        // Determine if this is instrumental (only chords/annotations with no meaningful lyrics)
+        const hasLyrics = segments.some(segment => 
+            segment instanceof TextSegment && segment.content.trim() !== ''
+        );
+
+        return hasLyrics ? new ChordLyricsLine(segments) : new InstrumentalLine(segments);
+    }
+
+    /**
+     * Get the display length of a chord or annotation segment.
+     */
+    private getChordDisplayLength(segment: LineSegment): number {
+        if (segment instanceof ChordNotation) {
+            return segment.toString().length - 2;
+        } else if (segment instanceof Annotation) {
+            return segment.content.length;
+        }
+        return 0;
     }
 }
