@@ -48,7 +48,7 @@ Add a `flow` property to your song files' frontmatter. The flow can be either a 
 ```yaml
 ---
 title: Simple Song
-flow: 'This is direct content to insert'
+flow: "This is direct content to insert"
 ---
 ```
 
@@ -58,10 +58,10 @@ flow: 'This is direct content to insert'
 ---
 title: Amazing Grace
 flow:
-  - '#Verse 1'
-  - '#Verse 2'
-  - '#Verse 3'
-  - '#Verse 4'
+    - "#Verse 1"
+    - "#Verse 2"
+    - "#Verse 3"
+    - "#Verse 4"
 ---
 ```
 
@@ -70,11 +70,11 @@ flow:
 When you use the "Insert flow content from file" command:
 
 1. **Section References**: Items starting with `#` create transclusion links to sections in the selected file
-   - `"#Verse 1"` becomes `![[filename#Verse 1]]`
-   - These will display the actual section content inline
+    - `"#Verse 1"` becomes `![[filename#Verse 1]]`
+    - These will display the actual section content inline
 
 2. **Direct Content**: Items not starting with `#` are inserted as literal text
-   - `"Repeat chorus twice"` is inserted exactly as written
+    - `"Repeat chorus twice"` is inserted exactly as written
 
 Only files containing a `flow` property in their frontmatter will appear in the file selector.
 

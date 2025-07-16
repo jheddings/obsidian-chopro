@@ -2,45 +2,44 @@ name: Release
 run-name: Release ${{ github.ref_name }}
 
 on:
-  push:
-    tags:
-      - 'v*'
+    push:
+        tags:
+            - "v*"
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.17.1'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build plugin
-        run: npm run build
-          
-      - name: Extract version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-        
-      - name: Verify gh CLI and create release
-        id: create_release
-        run: |
-          # Verify gh CLI is available and authenticated
-          gh auth status
-          
-          # Create release with auto-generated notes
-          gh release create ${{ github.ref_name }} \
-            --title "obsidian-chopro-${{ steps.version.outputs.VERSION }}" \
-            --generate-notes --draft \
-            ./main.js ./manifest.json ./styles.css
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    release:
+        runs-on: ubuntu-latest
 
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22.17.1"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build plugin
+              run: npm run build
+
+            - name: Extract version from tag
+              id: version
+              run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+            - name: Verify gh CLI and create release
+              id: create_release
+              run: |
+                  # Verify gh CLI is available and authenticated
+                  gh auth status
+
+                  # Create release with auto-generated notes
+                  gh release create ${{ github.ref_name }} \
+                    --title "obsidian-chopro-${{ steps.version.outputs.VERSION }}" \
+                    --generate-notes --draft \
+                    ./main.js ./manifest.json ./styles.css
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
