@@ -164,10 +164,6 @@ export class LetterNotation extends ChordSegment {
         const modifier = match[2] && match[2] !== "" ? match[2] : undefined;
         const bassString = match[3] ? match[3] : undefined;
 
-        if (!MusicNote.test(noteString)) {
-            throw new Error("Invalid letter notation: must use A-G note names");
-        }
-
         const primaryNote = MusicNote.parse(noteString);
         const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;
 
@@ -203,10 +199,6 @@ export class NashvilleNotation extends ChordSegment {
         const noteString = match[1];
         const modifier = match[3] && match[3] !== "" ? match[3] : undefined;
         const bassString = match[4] ? match[4] : undefined;
-
-        if (!NashvilleNumber.test(noteString)) {
-            throw new Error("Invalid Nashville notation: must use 1-7 numbers");
-        }
 
         const primaryNote = NashvilleNumber.parse(noteString);
         const bassNote = bassString ? AbstractNote.parse(bassString) : undefined;

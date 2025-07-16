@@ -145,7 +145,7 @@ export class MusicNote extends AbstractNote {
         const match = noteString.match(MusicNote.PATTERN);
 
         if (!match) {
-            throw new Error("Invalid note format");
+            throw new Error(`Invalid music note: ${noteString}`);
         }
 
         const root = match[1].toUpperCase();
@@ -189,7 +189,7 @@ export class NashvilleNumber extends AbstractNote {
         const match = noteString.match(NashvilleNumber.PATTERN);
 
         if (!match) {
-            throw new Error("Invalid note format");
+            throw new Error(`Invalid Nashville number: ${noteString}`);
         }
 
         const prefix = match[1];
@@ -432,18 +432,18 @@ export class NashvilleKeyInfo extends RelativeKeyInfo {
 export class MusicTheory {
     // chromatic scale with enharmonic equivalents
     public static readonly CHROMATIC_NOTES = [
-        ["C"], // 0
-        ["C#", "Db"], // 1
-        ["D"], // 2
-        ["D#", "Eb"], // 3
-        ["E"], // 4
-        ["F"], // 5
-        ["F#", "Gb"], // 6
-        ["G"], // 7
-        ["G#", "Ab"], // 8
-        ["A"], // 9
-        ["A#", "Bb"], // 10
-        ["B"], // 11
+        ["C"],
+        ["C#", "Db"],
+        ["D"],
+        ["D#", "Eb"],
+        ["E"],
+        ["F"],
+        ["F#", "Gb"],
+        ["G"],
+        ["G#", "Ab"],
+        ["A"],
+        ["A#", "Bb"],
+        ["B"],
     ];
 
     // circle of fifths for determining preferred accidentals
