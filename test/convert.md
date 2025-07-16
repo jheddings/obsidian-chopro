@@ -1,6 +1,8 @@
 # Chords over Lyrics
 
-# Chorus
+_This file is for testing the chord-over-lyrics converter_
+
+## Chorus
 
 ```chopro
       D          G    D
@@ -13,7 +15,7 @@ Swing low, sweet chariot,
 Comin' for to carry me home.
 ```
 
-# Verse 1
+## Verse 1
 
 ```chopro
      D                     G         D
@@ -26,7 +28,7 @@ A band of angels comin' after me,
 Comin' for to carry me home.
 ```
 
-# Verse 2
+## Verse 2
 
 ```chopro
        D           G       D
@@ -39,7 +41,7 @@ Just tell my friends that I'm a comin' too.
 Comin' for to carry me home.
 ```
 
-# Verse 3
+## Verse 3
 
 ```chopro
     D                G         D

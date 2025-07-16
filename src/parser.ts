@@ -700,8 +700,14 @@ export class ChoproBlock extends ContentBlock {
             return new ChoproBlock([]);
         }
 
-        const innerContent = match[2];
-        const lines = innerContent.split("\n");
+        return ChoproBlock.parseRaw(match[2]);
+    }
+
+    /**
+     * Attempt to parse raw content into a ChoproBlock.
+     */
+    static parseRaw(content: string): ChoproBlock {
+        const lines = content.split("\n");
         return ChoproBlock.parseLines(lines);
     }
 

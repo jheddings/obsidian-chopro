@@ -152,7 +152,7 @@ export default class ChoproPlugin extends Plugin {
             el.empty();
 
             const container = el.createDiv({ cls: "chopro-container" });
-            const block = ChoproBlock.parse(source);
+            const block = ChoproBlock.parseRaw(source);
             this.renderer.renderBlock(block, container);
         } catch (error) {
             console.error('Failed to process ChoPro block:', error);
