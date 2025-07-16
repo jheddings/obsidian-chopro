@@ -17,13 +17,9 @@ import { ChoproRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
 import { FlowGenerator } from "./flow";
-import { ChordConverter, ChordLineConverter } from "./convert";
+import { ChordLineConverter } from "./convert";
 
-import {
-    ChoproTransposer,
-    TransposeOptions,
-    TransposeUtils,
-} from "./transpose";
+import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose";
 
 export interface ChoproPluginSettings {
     chordColor: string;
@@ -54,7 +50,7 @@ export default class ChoproPlugin extends Plugin {
 
         this.renderer = new ChoproRenderer(this.settings);
 
-        this.registerMarkdownCodeBlockProcessor("chopro", (source, el, ctx) => {
+        this.registerMarkdownCodeBlockProcessor("chopro", (source, el, _ctx) => {
             this.processChoproBlock(source, el);
         });
 
@@ -69,7 +65,7 @@ export default class ChoproPlugin extends Plugin {
         this.addCommand({
             id: "chopro-insert-flow",
             name: "Insert flow content from file",
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (editor: Editor, _view: MarkdownView) => {
                 this.openFlowFileSelector(editor);
             },
         });
@@ -100,26 +96,22 @@ export default class ChoproPlugin extends Plugin {
         const detectedKey = TransposeUtils.detectKey(song);
         const currentKey = detectedKey ? detectedKey.toString() : "C";
 
-        const modal = new TransposeModal(
-            this.app,
-            currentKey,
-            async (options) => {
-                const transposer = new ChoproTransposer({
-                    fromKey: options.fromKey,
-                    toKey: options.toKey,
-                });
+        const modal = new TransposeModal(this.app, currentKey, async (options) => {
+            const transposer = new ChoproTransposer({
+                fromKey: options.fromKey,
+                toKey: options.toKey,
+            });
 
-                try {
-                    transposer.transpose(song);
-                    const transposedContent = song.toString();
-                    await this.app.vault.modify(file, transposedContent);
-                    new Notice("File transposed successfully");
-                } catch (error) {
-                    console.error("Transpose error:", error);
-                    new Notice("Error transposing file");
-                }
+            try {
+                transposer.transpose(song);
+                const transposedContent = song.toString();
+                await this.app.vault.modify(file, transposedContent);
+                new Notice("File transposed successfully");
+            } catch (error) {
+                console.error("Transpose error:", error);
+                new Notice("Error transposing file");
             }
-        );
+        });
 
         modal.open();
     }
@@ -130,11 +122,7 @@ export default class ChoproPlugin extends Plugin {
     }
 
     async loadSettings(): Promise<void> {
-        this.settings = Object.assign(
-            {},
-            DEFAULT_SETTINGS,
-            await this.loadData()
-        );
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     }
 
     async saveSettings(): Promise<void> {
@@ -155,11 +143,11 @@ export default class ChoproPlugin extends Plugin {
             const block = ChoproBlock.parseRaw(source);
             this.renderer.renderBlock(block, container);
         } catch (error) {
-            console.error('Failed to process ChoPro block:', error);
+            console.error("Failed to process ChoPro block:", error);
             el.empty();
-            el.createDiv({ 
+            el.createDiv({
                 cls: "chopro-error",
-                text: "Error parsing ChoPro content" 
+                text: "Error parsing ChoPro content",
             });
         }
     }
@@ -174,10 +162,10 @@ export default class ChoproPlugin extends Plugin {
 
         const content = await this.app.vault.read(file);
         const choproFile = ChoproFile.parse(content);
-        
+
         const converter = new ChordLineConverter();
         const changed = converter.convert(choproFile);
-        
+
         if (changed) {
             const convertedContent = choproFile.toString();
             await this.app.vault.modify(file, convertedContent);
@@ -215,8 +203,7 @@ class ChoproSettingTab extends PluginSettingTab {
                     .setPlaceholder("#2563eb")
                     .setValue(this.plugin.settings.chordColor)
                     .onChange(async (value) => {
-                        this.plugin.settings.chordColor =
-                            value || DEFAULT_SETTINGS.chordColor;
+                        this.plugin.settings.chordColor = value || DEFAULT_SETTINGS.chordColor;
                         updatePreview();
                     })
             );
@@ -237,9 +224,7 @@ class ChoproSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName("Superscript Chord Modifiers")
-            .setDesc(
-                "Display chord modifiers (7, maj7, sus4, etc.) as superscript"
-            )
+            .setDesc("Display chord modifiers (7, maj7, sus4, etc.) as superscript")
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.superscriptChordMods)
@@ -282,12 +267,10 @@ class ChoproSettingTab extends PluginSettingTab {
             .setName("Italic Annotations")
             .setDesc("Display inline annotations in italics")
             .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.italicAnnotations)
-                    .onChange(async (value) => {
-                        this.plugin.settings.italicAnnotations = value;
-                        updatePreview();
-                    })
+                toggle.setValue(this.plugin.settings.italicAnnotations).onChange(async (value) => {
+                    this.plugin.settings.italicAnnotations = value;
+                    updatePreview();
+                })
             );
 
         new Setting(containerEl)
@@ -360,9 +343,7 @@ class TransposeModal extends Modal {
             .setName("Current Key")
             .setDesc("Select the current key of the song")
             .addDropdown((dropdown) => {
-                TransposeUtils.getAllKeys().forEach((key) =>
-                    dropdown.addOption(key, key)
-                );
+                TransposeUtils.getAllKeys().forEach((key) => dropdown.addOption(key, key));
                 if (this.fromKey && TransposeUtils.isValidKey(this.fromKey)) {
                     dropdown.setValue(this.fromKey);
                 }
@@ -384,15 +365,11 @@ class TransposeModal extends Modal {
                         if (value === "nashville") {
                             this.toKey = "##";
                             targetKeyDropdown.setDisabled(true);
-                            targetKeySetting.setDesc(
-                                "Not applicable for the selected chord type"
-                            );
+                            targetKeySetting.setDesc("Not applicable for the selected chord type");
                         } else {
                             this.toKey = this.fromKey || "C";
                             targetKeyDropdown.setDisabled(false);
-                            targetKeySetting.setDesc(
-                                "Choose the key to transpose to"
-                            );
+                            targetKeySetting.setDesc("Choose the key to transpose to");
                         }
                     })
             );
@@ -403,9 +380,7 @@ class TransposeModal extends Modal {
             .setDesc("Choose the key to transpose to")
             .addDropdown((dropdown) => {
                 targetKeyDropdown = dropdown;
-                TransposeUtils.getAllKeys().forEach((key) =>
-                    dropdown.addOption(key, key)
-                );
+                TransposeUtils.getAllKeys().forEach((key) => dropdown.addOption(key, key));
                 dropdown.setValue(this.toKey);
                 dropdown.onChange((value) => {
                     this.toKey = value;
@@ -414,18 +389,14 @@ class TransposeModal extends Modal {
 
         if (this.chordType !== "alpha") {
             targetKeyDropdown.setDisabled(true);
-            targetKeySetting.setDesc(
-                "Not applicable for the selected chord type"
-            );
+            targetKeySetting.setDesc("Not applicable for the selected chord type");
         }
 
         const buttonContainer = contentEl.createDiv({
             cls: "chopro-modal-button-container",
         });
 
-        new ButtonComponent(buttonContainer)
-            .setButtonText("Cancel")
-            .onClick(() => this.close());
+        new ButtonComponent(buttonContainer).setButtonText("Cancel").onClick(() => this.close());
 
         new ButtonComponent(buttonContainer)
             .setButtonText("Transpose")
@@ -445,8 +416,8 @@ class TransposeModal extends Modal {
                     this.onConfirm(options);
                     this.close();
                 } catch (error) {
-                    console.error('Transpose validation error:', error);
-                    new Notice('Invalid transposition parameters');
+                    console.error("Transpose validation error:", error);
+                    new Notice("Invalid transposition parameters");
                 }
             });
     }

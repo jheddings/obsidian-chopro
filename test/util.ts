@@ -4,16 +4,13 @@ import { ChoproBlock, BracketChord, SegmentedLine, ChordSegment } from "../src/p
  * Helper function to verify that a SegmentedLine contains the expected chords.
  * Expected chords can be provided as either strings or chord objects.
  */
-export function verifyChordsInLine(
-    line: SegmentedLine,
-    expected: (string | ChordSegment)[]
-): void {
+export function verifyChordsInLine(line: SegmentedLine, expected: (string | ChordSegment)[]): void {
     const actualChords = line.chords;
 
     expect(actualChords).toHaveLength(expected.length);
 
     const expectedChords = expected.map((chord) =>
-        (typeof chord === "string") ? ChordSegment.parse(chord) : chord
+        typeof chord === "string" ? ChordSegment.parse(chord) : chord
     );
 
     actualChords.forEach((actualChord, index) => {

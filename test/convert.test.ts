@@ -1,28 +1,27 @@
 // convert.test.ts - unit tests for converter.ts
 
-import { ChordLineConverter } from '../src/convert';
-import { ChoproFile } from '../src/parser';
-import { TextLine, ChordLyricsLine, InstrumentalLine, ChordLine } from '../src/parser';
+import { ChordLineConverter } from "../src/convert";
+import { ChoproFile } from "../src/parser";
+import { TextLine, ChordLyricsLine, InstrumentalLine, ChordLine } from "../src/parser";
 
-describe('ChordLineConverter', () => {
-    describe('combine', () => {
-
+describe("ChordLineConverter", () => {
+    describe("combine", () => {
         const instrumentalCases = [
             {
                 chords: "C    G    Am    F",
                 lyrics: "",
-                expected: "[C]    [G]    [Am]    [F]"
+                expected: "[C]    [G]    [Am]    [F]",
             },
             {
                 chords: "Dm   F   C   G",
                 lyrics: "   ",
-                expected: "[Dm]   [F]   [C]   [G]"
-            }
+                expected: "[Dm]   [F]   [C]   [G]",
+            },
         ];
 
         test.each(instrumentalCases)(
-            'should parse instrumental line -- $expected',
-            ({ chords, lyrics, expected}) => {
+            "should parse instrumental line -- $expected",
+            ({ chords, lyrics, expected }) => {
                 const chordLine = ChordLine.parse(chords);
                 const lyricLine = new TextLine(lyrics);
 
@@ -70,11 +69,11 @@ describe('ChordLineConverter', () => {
                 chords: "A#   F#m7b5   Pause",
                 lyrics: "Special chords here.",
                 expected: "[A#]Speci[F#m7b5]al chords[*Pause] here.",
-            }
+            },
         ];
 
         test.each(combineTestCases)(
-            'should combine lines -- $expected',
+            "should combine lines -- $expected",
             ({ chords, lyrics, expected }) => {
                 const chordLine = ChordLine.parse(chords);
                 const lyricLine = new TextLine(lyrics);
@@ -89,11 +88,11 @@ describe('ChordLineConverter', () => {
         );
     });
 
-    describe('file conversion', () => {
+    describe("file conversion", () => {
         const path = require("path");
 
-        test('should convert convert.md file to bracketed chord patterns', () => {
-            const testFilePath = path.join(__dirname, 'convert.md');
+        test("should convert convert.md file to bracketed chord patterns", () => {
+            const testFilePath = path.join(__dirname, "convert.md");
 
             const choproFile = ChoproFile.load(testFilePath);
             expect(choproFile).toBeDefined();
@@ -105,11 +104,11 @@ describe('ChordLineConverter', () => {
 
             // Verify the conversion results contain expected patterns
             const convertedContent = choproFile.toString();
-            
-            expect(convertedContent).toContain('Swing [D]low, sweet [G]chari[D]ot,');
-            expect(convertedContent).toContain('Comin\' for to carry me [A7]home.');
-            expect(convertedContent).toContain('Swing l[D7]ow, sweet [G]char[D]iot,');
-            expect(convertedContent).toContain('Comin\' for to [A7]carry me [D]home.');
+
+            expect(convertedContent).toContain("Swing [D]low, sweet [G]chari[D]ot,");
+            expect(convertedContent).toContain("Comin' for to carry me [A7]home.");
+            expect(convertedContent).toContain("Swing l[D7]ow, sweet [G]char[D]iot,");
+            expect(convertedContent).toContain("Comin' for to [A7]carry me [D]home.");
         });
     });
 });

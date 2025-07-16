@@ -4,9 +4,9 @@
  * Musical accidental symbols.
  */
 export enum Accidental {
-    SHARP = '♯',
-    FLAT = '♭',
-    NATURAL = '♮'
+    SHARP = "♯",
+    FLAT = "♭",
+    NATURAL = "♮",
 }
 
 /**
@@ -28,7 +28,10 @@ export enum ScaleType {
  * Abstract base class for musical notes.
  */
 export abstract class AbstractNote {
-    constructor(public root: string, public postfix?: string) {
+    constructor(
+        public root: string,
+        public postfix?: string
+    ) {
         this.root = root;
         this.postfix = postfix;
     }
@@ -38,14 +41,14 @@ export abstract class AbstractNote {
      */
     get accidental(): Accidental {
         switch (this.postfix) {
-            case '#':
-            case '♯':
-            case 'is':
+            case "#":
+            case "♯":
+            case "is":
                 return Accidental.SHARP;
-            case 'b':
-            case '♭':
-            case 'es':
-            case 's':
+            case "b":
+            case "♭":
+            case "es":
+            case "s":
                 return Accidental.FLAT;
         }
 
@@ -59,12 +62,12 @@ export abstract class AbstractNote {
         if (MusicNote.test(noteString)) {
             return MusicNote.parse(noteString);
         }
-        
+
         if (NashvilleNumber.test(noteString)) {
             return NashvilleNumber.parse(noteString);
         }
-        
-        throw new Error('Invalid note format');
+
+        throw new Error("Invalid note format");
     }
 
     /**
@@ -79,15 +82,15 @@ export abstract class AbstractNote {
         if (normalize) {
             switch (this.accidental) {
                 case Accidental.SHARP:
-                    return '♯';
+                    return "♯";
                 case Accidental.FLAT:
-                    return '♭';
+                    return "♭";
                 case Accidental.NATURAL:
                 default:
                     return ""; // no symbol for natural notes
             }
         }
-        
+
         return this.postfix;
     }
 
@@ -140,9 +143,9 @@ export class MusicNote extends AbstractNote {
      */
     static parse(noteString: string): MusicNote {
         const match = noteString.match(MusicNote.PATTERN);
-        
+
         if (!match) {
-            throw new Error('Invalid note format');
+            throw new Error("Invalid note format");
         }
 
         const root = match[1].toUpperCase();
@@ -184,9 +187,9 @@ export class NashvilleNumber extends AbstractNote {
      */
     static parse(noteString: string): NashvilleNumber {
         const match = noteString.match(NashvilleNumber.PATTERN);
-        
+
         if (!match) {
-            throw new Error('Invalid note format');
+            throw new Error("Invalid note format");
         }
 
         const prefix = match[1];
@@ -208,7 +211,10 @@ export class NashvilleNumber extends AbstractNote {
  * Abstract base class for musical key information.
  */
 export abstract class KeyInfo {
-    constructor(public root: AbstractNote, public accidental?: Accidental) {}
+    constructor(
+        public root: AbstractNote,
+        public accidental?: Accidental
+    ) {}
 
     /**
      * Parse a key string into a KeyInfo object.
@@ -217,11 +223,8 @@ export abstract class KeyInfo {
         if (keyString === "##") {
             return NashvilleKeyInfo.parse(keyString);
         }
-        
-        try { return AbsoluteKeyInfo.parse(keyString); }
-        catch (error) { }
 
-        throw new Error(`Invalid key format: ${keyString}`);
+        return AbsoluteKeyInfo.parse(keyString);
     }
 
     /**
@@ -239,7 +242,10 @@ export abstract class KeyInfo {
  * Abstract base class for absolute key information.
  */
 export abstract class AbsoluteKeyInfo extends KeyInfo {
-    constructor(public root: MusicNote, public accidental?: Accidental) {
+    constructor(
+        public root: MusicNote,
+        public accidental?: Accidental
+    ) {
         super(root, accidental);
     }
 
@@ -296,14 +302,12 @@ export abstract class AbsoluteKeyInfo extends KeyInfo {
 /**
  * Abstract base class for modal key information.
  */
-export abstract class ModalKeyInfo extends KeyInfo {
-}
+export abstract class ModalKeyInfo extends KeyInfo {}
 
 /**
  * Abstract base class for relative key information.
  */
-export abstract class RelativeKeyInfo extends KeyInfo {
-}
+export abstract class RelativeKeyInfo extends KeyInfo {}
 
 /**
  * Represents a major key with major scale intervals.
@@ -311,7 +315,10 @@ export abstract class RelativeKeyInfo extends KeyInfo {
 export class MajorKeyInfo extends AbsoluteKeyInfo {
     public static readonly SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
 
-    constructor(public root: MusicNote, public accidental?: Accidental) {
+    constructor(
+        public root: MusicNote,
+        public accidental?: Accidental
+    ) {
         super(root, accidental);
     }
 
@@ -377,7 +384,7 @@ export class MinorKeyInfo extends AbsoluteKeyInfo {
      * Get string representation of the minor key.
      */
     toString(): string {
-        return this.root.toString() + 'm';
+        return this.root.toString() + "m";
     }
 
     static parse(keyString: string): MinorKeyInfo {
@@ -423,21 +430,20 @@ export class NashvilleKeyInfo extends RelativeKeyInfo {
  * Music theory constants and utilities.
  */
 export class MusicTheory {
-
     // chromatic scale with enharmonic equivalents
     public static readonly CHROMATIC_NOTES = [
-        ["C"],        // 0
+        ["C"], // 0
         ["C#", "Db"], // 1
-        ["D"],        // 2
+        ["D"], // 2
         ["D#", "Eb"], // 3
-        ["E"],        // 4
-        ["F"],        // 5
+        ["E"], // 4
+        ["F"], // 5
         ["F#", "Gb"], // 6
-        ["G"],        // 7
+        ["G"], // 7
         ["G#", "Ab"], // 8
-        ["A"],        // 9
+        ["A"], // 9
         ["A#", "Bb"], // 10
-        ["B"],        // 11
+        ["B"], // 11
     ];
 
     // circle of fifths for determining preferred accidentals
@@ -491,10 +497,7 @@ export class MusicTheory {
     /**
      * Get the preferred note name for a chromatic index based on key context.
      */
-    static getPreferredNoteName(
-        chromaticIndex: number,
-        preferredAccidental?: Accidental
-    ): string {
+    static getPreferredNoteName(chromaticIndex: number, preferredAccidental?: Accidental): string {
         const noteOptions = this.CHROMATIC_NOTES[chromaticIndex];
 
         if (noteOptions.length === 1) {
@@ -519,13 +522,13 @@ export class MusicTheory {
         } else if (keyRoot.includes("b") || keyRoot.includes("♭")) {
             return Accidental.FLAT;
         }
-        
-        const naturalRoot = keyRoot.replace(/[#♯b♭]/g, '');
-        
-        if (naturalRoot === 'F') {
+
+        const naturalRoot = keyRoot.replace(/[#♯b♭]/g, "");
+
+        if (naturalRoot === "F") {
             return Accidental.FLAT;
         }
-        
+
         return Accidental.NATURAL;
     }
 

@@ -11,9 +11,7 @@ import {
 
 describe("AbstractNote", () => {
     describe("handles music notes correctly", () => {
-        const musicNoteCases = [
-            "C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"
-        ];
+        const musicNoteCases = ["C", "G", "F#", "Bb", "G♯", "A♭", "Gis", "Fes"];
 
         test.each(musicNoteCases)("parses %s correctly", (input) => {
             const note = AbstractNote.parse(input);
@@ -23,9 +21,7 @@ describe("AbstractNote", () => {
     });
 
     describe("handles Nashville numbers correctly", () => {
-        const nashvilleNumberCases = [
-            "1", "b4", "#2", "♯7", "♭3"
-        ];
+        const nashvilleNumberCases = ["1", "b4", "#2", "♯7", "♭3"];
 
         test.each(nashvilleNumberCases)("parses %s correctly", (input) => {
             const note = AbstractNote.parse(input);
@@ -39,13 +35,13 @@ describe("AbstractNote", () => {
             // Basic notes (no change)
             { input: "C", normalized: "C" },
             { input: "G", normalized: "G" },
-            
+
             // ASCII accidentals to Unicode
             { input: "F#", normalized: "F♯" },
             { input: "Bb", normalized: "B♭" },
             { input: "#2", normalized: "♯2" },
             { input: "b4", normalized: "♭4" },
-            
+
             // Unicode accidentals
             { input: "B♮", normalized: "B" },
             { input: "A♭", normalized: "A♭" },
@@ -56,21 +52,16 @@ describe("AbstractNote", () => {
             { input: "Fes", normalized: "F♭" },
         ];
 
-        test.each(normalizationCases)(
-            "normalizes $input correctly",
-            ({ input, normalized }) => {
-                const note = AbstractNote.parse(input);
-                expect(note.toString()).toEqual(input);
-                expect(note.toString(false)).toEqual(input);
-                expect(note.toString(true)).toEqual(normalized);
-            }
-        );
+        test.each(normalizationCases)("normalizes $input correctly", ({ input, normalized }) => {
+            const note = AbstractNote.parse(input);
+            expect(note.toString()).toEqual(input);
+            expect(note.toString(false)).toEqual(input);
+            expect(note.toString(true)).toEqual(normalized);
+        });
     });
 
     describe("error handling", () => {
-        const invalidNotes = [
-            "H", "8", "0", "", "invalid", "I", "iv", "&", "#"
-        ];
+        const invalidNotes = ["H", "8", "0", "", "invalid", "I", "iv", "&", "#"];
 
         test.each(invalidNotes)("rejects invalid note %s", (note) => {
             expect(() => AbstractNote.parse(note)).toThrow();
@@ -96,11 +87,11 @@ describe("MusicNote", () => {
             "parses music note $input correctly",
             ({ input, root, postfix, accidental }) => {
                 const note = MusicNote.parse(input);
-                
+
                 expect(note.root).toEqual(root);
                 expect(note.postfix).toEqual(postfix);
                 expect(note.accidental).toEqual(accidental);
-                
+
                 // round-trip test
                 expect(note.toString()).toEqual(input);
             }
@@ -115,9 +106,22 @@ describe("MusicNote", () => {
 
     describe("error handling", () => {
         const invalidMusicNotes = [
-            "1", "2", "3", "4", "5", "6", "7",
-            "1m", "b4", "#2", "♯7", "♭3",
-            "[G]", "[Am]", "C♪", "Do"
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "1m",
+            "b4",
+            "#2",
+            "♯7",
+            "♭3",
+            "[G]",
+            "[Am]",
+            "C♪",
+            "Do",
         ];
 
         test.each(invalidMusicNotes)("rejects invalid note %s", (note) => {
@@ -148,11 +152,11 @@ describe("NashvilleNumber", () => {
             "parses Nashville number $input correctly",
             ({ input, root, postfix, accidental }) => {
                 const note = NashvilleNumber.parse(input);
-                
+
                 expect(note.root).toEqual(root);
                 expect(note.postfix).toEqual(postfix);
                 expect(note.accidental).toEqual(accidental);
-                
+
                 // round-trip test
                 expect(note.toString()).toEqual(input);
             }
@@ -167,8 +171,20 @@ describe("NashvilleNumber", () => {
 
     describe("error handling", () => {
         const invalidNashvilleNumbers = [
-            "7b", "4#", "C", "D", "F#", "Bb", "G♯", "A♭", 
-            "Gis", "Fes", "As", "8", "0", "[1]"
+            "7b",
+            "4#",
+            "C",
+            "D",
+            "F#",
+            "Bb",
+            "G♯",
+            "A♭",
+            "Gis",
+            "Fes",
+            "As",
+            "8",
+            "0",
+            "[1]",
         ];
 
         test.each(invalidNashvilleNumbers)("rejects invalid number %s", (note) => {
@@ -229,27 +245,25 @@ describe("MusicTheory", () => {
         test.each(preferredNoteTestCases)(
             "should return $expected for index $index with preference $preference",
             ({ index, preference, expected }) => {
-                expect(
-                    MusicTheory.getPreferredNoteName(index, preference)
-                ).toEqual(expected);
+                expect(MusicTheory.getPreferredNoteName(index, preference)).toEqual(expected);
             }
         );
     });
 });
 
-describe('KeyInfo', () => {
-    describe('parse major keys', () => {
+describe("KeyInfo", () => {
+    describe("parse major keys", () => {
         const majorKeyTestCases = [
-            { input: 'C', root: 'C', accidental: Accidental.NATURAL, minor: 'Am' },
-            { input: 'G', root: 'G', accidental: Accidental.NATURAL, minor: 'Em' },
-            { input: 'F#', root: 'F#', accidental: Accidental.SHARP, minor: 'D#m' },
-            { input: 'Bb', root: 'Bb', accidental: Accidental.FLAT, minor: 'Gm' },
-            { input: 'Db', root: 'Db', accidental: Accidental.FLAT, minor: 'Bbm' },
-            { input: 'C#', root: 'C#', accidental: Accidental.SHARP, minor: 'A#m' },
+            { input: "C", root: "C", accidental: Accidental.NATURAL, minor: "Am" },
+            { input: "G", root: "G", accidental: Accidental.NATURAL, minor: "Em" },
+            { input: "F#", root: "F#", accidental: Accidental.SHARP, minor: "D#m" },
+            { input: "Bb", root: "Bb", accidental: Accidental.FLAT, minor: "Gm" },
+            { input: "Db", root: "Db", accidental: Accidental.FLAT, minor: "Bbm" },
+            { input: "C#", root: "C#", accidental: Accidental.SHARP, minor: "A#m" },
         ];
 
         test.each(majorKeyTestCases)(
-            'should parse $input correctly',
+            "should parse $input correctly",
             ({ input, root, accidental, minor }) => {
                 const key = MajorKeyInfo.parse(input);
 
@@ -268,21 +282,20 @@ describe('KeyInfo', () => {
                 expect(relativeMinor).toEqual(expectedMinor);
             }
         );
-
     });
 
-    describe('parse minor keys', () => {
+    describe("parse minor keys", () => {
         const minorKeyTestCases = [
-            { input: 'Am', root: 'A', accidental: Accidental.NATURAL, major: 'C' },
-            { input: 'Em', root: 'E', accidental: Accidental.NATURAL, major: 'G' },
-            { input: 'F#m', root: 'F#', accidental: Accidental.SHARP, major: 'A' },
-            { input: 'Bbm', root: 'Bb', accidental: Accidental.FLAT, major: 'Db' },
-            { input: 'C#m', root: 'C#', accidental: Accidental.SHARP, major: 'E' },
-            { input: 'Ebm', root: 'Eb', accidental: Accidental.FLAT, major: 'Gb' },
+            { input: "Am", root: "A", accidental: Accidental.NATURAL, major: "C" },
+            { input: "Em", root: "E", accidental: Accidental.NATURAL, major: "G" },
+            { input: "F#m", root: "F#", accidental: Accidental.SHARP, major: "A" },
+            { input: "Bbm", root: "Bb", accidental: Accidental.FLAT, major: "Db" },
+            { input: "C#m", root: "C#", accidental: Accidental.SHARP, major: "E" },
+            { input: "Ebm", root: "Eb", accidental: Accidental.FLAT, major: "Gb" },
         ];
 
         test.each(minorKeyTestCases)(
-            'should parse $input correctly',
+            "should parse $input correctly",
             ({ input, root, accidental, major }) => {
                 const key = MinorKeyInfo.parse(input);
 
@@ -302,38 +315,27 @@ describe('KeyInfo', () => {
             }
         );
 
-        const invalidKeyTestCases = [
-            'H',
-            'C#b',
-            '',
-            'CM',
-            'Am#',
-            'X',
-            '1',
-        ];
+        const invalidKeyTestCases = ["H", "C#b", "", "CM", "Am#", "X", "1"];
 
-        test.each(invalidKeyTestCases)(
-            'should throw on invalid key %s',
-            (invalidKey) => {
-                expect(() => KeyInfo.parse(invalidKey)).toThrow();
-            }
-        );
+        test.each(invalidKeyTestCases)("should throw on invalid key %s", (invalidKey) => {
+            expect(() => KeyInfo.parse(invalidKey)).toThrow();
+        });
     });
 
-    describe('getInterval', () => {
+    describe("getInterval", () => {
         const intervalTestCases = [
-            { from: new MusicNote('C'), to: new MusicNote('C'), expected: 0 },
-            { from: new MusicNote('C'), to: new MusicNote('D'), expected: 2 },
-            { from: new MusicNote('C'), to: new MusicNote('G'), expected: 7 },
-            { from: new MusicNote('C'), to: new MusicNote('C', '#'), expected: 1 },
-            { from: new MusicNote('D'), to: new MusicNote('C'), expected: 10 },
-            { from: new MusicNote('G'), to: new MusicNote('F'), expected: 10 },
-            { from: new MusicNote('A'), to: new MusicNote('A'), expected: 0 },
-            { from: new MusicNote('F', '#'), to: new MusicNote('G', 'b'), expected: 0 },
+            { from: new MusicNote("C"), to: new MusicNote("C"), expected: 0 },
+            { from: new MusicNote("C"), to: new MusicNote("D"), expected: 2 },
+            { from: new MusicNote("C"), to: new MusicNote("G"), expected: 7 },
+            { from: new MusicNote("C"), to: new MusicNote("C", "#"), expected: 1 },
+            { from: new MusicNote("D"), to: new MusicNote("C"), expected: 10 },
+            { from: new MusicNote("G"), to: new MusicNote("F"), expected: 10 },
+            { from: new MusicNote("A"), to: new MusicNote("A"), expected: 0 },
+            { from: new MusicNote("F", "#"), to: new MusicNote("G", "b"), expected: 0 },
         ];
 
         test.each(intervalTestCases)(
-            'should calculate interval from $from.root$from.postfix to $to.root$to.postfix as $expected',
+            "should calculate interval from $from.root$from.postfix to $to.root$to.postfix as $expected",
             ({ from, to, expected }) => {
                 expect(MusicTheory.getInterval(from, to)).toEqual(expected);
             }
