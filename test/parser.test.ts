@@ -10,44 +10,11 @@ import {
     TextLine,
     ChoproBlock,
     MarkdownBlock,
+    Frontmatter,
     SegmentedLine,
+    ChordLine,
 } from "../src/parser";
-
-/**
- * Helper function to verify that a SegmentedLine contains the expected chords.
- * Expected chords can be provided as either strings or ChordNotation objects.
- */
-export function verifyChordsInLine(
-    line: SegmentedLine,
-    expected: (string | ChordNotation)[]
-): void {
-    const actualChords = line.chords;
-
-    expect(actualChords).toHaveLength(expected.length);
-
-    const expectedChords = expected.map((chord) =>
-        typeof chord === "string" ? ChordNotation.parse(chord) : chord
-    );
-
-    actualChords.forEach((actualChord, index) => {
-        expect(actualChord).toBeInstanceOf(ChordNotation);
-        expect(actualChord).toEqual(expectedChords[index]);
-    });
-}
-
-export function verifyChordsInBlock(
-    block: ChoproBlock,
-    expected: (string[] | ChordNotation[])[]
-): void {
-    const lines = block.lines;
-
-    expect(lines).toHaveLength(expected.length);
-
-    lines.forEach((line, index) => {
-        verifyChordsInLine(line as SegmentedLine, expected[index]);
-    });
-}
-
+import { verifyChordsInLine } from "./util";
 
 describe("ChordNotation", () => {
     describe("handles letter notation correctly", () => {
@@ -520,7 +487,6 @@ describe("SegmentedLine", () => {
             "parses chord segments from $input",
             ({ input, expected }) => {
                 const line = SegmentedLine.parse(input);
-
                 verifyChordsInLine(line, expected);
             }
         );
@@ -568,6 +534,170 @@ describe("SegmentedLine", () => {
                 expect(lyrics).toEqual(segments);
             }
         );
+    });
+});
+
+describe("ChordLine", () => {
+    const chordLineTests = [
+        { input: "Am    Dm   E7" },
+        { input: "F#m7/B Bb7add9 C/G" },
+        { input: "C   Intro   G7" },
+        { input: "C   D   E   F   G" },
+        { input: "C" },
+        { input: "   B" },
+    ];
+
+    describe("parsing", () => {
+        test.each(chordLineTests)("round-trips '$input'", ({ input }) => {
+            const chordLine = ChordLine.parse(input);
+            expect(chordLine.toString()).toEqual(input);
+        });
+    });
+
+    describe("validation", () => {
+        test.each(chordLineTests)("validates '$input'", ({ input }) => {
+            expect(ChordLine.test(input)).toBe(true);
+        });
+    });
+
+    describe("error handling", () => {
+        const invalidChordLines = [
+            "This line has no chords",
+            "C G H J K",
+            "[C] [G] [Am] [F]",
+            "",
+            "  \t  ",
+        ];
+
+        test.each(invalidChordLines)("rejects invalid chord line '%s'", (line) => {
+            expect(ChordLine.test(line)).toBe(false);
+        });
+    });
+});
+
+describe("ChoproBlock", () => {
+    describe("empty blocks", () => {
+        it("creates an empty block", () => {
+            const block = new ChoproBlock([]);
+            expect(block.lines).toHaveLength(0);
+            expect(block.toString()).toEqual("```chopro\n```");
+        });
+
+        it("parses an empty block", () => {
+            const block = ChoproBlock.parse("```chopro\n```");
+            expect(block.lines).toHaveLength(0);
+            expect(block.toString()).toEqual("```chopro\n```");
+        });
+
+        it("parses a block with an empty line", () => {
+            const block = ChoproBlock.parse("```chopro\n\n```");
+            expect(block.lines).toHaveLength(1);
+            expect(block.toString()).toEqual("```chopro\n\n```");
+        });
+    });
+
+    describe("with content", () => {
+        it("parses and serializes content correctly", () => {
+            const content = "```chopro\n[C]Amazing [F]Grace\nHow [G]sweet the [C]sound\n```";
+            const block = ChoproBlock.parse(content);
+            expect(block.lines).toHaveLength(2);
+            expect(block.toString()).toEqual(content);
+        });
+
+        it("handles round-trip parsing", () => {
+            const originalContent = "```chopro\n# Verse 1\n[C]Test line\n\n[F]Another line\n```";
+            const block = ChoproBlock.parse(originalContent);
+            const serialized = block.toString();
+            const reparsed = ChoproBlock.parse(serialized);
+            expect(reparsed.toString()).toEqual(originalContent);
+        });
+    });
+});
+
+describe("MarkdownBlock", () => {
+    describe("basic functionality", () => {
+        it("creates and serializes simple markdown", () => {
+            const content = "# Heading\n\nThis is some markdown content.";
+            const block = new MarkdownBlock(content);
+            expect(block.content).toEqual(content);
+            expect(block.toString()).toEqual(content);
+        });
+
+        it("parses markdown content correctly", () => {
+            const content = "## Verse 1\n\nSome lyrics here\n- List item\n- Another item";
+            const block = MarkdownBlock.parse(content);
+            expect(block.content).toEqual(content);
+            expect(block.toString()).toEqual(content);
+        });
+
+        it("handles round-trip parsing", () => {
+            const originalContent = "**Bold text** and *italic text*\n\n> Blockquote\n\n```\nCode block\n```";
+            const block = MarkdownBlock.parse(originalContent);
+            const serialized = block.toString();
+            const reparsed = MarkdownBlock.parse(serialized);
+            expect(reparsed.toString()).toEqual(originalContent);
+        });
+    });
+
+    describe("test method", () => {
+        it("identifies markdown content correctly", () => {
+            expect(MarkdownBlock.test("# Regular markdown")).toBe(true);
+        });
+    });
+});
+
+describe("Frontmatter", () => {
+    describe("basic functionality", () => {
+        it("creates and serializes empty frontmatter", () => {
+            const frontmatter = new Frontmatter();
+            expect(frontmatter.properties).toEqual({});
+            expect(frontmatter.toString()).toEqual("---\n{}\n---");
+        });
+
+        it("parses frontmatter with properties", () => {
+            const content = "---\ntitle: Test Song\nartist: Test Artist\ntempo: 120\n---";
+            const frontmatter = Frontmatter.parse(content);
+            expect(frontmatter.get("title")).toEqual("Test Song");
+            expect(frontmatter.get("artist")).toEqual("Test Artist");
+            expect(frontmatter.get("tempo")).toEqual(120);
+        });
+
+        it("handles round-trip parsing", () => {
+            const originalContent = "---\ntitle: Amazing Grace\nkey: C\ntime: 3/4\n---";
+            const frontmatter = Frontmatter.parse(originalContent);
+            const serialized = frontmatter.toString();
+            const reparsed = Frontmatter.parse(serialized);
+            expect(reparsed.get("title")).toEqual("Amazing Grace");
+            expect(reparsed.get("key")).toEqual("C");
+            expect(reparsed.get("time")).toEqual("3/4");
+        });
+    });
+
+    describe("property management", () => {
+        it("manages properties correctly", () => {
+            const frontmatter = new Frontmatter();
+            
+            frontmatter.set("title", "Test Song");
+            expect(frontmatter.has("title")).toBe(true);
+            expect(frontmatter.get("title")).toEqual("Test Song");
+            
+            frontmatter.set("tempo", 100);
+            expect(frontmatter.keys()).toContain("title");
+            expect(frontmatter.keys()).toContain("tempo");
+            
+            frontmatter.remove("title");
+            expect(frontmatter.has("title")).toBe(false);
+            expect(frontmatter.get("title")).toBeUndefined();
+        });
+    });
+
+    describe("test method", () => {
+        it("identifies frontmatter correctly", () => {
+            expect(Frontmatter.test("---\ntitle: test\n---")).toBe(true);
+            expect(Frontmatter.test("---\nkey: C\ntime: 4/4\n---")).toBe(true);
+            expect(Frontmatter.test("# Regular markdown")).toBe(false);
+            expect(Frontmatter.test("```chopro\n[C]chord\n```")).toBe(false);
+        });
     });
 });
 
@@ -686,7 +816,7 @@ describe("ChoproFile", () => {
             });
 
             it("parses file structure correctly", () => {
-                expect(file.blocks).toHaveLength(3);
+                expect(file.blocks).toHaveLength(5);
             });
 
             it("identifies block types correctly", () => {
@@ -698,7 +828,7 @@ describe("ChoproFile", () => {
             it("parses block content correctly", () => {
                 expect(file.blocks[0].toString()).toContain("# Goofy");
                 expect(file.blocks[1].toString()).toEqual("```chopro\n```");
-                expect(file.blocks[2].toString()).toEqual("");
+                expect(file.blocks[3].toString()).toEqual("```chopro\n\n```");
             });
         });
 

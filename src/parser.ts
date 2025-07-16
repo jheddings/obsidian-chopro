@@ -123,8 +123,8 @@ export class LetterNotation extends ChordNotation {
         }
 
         const noteString = match[1];
-        const modifier = match[2] && match[2].trim() !== '' ? match[2].trim() : undefined;
-        const bassString = match[3] ? match[3].trim() : undefined;
+        const modifier = match[2] && match[2] !== '' ? match[2] : undefined;
+        const bassString = match[3] ? match[3] : undefined;
 
         if (!MusicNote.test(noteString)) {
             throw new Error('Invalid letter notation: must use A-G note names');
@@ -163,8 +163,8 @@ export class NashvilleNotation extends ChordNotation {
         }
 
         const noteString = match[1];
-        const modifier = match[3] && match[3].trim() !== '' ? match[3].trim() : undefined;
-        const bassString = match[4] ? match[4].trim() : undefined;
+        const modifier = match[3] && match[3] !== '' ? match[3] : undefined;
+        const bassString = match[4] ? match[4] : undefined;
 
         if (!NashvilleNumber.test(noteString)) {
             throw new Error('Invalid Nashville notation: must use 1-7 numbers');
@@ -226,6 +226,22 @@ export class TextSegment extends LineSegment {
     }
 }
 
+/**
+ * Line segments that retain position information.
+ */
+export class IndexedSegment extends LineSegment {
+    constructor(public segment: LineSegment, public lineIndex: number) {
+        super();
+    }
+
+    /**
+     * Return the text-only of this line segment.
+     */
+    toString(): string {
+        return this.segment.toString();
+    }
+}
+
 export abstract class ChoproLine {
     constructor() {}
 
@@ -249,9 +265,18 @@ export abstract class ChoproLine {
             return ChordLyricsLine.parse(line);
         }
 
+        if (ChordLine.test(line)) {
+            return ChordLine.parse(line);
+        }
+
         // default to text line
         return TextLine.parse(line);
     }
+
+    /**
+     * Return this line as a string.
+     */
+    abstract toString(): string;
 }
 
 export class EmptyLine extends ChoproLine {
@@ -454,6 +479,92 @@ export class InstrumentalLine extends SegmentedLine {
     }
 }
 
+export class ChordLine extends ChoproLine {
+    private static readonly CHORD_LINE_THRESHOLD = 0.51;
+    private static readonly CHORD_PATTERN = /\S+/g;
+
+    constructor(public segments: LineSegment[]) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        if (SegmentedLine.test(line)) {
+            return false;
+        }
+
+        let match: RegExpExecArray | null;
+        let validChordCount = 0;
+        let totalWords = 0;
+
+        while ((match = ChordLine.CHORD_PATTERN.exec(line)) !== null) {
+            totalWords++;
+
+            if (ChordNotation.test(`[${match[0]}]`)) {
+                validChordCount++;
+            }
+        }
+
+        const ratio = validChordCount / totalWords;
+        return ratio >= ChordLine.CHORD_LINE_THRESHOLD;
+    }
+
+    static parse(line: string): ChordLine {
+        const segments: IndexedSegment[] = [];
+        let match: RegExpExecArray | null;
+
+        while ((match = ChordLine.CHORD_PATTERN.exec(line)) !== null) {
+            let segment: LineSegment;
+            const segmentText = match[0];
+
+            if (ChordNotation.test(`[${segmentText}]`)) {
+                segment = ChordNotation.parse(`[${segmentText}]`);
+            } else {
+                segment = new Annotation(segmentText);
+            }
+
+            segments.push(new IndexedSegment(segment, match.index));
+        }
+
+        return new ChordLine(segments);
+    }
+
+    /**
+     * Return this line as a string.
+     */
+    toString(): string {
+        if (this.segments.length === 0) {
+            return '';
+        }
+
+        const indexedSegments = this.segments as IndexedSegment[];
+        
+        const getSegmentContent = (seg: IndexedSegment): string => {
+            if (seg.segment instanceof ChordNotation) {
+                return seg.segment.toString().slice(1, -1);
+            } else if (seg.segment instanceof Annotation) {
+                return seg.segment.content;
+            }
+            return seg.toString();
+        };
+
+        // calculate the total length based on the last segment's actual content
+        const lastSegment = indexedSegments[indexedSegments.length - 1];
+        const lastSegmentContent = getSegmentContent(lastSegment);
+        const lineLength = lastSegment.lineIndex + lastSegmentContent.length;
+
+        let chars = Array(lineLength).fill(' ');
+
+        for (const seg of indexedSegments) {
+            const segStr = getSegmentContent(seg);
+            for (let i = 0; i < segStr.length; i++) {
+                chars[seg.lineIndex + i] = segStr[i];
+            }
+        }
+
+        return chars.join('');
+    }
+}
+
 /**
  * Base class for content blocks that can be rendered.
  */
@@ -470,26 +581,49 @@ export abstract class ContentBlock {
  * Represents a frontmatter block containing properties serialized as YAML.
  */
 export class Frontmatter extends ContentBlock {
-    public static readonly BLOCK_PATTERN = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+    public static readonly BLOCK_PATTERN = /^---\n(([\s\S]*)\n)?---$/;
 
     constructor(public properties: Record<string, any> = {}) {
         super();
     }
 
     /**
-     * Create a Frontmatter block from YAML content.
+     * Test if content represents a frontmatter block.
+     */
+    static test(content: string): boolean {
+        return Frontmatter.extract(content) !== undefined;
+    }
+
+    /**
+     * Create a Frontmatter block from full frontmatter content (including --- delimiters).
      */
     static parse(content: string): Frontmatter {
-        const frontmatter = new Frontmatter();
+        const props = Frontmatter.extract(content);
 
-        try {
-            frontmatter.properties = parseYaml(content) || {};
-        } catch (error) {
-            console.warn('Failed to parse YAML frontmatter:', error);
-            frontmatter.properties = {};
+        if (props === undefined) {
+            throw new Error('Invalid frontmatter');
         }
 
-        return frontmatter;
+        return new Frontmatter(props);
+    }
+
+    /**
+     * Extract the frontmatter records from a string.
+     */
+    private static extract(content: string): Record<string, any> | undefined {
+        const match = content.match(Frontmatter.BLOCK_PATTERN);
+
+        if (!match) {
+            return undefined;
+        }
+
+        try {
+            return parseYaml(match[1]) as Record<string, any>;
+        } catch (error) {
+            console.warn('Failed to parse frontmatter:', error);
+        }
+
+        return undefined;
     }
 
     /**
@@ -539,35 +673,50 @@ export class Frontmatter extends ContentBlock {
  * Represents a block of ChoPro content, containing multiple lines.
  */
 export class ChoproBlock extends ContentBlock {
-    static BLOCK_PATTERN = /^```chopro\s*\n([\s\S]*?)\n```$/m;
+    static BLOCK_PATTERN = /^```chopro\n(([\s\S]*)\n)?```$/m;
 
     constructor(public lines: ChoproLine[]) {
         super();
     }
 
     /**
-     * Create a ChoproBlock by parsing the content.
+     * Test if content represents a ChoPro block.
+     */
+    static test(content: string): boolean {
+        return ChoproBlock.BLOCK_PATTERN.test(content);
+    }
+
+    /**
+     * Create a ChoproBlock by parsing the block content.
      */
     static parse(content: string): ChoproBlock {
-        const trimmedContent = content.trim();
-        const choproLines: ChoproLine[] = [];
+        const match = content.match(ChoproBlock.BLOCK_PATTERN);
 
-        // Handle empty content
-        if (!trimmedContent) {
-            return new ChoproBlock(choproLines);
+        if (!match) {
+            throw new Error("Invalid chopro block format");
         }
 
-        const lines = trimmedContent.split('\n');
+        if (match[2] === undefined) {
+            return new ChoproBlock([]);
+        }
 
+        const innerContent = match[2];
+        const lines = innerContent.split("\n");
+        return ChoproBlock.parseLines(lines);
+    }
+
+    /**
+     * Parse multiple lines into a ChoproBlock.
+     */
+    static parseLines(lines: string[]): ChoproBlock {
+        const choproLines: ChoproLine[] = [];
         for (const line of lines) {
-            const trimmedLine = line.trim();
-            const parsedLine = ChoproLine.parse(trimmedLine);
-            
+            const parsedLine = ChoproLine.parse(line);
+
             if (parsedLine !== null) {
                 choproLines.push(parsedLine);
             }
         }
-
         return new ChoproBlock(choproLines);
     }
 
@@ -575,18 +724,17 @@ export class ChoproBlock extends ContentBlock {
      * Convert the block to its normalized ChoPro representation.
      */
     toString(): string {
-        let content = '```chopro\n';
+        let content = "```chopro\n";
 
         if (this.lines.length > 0) {
-            content += this.lines.map(line => line.toString()).join('\n');
-            content += '\n```';
+            content += this.lines.map((line) => line.toString()).join("\n");
+            content += "\n```";
         } else {
-            content += '```';
+            content += "```";
         }
 
         return content;
     }
-
 }
 
 /**
@@ -595,6 +743,13 @@ export class ChoproBlock extends ContentBlock {
 export class MarkdownBlock extends ContentBlock {
     constructor(public content: string) {
         super();
+    }
+
+    /**
+     * Test if content represents a markdown block.
+     */
+    static test(content: string): boolean {
+        return true;
     }
 
     /**
@@ -638,10 +793,12 @@ export class ChoproFile {
         let frontmatter: Frontmatter | undefined;
         let remainingContent = source;
 
-        const frontmatterMatch = source.match(Frontmatter.BLOCK_PATTERN);
+        // check for frontmatter (only at the beginning)
+        // this pattern is similar to Frontmatter.BLOCK_PATTERN, without the end anchor
+        const frontmatterMatch = source.match(/^---\n(([\s\S]*?)\n)?---/m);
 
         if (frontmatterMatch) {
-            frontmatter = Frontmatter.parse(frontmatterMatch[1]);
+            frontmatter = Frontmatter.parse(frontmatterMatch[0]);
             remainingContent = source.substring(frontmatterMatch[0].length);
         }
 
@@ -679,8 +836,12 @@ export class ChoproFile {
         };
         
         const flushChoproBlock = () => {
-            const choproContent = blockContent.join('\n');
-            const block = ChoproBlock.parse(choproContent);
+            let block: ChoproBlock;
+            if (blockContent.length === 0) {
+                block = new ChoproBlock([]);
+            } else {
+                block = ChoproBlock.parseLines(blockContent);
+            }
             blocks.push(block);
             blockContent = [];
         };
@@ -719,7 +880,7 @@ export class ChoproFile {
         let result = '';
         
         if (this.frontmatter) {
-            result += this.frontmatter.toString() + '\n\n';
+            result += this.frontmatter.toString();
         }
         
         result += this.blocks.map(block => block.toString()).join('\n');

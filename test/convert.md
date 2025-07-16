@@ -7,9 +7,9 @@
 Swing low, sweet chariot,
                        A7
 Comin' for to carry me home.
-       D7	 G	D
+       D7        G   D
 Swing low, sweet chariot,
- 	       A7	D
+              A7       D
 Comin' for to carry me home.
 ```
 
@@ -22,7 +22,7 @@ I looked over Jordan, and what did I see,
 Comin' for to carry me home.
     D7                   G    D
 A band of angels comin' after me,
- 	       A7	D
+              A7       D
 Comin' for to carry me home.
 ```
 
@@ -35,7 +35,7 @@ If you get there before I do,
 Comin' for to carry me home.
       D7                          G     D
 Just tell my friends that I'm a comin' too.
- 	       A7	D
+              A7       D
 Comin' for to carry me home.
 ```
 
@@ -48,6 +48,6 @@ I'm sometimes up and sometimes down,
 Comin' for to carry me home.
     D7                   G       D
 But still my soul feels heavenly bound.
- 	       A7	D
+              A7       D
 Comin' for to carry me home.
 ```
