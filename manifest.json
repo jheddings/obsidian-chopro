@@ -1,5 +1,5 @@
 {
-    "id": "chopro-plugin",
+    "id": "chopro-viewer",
     "name": "ChordPro Viewer",
     "version": "0.6.0",
     "minAppVersion": "0.15.0",
