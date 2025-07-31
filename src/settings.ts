@@ -1,6 +1,7 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
-import ChoproPlugin from "./main";
 import { ChoproBlock } from "./parser";
+import { LogLevel } from "./logger";
+import ChoproPlugin from "./main";
 
 abstract class SettingsTabPage {
     public isActive: boolean = false;
@@ -170,13 +171,43 @@ class FlowSettings extends SettingsTabPage {
     }
 }
 
+/**
+ * Settings page for advanced options.
+ */
+class AdvancedSettings extends SettingsTabPage {
+    constructor(plugin: ChoproPlugin) {
+        super(plugin, "Advanced");
+    }
+
+    display(containerEl: HTMLElement): void {
+        new Setting(containerEl)
+            .setName("Log Level")
+            .setDesc("Set the logging level for console output")
+            .addDropdown((dropdown) => {
+                dropdown.addOption(LogLevel.ERROR.toString(), "Error");
+                dropdown.addOption(LogLevel.WARN.toString(), "Warning");
+                dropdown.addOption(LogLevel.INFO.toString(), "Info");
+                dropdown.addOption(LogLevel.DEBUG.toString(), "Debug");
+                dropdown.setValue(this.plugin.settings.logLevel.toString());
+                dropdown.onChange(async (value) => {
+                    this.plugin.settings.logLevel = parseInt(value) as LogLevel;
+                    await this.plugin.saveSettings();
+                });
+            });
+    }
+}
+
 export class ChoproSettingTab extends PluginSettingTab {
     private tabs: SettingsTabPage[];
 
     constructor(app: App, plugin: ChoproPlugin) {
         super(app, plugin);
 
-        this.tabs = [new DisplaySettings(plugin), new FlowSettings(plugin)];
+        this.tabs = [
+            new DisplaySettings(plugin),
+            new FlowSettings(plugin),
+            new AdvancedSettings(plugin),
+        ];
     }
 
     /**

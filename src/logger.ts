@@ -1,3 +1,5 @@
+// basic logging framework
+
 export enum LogLevel {
     DEBUG = 30,
     INFO = 20,
@@ -6,25 +8,32 @@ export enum LogLevel {
     SILENT = -1,
 }
 
-export class LoggerInstance {
-    private name: string;
-    private logLevel: LogLevel;
+export class Logger {
+    private static loggers: Map<string, Logger> = new Map();
+    private static globalLogLevel: LogLevel = LogLevel.ERROR;
 
-    constructor(name: string, logLevel: LogLevel = LogLevel.SILENT) {
-        this.name = name;
-        this.logLevel = logLevel;
+    private _name: string;
+    private _logLevel: LogLevel;
+
+    protected constructor(name: string, logLevel: LogLevel = LogLevel.SILENT) {
+        this._name = name;
+        this._logLevel = logLevel;
     }
 
-    setLogLevel(level: LogLevel): void {
-        this.logLevel = level;
+    get name(): string {
+        return this._name;
+    }
+
+    get logLevel(): LogLevel {
+        return this._logLevel;
     }
 
     private shouldLog(level: LogLevel): boolean {
-        return level <= this.logLevel;
+        return level <= this._logLevel;
     }
 
     log(level: string, message: string, ...args: any[]): void {
-        console.log(`[${level}] STOMP:${this.name} -- ${message}`, ...args);
+        console.log(`[${level}] chopro:${this._name} -- ${message}`, ...args);
     }
 
     debug(message: string, ...args: any[]): void {
@@ -50,20 +59,17 @@ export class LoggerInstance {
             this.log("ERROR", message, ...args);
         }
     }
-}
 
-export class Logger {
-    private static loggers: Map<string, LoggerInstance> = new Map();
-    private static globalLogLevel: LogLevel = LogLevel.ERROR;
+    static getLogger(name: string): Logger {
+        let logger: Logger;
 
-    static getLogger(name: string): LoggerInstance {
-        let logger;
         if (Logger.loggers.has(name)) {
             logger = Logger.loggers.get(name)!;
         } else {
-            logger = new LoggerInstance(name, Logger.globalLogLevel);
+            logger = new Logger(name, Logger.globalLogLevel);
             Logger.loggers.set(name, logger);
         }
+
         return logger;
     }
 
@@ -71,7 +77,7 @@ export class Logger {
         Logger.globalLogLevel = level;
 
         for (const logger of Logger.loggers.values()) {
-            logger.setLogLevel(level);
+            logger._logLevel = level;
         }
     }
 

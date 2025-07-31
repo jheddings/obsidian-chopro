@@ -20,6 +20,7 @@ import { ChordLineConverter } from "./convert";
 import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose";
 import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
+import { Logger, LogLevel } from "./logger";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: "#2563eb", // blue
@@ -29,11 +30,14 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     normalizedChordDisplay: false,
     italicAnnotations: true,
     flowFilesFolder: "",
+    logLevel: LogLevel.ERROR,
 };
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ChoproRenderer;
+
+    private logger: Logger = Logger.getLogger("main");
 
     async onload() {
         await this.loadSettings();
@@ -67,6 +71,14 @@ export default class ChoproPlugin extends Plugin {
         });
 
         this.addSettingTab(new ChoproSettingTab(this.app, this));
+
+        this.logger.info("Plugin loaded");
+    }
+
+    onunload(): void {
+        ChoproStyleManager.removeStyles();
+
+        this.logger.info("Plugin unloaded");
     }
 
     private async openTransposeModal(activeView: MarkdownView): Promise<void> {
@@ -120,6 +132,8 @@ export default class ChoproPlugin extends Plugin {
     }
 
     private applySettings(): void {
+        Logger.setGlobalLogLevel(this.settings.logLevel);
+
         this.renderer = new ChoproRenderer(this.settings);
 
         ChoproStyleManager.applyStyles(this.settings);
@@ -163,10 +177,6 @@ export default class ChoproPlugin extends Plugin {
         } else {
             new Notice("No chord-over-lyrics format found to convert");
         }
-    }
-
-    onunload(): void {
-        ChoproStyleManager.removeStyles();
     }
 }
 
