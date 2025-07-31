@@ -1,5 +1,7 @@
 // config model for the Obsidian ChordPro plugin
 
+import { LogLevel } from "./logger";
+
 export interface ChoproPluginSettings {
     chordColor: string;
     chordSize: number;
@@ -8,4 +10,5 @@ export interface ChoproPluginSettings {
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
     flowFilesFolder: string;
+    logLevel: LogLevel;
 }

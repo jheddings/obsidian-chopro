@@ -3,14 +3,18 @@
 import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
 
 import { ChoproPluginSettings } from "./config";
+import { Logger } from "./logger";
 
 export class FlowGenerator {
     private app: App;
     private settings: ChoproPluginSettings;
+    private logger: Logger;
 
     constructor(app: App, settings: ChoproPluginSettings) {
         this.app = app;
         this.settings = settings;
+
+        this.logger = Logger.getLogger("FlowGenerator");
     }
 
     /**
@@ -63,6 +67,8 @@ export class FlowGenerator {
         let insertText = "";
 
         for (const item of flow) {
+            this.logger.debug(`Processing flow item: ${item}`);
+
             if (typeof item === "string") {
                 // check for local wiki links (format: [[#Section]])
                 const localWikiLinkMatch = item.match(/^\[\[#([^\]]+)\]\]$/);

@@ -2,6 +2,7 @@
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { AbstractNote, MusicNote, NashvilleNumber } from "./music";
+import { Logger } from "./logger";
 
 export abstract class LineSegment {
     constructor() {}
@@ -732,6 +733,9 @@ export class ChoproBlock extends ContentBlock {
      * Attempt to parse raw content into a ChoproBlock.
      */
     static parseRaw(content: string): ChoproBlock {
+        const logger = Logger.getLogger("ChoproBlock");
+        logger.debug(`Parsing raw content with ${content.length} characters`);
+
         const lines = content.split("\n");
         return ChoproBlock.parseLines(lines);
     }
@@ -740,7 +744,11 @@ export class ChoproBlock extends ContentBlock {
      * Parse multiple lines into a ChoproBlock.
      */
     static parseLines(lines: string[]): ChoproBlock {
+        const logger = Logger.getLogger("ChoproBlock");
+        logger.debug(`Parsing ${lines.length} lines into ChoPro block`);
+
         const choproLines: ChoproLine[] = [];
+
         for (const line of lines) {
             const parsedLine = ChoproLine.parse(line);
 
@@ -748,6 +756,7 @@ export class ChoproBlock extends ContentBlock {
                 choproLines.push(parsedLine);
             }
         }
+
         return new ChoproBlock(choproLines);
     }
 
@@ -821,6 +830,9 @@ export class ChoproFile {
      * Parse a complete ChordPro file from source text.
      */
     static parse(source: string): ChoproFile {
+        const logger = Logger.getLogger("ChoproFile");
+        logger.debug(`Parsing ChoPro file with ${source.length} characters`);
+
         let frontmatter: Frontmatter | undefined;
         let remainingContent = source;
 
@@ -829,12 +841,17 @@ export class ChoproFile {
         const frontmatterMatch = source.match(/^---\n(([\s\S]*?)\n)?---/m);
 
         if (frontmatterMatch) {
+            logger.debug("Frontmatter detected, parsing");
             frontmatter = Frontmatter.parse(frontmatterMatch[0]);
             remainingContent = source.substring(frontmatterMatch[0].length);
+        } else {
+            logger.debug("No frontmatter found");
         }
 
+        logger.debug(`Parsing content blocks from ${remainingContent.length} characters`);
         const blocks = ChoproFile.parseContentBlocks(remainingContent);
 
+        logger.info(`Parsed ChoPro file with ${blocks.length} content blocks`);
         return new ChoproFile(frontmatter, blocks);
     }
 

@@ -14,24 +14,22 @@ import {
     ChoproBlock,
     ChordSegment,
 } from "./parser";
+import { Logger } from "./logger";
 
 /**
  * Renderer for converting ChordPro AST into DOM elements
  */
 export class ChoproRenderer {
-    constructor(private settings: ChoproPluginSettings) {}
+    private logger = Logger.getLogger("ChoproRenderer");
 
-    /**
-     * Update renderer settings without creating a new instance
-     */
-    updateSettings(settings: ChoproPluginSettings): void {
-        this.settings = settings;
-    }
+    constructor(private settings: ChoproPluginSettings) {}
 
     /**
      * Render a ChordPro block into DOM elements
      */
     renderBlock(block: ChoproBlock, container: HTMLElement): void {
+        this.logger.debug(`Rendering ${block.lines.length} lines`);
+
         for (const line of block.lines) {
             this.renderLine(container, line);
         }
