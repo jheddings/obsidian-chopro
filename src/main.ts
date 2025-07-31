@@ -40,6 +40,8 @@ export default class ChoproPlugin extends Plugin {
     private logger: Logger = Logger.getLogger("main");
 
     async onload() {
+        this.logger.debug("Initializing plugin");
+
         await this.loadSettings();
 
         this.registerMarkdownCodeBlockProcessor("chopro", (source, el, _ctx) => {
@@ -81,11 +83,32 @@ export default class ChoproPlugin extends Plugin {
         this.logger.info("Plugin unloaded");
     }
 
+    async loadSettings(): Promise<void> {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.applySettings();
+        this.logger.debug("Settings loaded");
+    }
+
+    async saveSettings(): Promise<void> {
+        await this.saveData(this.settings);
+        this.applySettings();
+        this.logger.debug("Settings saved");
+    }
+
+    private applySettings(): void {
+        Logger.setGlobalLogLevel(this.settings.logLevel);
+
+        this.renderer = new ChoproRenderer(this.settings);
+
+        ChoproStyleManager.applyStyles(this.settings);
+    }
+
     private async openTransposeModal(activeView: MarkdownView): Promise<void> {
         const file = activeView.file;
 
         if (!file) {
             new Notice("No file is currently open");
+            this.logger.warn("No file is currently open for transposition");
             return;
         }
 
@@ -95,6 +118,10 @@ export default class ChoproPlugin extends Plugin {
         const currentKey = detectedKey ? detectedKey.toString() : "C";
 
         const modal = new TransposeModal(this.app, currentKey, async (options) => {
+            this.logger.info(
+                `Transposing ${file.basename} from ${options.fromKey} to ${options.toKey}`
+            );
+
             const transposer = new ChoproTransposer({
                 fromKey: options.fromKey,
                 toKey: options.toKey,
@@ -104,10 +131,12 @@ export default class ChoproPlugin extends Plugin {
                 transposer.transpose(song);
                 const transposedContent = song.toString();
                 await this.app.vault.modify(file, transposedContent);
+
                 new Notice("File transposed successfully");
+                this.logger.info(`File ${file.name} transposed successfully`);
             } catch (error) {
-                console.error("Transpose error:", error);
                 new Notice("Error transposing file");
+                this.logger.error("Transpose operation failed", error);
             }
         });
 
@@ -119,35 +148,19 @@ export default class ChoproPlugin extends Plugin {
         await flowGenerator.openFlowFileSelector(editor);
     }
 
-    async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-
-        this.applySettings();
-    }
-
-    async saveSettings(): Promise<void> {
-        await this.saveData(this.settings);
-
-        this.applySettings();
-    }
-
-    private applySettings(): void {
-        Logger.setGlobalLogLevel(this.settings.logLevel);
-
-        this.renderer = new ChoproRenderer(this.settings);
-
-        ChoproStyleManager.applyStyles(this.settings);
-    }
-
     processChoproBlock(source: string, el: HTMLElement): void {
+        this.logger.debug(`Processing ChoPro block with ${source.length} characters`);
+
         try {
             el.empty();
 
             const container = el.createDiv({ cls: "chopro-container" });
             const block = ChoproBlock.parseRaw(source);
             this.renderer.renderBlock(block, container);
+
+            this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
-            console.error("Failed to process ChoPro block:", error);
+            this.logger.error("Failed to process ChoPro block", error);
             el.empty();
             el.createDiv({
                 cls: "chopro-error",
@@ -157,24 +170,31 @@ export default class ChoproPlugin extends Plugin {
     }
 
     async convertChordOverLyrics(view: MarkdownView): Promise<void> {
+        this.logger.debug("Starting chord-over-lyrics conversion");
+
         const file = view.file;
 
         if (!file) {
+            this.logger.warn("No file is currently open for conversion");
             new Notice("No file is currently open");
             return;
         }
 
+        this.logger.debug(`Loading file content for conversion: ${file.name}`);
         const content = await this.app.vault.read(file);
         const choproFile = ChoproFile.parse(content);
 
+        this.logger.debug("Parsing completed, starting conversion");
         const converter = new ChordLineConverter();
         const changed = converter.convert(choproFile);
 
         if (changed) {
+            this.logger.info(`Chord-over-lyrics conversion applied to file: ${file.name}`);
             const convertedContent = choproFile.toString();
             await this.app.vault.modify(file, convertedContent);
             new Notice("Converted chord-over-lyrics format successfully");
         } else {
+            this.logger.debug(`No chord-over-lyrics format found in file: ${file.name}`);
             new Notice("No chord-over-lyrics format found to convert");
         }
     }
@@ -184,6 +204,7 @@ class TransposeModal extends Modal {
     private fromKey: string | null = null;
     private toKey: string = "C";
     private chordType: string = "alpha";
+    private logger: Logger = Logger.getLogger("TransposeModal");
     private onConfirm: (options: TransposeOptions) => void;
 
     constructor(
@@ -280,7 +301,7 @@ class TransposeModal extends Modal {
                     this.onConfirm(options);
                     this.close();
                 } catch (error) {
-                    console.error("Transpose validation error:", error);
+                    this.logger.error("Transpose validation error:", error);
                     new Notice("Invalid transposition parameters");
                 }
             });

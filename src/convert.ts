@@ -15,6 +15,7 @@ import {
     ChordSegment,
     IndexedSegment,
 } from "./parser";
+import { Logger } from "./logger";
 
 export abstract class ChordConverter {
     constructor() {}
@@ -45,6 +46,8 @@ export abstract class ChordConverter {
 }
 
 export class ChordLineConverter extends ChordConverter {
+    private logger = Logger.getLogger("ChordLineConverter");
+
     constructor() {
         super();
     }
@@ -57,10 +60,12 @@ export class ChordLineConverter extends ChordConverter {
         const newLines = this.convertLines(block.lines);
 
         if (newLines) {
+            this.logger.info(`Converted ${block.lines.length} lines to ${newLines.length} lines`);
             block.lines = newLines;
             return true;
         }
 
+        this.logger.debug("No chord-over-lyrics format found in block");
         return false;
     }
 

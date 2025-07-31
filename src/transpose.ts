@@ -25,6 +25,8 @@ import {
     MusicTheory,
 } from "./music";
 
+import { Logger } from "./logger";
+
 export interface TransposeOptions {
     fromKey?: KeyInfo;
     toKey?: KeyInfo;
@@ -186,6 +188,8 @@ export class NashvilleTransposer {
  * Main transposer class that handles complete file transposition
  */
 export class ChoproTransposer {
+    private logger = Logger.getLogger("ChoproTransposer");
+
     constructor(private options: TransposeOptions) {
         this.validateOptions();
     }
@@ -194,6 +198,8 @@ export class ChoproTransposer {
      * Transpose a complete ChordPro file in place.
      */
     async transposeAsync(file: ChoproFile): Promise<TransposeResult> {
+        this.logger.debug("Starting async transposition");
+
         try {
             this.transpose(file);
 
@@ -215,6 +221,10 @@ export class ChoproTransposer {
      * Transpose a complete ChordPro file in place.
      */
     transpose(file: ChoproFile): void {
+        this.logger.debug(
+            `Transposing ${file.blocks.length} blocks from ${this.options.fromKey?.toString()} to ${this.options.toKey?.toString()}`
+        );
+
         file.blocks.forEach((block) => this.transposeBlock(block));
 
         if (!file.frontmatter) {
@@ -222,6 +232,8 @@ export class ChoproTransposer {
         }
 
         this.transposeFrontmatter(file.frontmatter);
+
+        this.logger.debug("Transposition completed");
     }
 
     /**
@@ -229,6 +241,8 @@ export class ChoproTransposer {
      */
     private transposeBlock(block: ContentBlock): void {
         if (block instanceof ChoproBlock) {
+            this.logger.debug(`Transposing ${block.lines.length} lines`);
+
             block.lines.forEach((line) => this.transposeLine(line));
         }
 
@@ -351,6 +365,8 @@ export class ChoproTransposer {
  * Utility functions for the transpose modal.
  */
 export class TransposeUtils {
+    private static logger = Logger.getLogger("TransposeUtils");
+
     /**
      * Get all possible keys (for UI dropdown)
      */
@@ -404,14 +420,19 @@ export class TransposeUtils {
      * Detect the key from a ChordPro file.
      */
     static detectKey(file: ChoproFile): KeyInfo | undefined {
+        TransposeUtils.logger.debug("Starting key detection");
+
         const keyString = file.key;
         if (keyString && this.isValidKey(keyString)) {
+            TransposeUtils.logger.debug(`Key detected from frontmatter: ${keyString}`);
             return KeyInfo.parse(keyString);
         }
 
+        TransposeUtils.logger.debug("No valid key found in frontmatter");
         // TODO: Implement key detection algorithm based on chord analysis
         // This would analyze the chords used to determine the most likely key
 
+        TransposeUtils.logger.warn("Key detection failed - no key found");
         return undefined;
     }
 
