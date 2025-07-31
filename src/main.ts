@@ -18,18 +18,8 @@ import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
 import { FlowGenerator } from "./flow";
 import { ChordLineConverter } from "./convert";
-
 import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose";
-
-export interface ChoproPluginSettings {
-    chordColor: string;
-    chordSize: number;
-    superscriptChordMods: boolean;
-    chordDecorations: string;
-    normalizedChordDisplay: boolean;
-    italicAnnotations: boolean;
-    flowFilesFolder: string;
-}
+import { ChoproPluginSettings } from "./config";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     chordColor: "#2563eb", // blue
