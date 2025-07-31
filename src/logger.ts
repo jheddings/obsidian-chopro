@@ -3,13 +3,14 @@ export enum LogLevel {
     INFO = 20,
     WARN = 10,
     ERROR = 0,
+    SILENT = -1,
 }
 
 export class LoggerInstance {
     private name: string;
     private logLevel: LogLevel;
 
-    constructor(name: string, logLevel: LogLevel = LogLevel.ERROR) {
+    constructor(name: string, logLevel: LogLevel = LogLevel.SILENT) {
         this.name = name;
         this.logLevel = logLevel;
     }
