@@ -1,6 +1,6 @@
 // chopro - Chord Pro Processor for Obsidian
 
-import { ChoproPluginSettings } from "./main";
+import { ChoproPluginSettings } from "./config";
 import {
     BracketChord,
     Annotation,
