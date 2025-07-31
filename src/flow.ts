@@ -2,7 +2,7 @@
 
 import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
 
-import { ChoproPluginSettings } from "./main";
+import { ChoproPluginSettings } from "./config";
 
 export class FlowGenerator {
     private app: App;
