@@ -91,3 +91,30 @@
 .chopro-modal-button-container button {
     padding: 8px 16px;
 }
+
+/* ===== Settings Styles ===== */
+.chopro-settings-tab-container {
+    display: flex;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 20px;
+}
+
+.chopro-settings-tab-button {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-normal);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.chopro-settings-tab-button:hover {
+    background: var(--background-modifier-hover);
+}
+
+.chopro-settings-tab-button-active {
+    color: var(--text-accent);
+    border-bottom-color: var(--interactive-accent);
+    background: var(--background-modifier-active-hover);
+}
