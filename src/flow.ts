@@ -2,7 +2,7 @@
 
 import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
 
-import { ChoproPluginSettings } from "./main";
+import { ChoproPluginSettings } from "./config";
 
 export class FlowGenerator {
     private app: App;
@@ -64,11 +64,12 @@ export class FlowGenerator {
 
         for (const item of flow) {
             if (typeof item === "string") {
-                if (item.startsWith("#")) {
-                    // Section reference - create transclusion
-                    insertText += `![[${file.basename}${item}]]\n`;
+                // check for local wiki links (format: [[#Section]])
+                const localWikiLinkMatch = item.match(/^\[\[#([^\]]+)\]\]$/);
+                if (localWikiLinkMatch) {
+                    const sectionName = localWikiLinkMatch[1];
+                    insertText += `![[${file.basename}#${sectionName}]]\n`;
                 } else {
-                    // Markdown content
                     insertText += `${item}\n`;
                 }
             }

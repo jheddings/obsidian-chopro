@@ -5,13 +5,13 @@ time: 3/4
 key: C
 tempo: 80
 flow:
-  - "#Verse 1"
-  - "#Verse 2"
-  - "#Verse 3"
+  - "[[#Verse 1]]"
+  - "[[#Verse 2]]"
+  - "[[#Verse 3]]"
   - ""
   - ">[!note] Key Change"
   - ""
-  - "#Verse 4"
+  - "[[#Verse 4]]"
 ---
 
 # Amazing Grace
