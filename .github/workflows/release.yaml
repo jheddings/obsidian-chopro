@@ -4,7 +4,7 @@ run-name: Release ${{ github.ref_name }}
 on:
     push:
         tags:
-            - "v*"
+            - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
     release:
@@ -17,7 +17,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "22.17.1"
+                  node-version: "22.18.0"
                   cache: "npm"
 
             - name: Install dependencies
@@ -26,19 +26,14 @@ jobs:
             - name: Build plugin
               run: npm run build
 
-            - name: Extract version from tag
+            - name: Get version from tag
               id: version
-              run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+              run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
-            - name: Verify gh CLI and create release
-              id: create_release
+            - name: Create release
               run: |
-                  # Verify gh CLI is available and authenticated
-                  gh auth status
-
-                  # Create release with auto-generated notes
                   gh release create ${{ github.ref_name }} \
-                    --title "obsidian-chopro-${{ steps.version.outputs.VERSION }}" \
+                    --title "obsidian-stomp-${{ github.ref_name }}" \
                     --generate-notes --draft \
                     ./main.js ./manifest.json ./styles.css
               env:

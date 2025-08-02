@@ -6,16 +6,16 @@
     "license": "MIT",
     "main": "main.js",
     "scripts": {
-        "prepare": "husky install",
+        "prepare": "husky",
         "dev": "node esbuild.config.mjs",
         "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
         "test": "jest test/*.test.ts",
         "format": "prettier --write .",
         "lint": "eslint --fix .",
         "preflight": "npm run build && npm test && npm run format && npm run lint",
-        "release": "npm run preflight && git push origin v$npm_package_version",
-        "version": "node version.mjs && git add manifest.json versions.json",
-        "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\""
+        "release": "npm run preflight && git push && git push --tags",
+        "version": "node version.mjs && npm run format && git add manifest.json versions.json",
+        "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\" && git tag -f $npm_package_version"
     },
     "keywords": [
         "obsidian",
