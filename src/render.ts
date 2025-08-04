@@ -202,12 +202,12 @@ export class ChoproRenderer {
             totalChordLength += prefix.length;
         }
 
-        const note = chord.note.toString(this.settings.normalizedChordDisplay);
+        const note = chord.note.toString(this.settings.renderSettings.normalizedChordDisplay);
         container.createSpan({ text: note });
         totalChordLength += note.length;
 
         if (chord.modifier) {
-            const mod = this.settings.normalizedChordDisplay
+            const mod = this.settings.renderSettings.normalizedChordDisplay
                 ? chord.quality || chord.modifier.toLowerCase()
                 : chord.modifier;
 
@@ -216,7 +216,7 @@ export class ChoproRenderer {
         }
 
         if (chord.bass) {
-            const bass = chord.bass.toString(this.settings.normalizedChordDisplay);
+            const bass = chord.bass.toString(this.settings.renderSettings.normalizedChordDisplay);
             container.createSpan({ text: `/${bass}` });
             totalChordLength += 1 + bass.length; // +1 for the slash
         }
@@ -233,7 +233,7 @@ export class ChoproRenderer {
      * Get prefix and suffix decorations for chords based on settings.
      */
     private getChordDecorations(): { prefix: string; suffix: string } {
-        switch (this.settings.chordDecorations) {
+        switch (this.settings.renderSettings.chordDecorations) {
             case "square":
                 return { prefix: "[", suffix: "]" };
             case "round":
@@ -251,7 +251,7 @@ export class ChoproRenderer {
      * Set minimum width for chord positioning.
      */
     private setMinimumWidth(container: HTMLElement, lengthInChars: number): void {
-        const adjustedWidth = lengthInChars * this.settings.chordSize;
+        const adjustedWidth = lengthInChars * this.settings.renderSettings.chordSize;
         container.style.setProperty("--chord-min-width", `${adjustedWidth}ch`);
     }
 }

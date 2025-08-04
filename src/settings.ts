@@ -48,9 +48,9 @@ class DisplaySettings extends SettingsTabPage {
             .addText((text) =>
                 text
                     .setPlaceholder("#2563eb")
-                    .setValue(this.plugin.settings.chordColor)
+                    .setValue(this.plugin.settings.renderSettings.chordColor)
                     .onChange(async (value) => {
-                        this.plugin.settings.chordColor = value;
+                        this.plugin.settings.renderSettings.chordColor = value;
                         updatePreview();
                     })
             );
@@ -61,10 +61,10 @@ class DisplaySettings extends SettingsTabPage {
             .addSlider((slider) =>
                 slider
                     .setLimits(0.5, 2.0, 0.05)
-                    .setValue(this.plugin.settings.chordSize)
+                    .setValue(this.plugin.settings.renderSettings.chordSize)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
-                        this.plugin.settings.chordSize = value;
+                        this.plugin.settings.renderSettings.chordSize = value;
                         updatePreview();
                     })
             );
@@ -74,9 +74,9 @@ class DisplaySettings extends SettingsTabPage {
             .setDesc("Display chord modifiers (7, maj7, sus4, etc.) as superscript")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.plugin.settings.superscriptChordMods)
+                    .setValue(this.plugin.settings.renderSettings.superscriptChordMods)
                     .onChange(async (value) => {
-                        this.plugin.settings.superscriptChordMods = value;
+                        this.plugin.settings.renderSettings.superscriptChordMods = value;
                         updatePreview();
                     })
             );
@@ -91,9 +91,9 @@ class DisplaySettings extends SettingsTabPage {
                     .addOption("round", "( )")
                     .addOption("curly", "{ }")
                     .addOption("angle", "< >")
-                    .setValue(this.plugin.settings.chordDecorations)
+                    .setValue(this.plugin.settings.renderSettings.chordDecorations)
                     .onChange(async (value) => {
-                        this.plugin.settings.chordDecorations = value;
+                        this.plugin.settings.renderSettings.chordDecorations = value;
                         updatePreview();
                     })
             );
@@ -103,9 +103,9 @@ class DisplaySettings extends SettingsTabPage {
             .setDesc("Use normalized chord representations (F# → F♯, Bb → B♭)")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.plugin.settings.normalizedChordDisplay)
+                    .setValue(this.plugin.settings.renderSettings.normalizedChordDisplay)
                     .onChange(async (value) => {
-                        this.plugin.settings.normalizedChordDisplay = value;
+                        this.plugin.settings.renderSettings.normalizedChordDisplay = value;
                         updatePreview();
                     })
             );
@@ -114,10 +114,12 @@ class DisplaySettings extends SettingsTabPage {
             .setName("Italic annotations")
             .setDesc("Display inline annotations in italics")
             .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.italicAnnotations).onChange(async (value) => {
-                    this.plugin.settings.italicAnnotations = value;
-                    updatePreview();
-                })
+                toggle
+                    .setValue(this.plugin.settings.renderSettings.italicAnnotations)
+                    .onChange(async (value) => {
+                        this.plugin.settings.renderSettings.italicAnnotations = value;
+                        updatePreview();
+                    })
             );
 
         const previewDiv = containerEl.createDiv({ cls: "setting-item" });
@@ -162,9 +164,9 @@ class FlowSettings extends SettingsTabPage {
             .addText((text) =>
                 text
                     .setPlaceholder("folder/path")
-                    .setValue(this.plugin.settings.flowFilesFolder)
+                    .setValue(this.plugin.settings.flowSettings.flowFilesFolder)
                     .onChange(async (value) => {
-                        this.plugin.settings.flowFilesFolder = value;
+                        this.plugin.settings.flowSettings.flowFilesFolder = value;
                         this.plugin.saveSettings();
                     })
             );
@@ -173,9 +175,11 @@ class FlowSettings extends SettingsTabPage {
             .setName("Blank line")
             .setDesc("Add a blank line after each flow item")
             .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.flowExtraLine).onChange(async (value) => {
-                    this.plugin.settings.flowExtraLine = value;
-                })
+                toggle
+                    .setValue(this.plugin.settings.flowSettings.flowExtraLine)
+                    .onChange(async (value) => {
+                        this.plugin.settings.flowSettings.flowExtraLine = value;
+                    })
             );
     }
 }

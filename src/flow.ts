@@ -23,7 +23,7 @@ export class FlowGenerator {
     async openFlowFileSelector(editor: Editor): Promise<void> {
         const modal = new FlowFileSelector(
             this.app,
-            this.settings.flowFilesFolder,
+            this.settings.flowSettings.flowFilesFolder,
             async (file) => {
                 await this.insertFlowFromFile(file, editor);
             }
@@ -79,7 +79,7 @@ export class FlowGenerator {
             }
         }
 
-        if (this.settings.flowExtraLine) {
+        if (this.settings.flowSettings.flowExtraLine) {
             return flowLines.join("\n\n");
         }
 

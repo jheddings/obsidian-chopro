@@ -23,14 +23,18 @@ import { ChoproSettingTab } from "./settings";
 import { Logger, LogLevel } from "./logger";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
-    chordColor: "#2563eb", // blue
-    chordSize: 1.0,
-    superscriptChordMods: false,
-    chordDecorations: "none",
-    normalizedChordDisplay: false,
-    italicAnnotations: true,
-    flowFilesFolder: "",
-    flowExtraLine: true,
+    renderSettings: {
+        chordColor: "#2563eb", // blue
+        chordSize: 1.0,
+        superscriptChordMods: false,
+        chordDecorations: "none",
+        normalizedChordDisplay: false,
+        italicAnnotations: true,
+    },
+    flowSettings: {
+        flowFilesFolder: "",
+        flowExtraLine: true,
+    },
     logLevel: LogLevel.ERROR,
 };
 
