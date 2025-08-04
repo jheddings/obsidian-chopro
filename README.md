@@ -14,6 +14,7 @@ An Obsidian plugin that renders ChordPro format chord sheets with accurate chord
 - **Configurable Styling**: Customizable chord color, directive display
 - **Chord Normalization**: Automatic cleanup and standardization of chord notation
 - **Transpose Files**: Transpose entire files between keys or chord notations
+- **ChoPro Callouts**: Custom `[!chopro]` callouts for advanced song transclusion with flow control and key transposition
 
 ## Usage
 
@@ -27,6 +28,25 @@ That [C]saved a [Am]wretch like [F]me[G]
 Was [C]blind but [Am]now I [F]see[C]
 ```
 ````
+
+## ChoPro Callouts
+
+The plugin also supports custom `[!chopro]` callouts for advanced song rendering with flow control and transposition:
+
+```markdown
+> [!chopro] [[song-name]]
+> flow: on
+> key: G
+```
+
+This feature allows you to:
+
+- Transclude entire song files or specific sections
+- Control rendering order with flow arrays
+- Transpose songs to different keys
+- Create dynamic set lists and practice sheets
+
+See [CALLOUT_FEATURE.md](docs/CALLOUT_FEATURE.md) for detailed documentation.
 
 ## Commands
 

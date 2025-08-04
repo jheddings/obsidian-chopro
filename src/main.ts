@@ -21,6 +21,7 @@ import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose"
 import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
 import { Logger, LogLevel } from "./logger";
+import { ChoproCalloutProcessor } from "./callout";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     rendering: {
@@ -35,12 +36,13 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
         filesFolder: "",
         extraLine: true,
     },
-    logLevel: LogLevel.ERROR,
+    logLevel: LogLevel.DEBUG,
 };
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ChoproRenderer;
+    calloutProcessor: ChoproCalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
 
@@ -51,6 +53,10 @@ export default class ChoproPlugin extends Plugin {
 
         this.registerMarkdownCodeBlockProcessor("chopro", (source, el, _ctx) => {
             this.processChoproBlock(source, el);
+        });
+
+        this.registerMarkdownPostProcessor(async (el, ctx) => {
+            await this.calloutProcessor.processCallouts(el, ctx);
         });
 
         this.addCommand({
@@ -104,6 +110,11 @@ export default class ChoproPlugin extends Plugin {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
         this.renderer = new ChoproRenderer(this.settings.rendering);
+        this.calloutProcessor = new ChoproCalloutProcessor(
+            this.app,
+            this.settings.rendering,
+            this.settings.flow
+        );
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
