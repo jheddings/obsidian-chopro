@@ -12,12 +12,12 @@ export interface RenderSettings {
 }
 
 export interface FlowSettings {
-    flowFilesFolder: string;
-    flowExtraLine: boolean;
+    filesFolder: string;
+    extraLine: boolean;
 }
 
 export interface ChoproPluginSettings {
-    renderSettings: RenderSettings;
-    flowSettings: FlowSettings;
+    rendering: RenderSettings;
+    flow: FlowSettings;
     logLevel: LogLevel;
 }

@@ -27,8 +27,8 @@ export class ChoproStyleManager {
             let overrides = "";
 
             // Validate and sanitize color value
-            const colorValue = this.sanitizeColorValue(settings.renderSettings.chordColor);
-            const sizeValue = this.sanitizeSizeValue(settings.renderSettings.chordSize);
+            const colorValue = this.sanitizeColorValue(settings.rendering.chordColor);
+            const sizeValue = this.sanitizeSizeValue(settings.rendering.chordSize);
 
             // Chord and annotation color and size overrides
             overrides += `
@@ -43,7 +43,7 @@ export class ChoproStyleManager {
             `;
 
             // Italic annotations override
-            if (settings.renderSettings.italicAnnotations) {
+            if (settings.rendering.italicAnnotations) {
                 overrides += `
                 .chopro-annotation {
                     font-style: italic;
@@ -52,7 +52,7 @@ export class ChoproStyleManager {
             }
 
             // Superscript chord modifiers override
-            if (settings.renderSettings.superscriptChordMods) {
+            if (settings.rendering.superscriptChordMods) {
                 overrides += `
                 .chopro-chord-modifier {
                     vertical-align: top;
