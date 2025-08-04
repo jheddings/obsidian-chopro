@@ -10,5 +10,6 @@ export interface ChoproPluginSettings {
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
     flowFilesFolder: string;
+    flowExtraLine: boolean;
     logLevel: LogLevel;
 }

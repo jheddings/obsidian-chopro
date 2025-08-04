@@ -30,6 +30,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     normalizedChordDisplay: false,
     italicAnnotations: true,
     flowFilesFolder: "",
+    flowExtraLine: true,
     logLevel: LogLevel.ERROR,
 };
 
