@@ -36,12 +36,13 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
         filesFolder: "",
         extraLine: true,
     },
-    logLevel: LogLevel.DEBUG,
+    logLevel: LogLevel.ERROR,
 };
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ChoproRenderer;
+    flowGenerator: FlowGenerator;
     calloutProcessor: ChoproCalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
@@ -51,8 +52,8 @@ export default class ChoproPlugin extends Plugin {
 
         await this.loadSettings();
 
-        this.registerMarkdownCodeBlockProcessor("chopro", (source, el, _ctx) => {
-            this.processChoproBlock(source, el);
+        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el, _ctx) => {
+            await this.processChoproBlock(source, el);
         });
 
         this.registerMarkdownPostProcessor(async (el, ctx) => {
@@ -110,10 +111,11 @@ export default class ChoproPlugin extends Plugin {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
         this.renderer = new ChoproRenderer(this.settings.rendering);
+        this.flowGenerator = new FlowGenerator(this.app, this.settings.flow);
         this.calloutProcessor = new ChoproCalloutProcessor(
             this.app,
-            this.settings.rendering,
-            this.settings.flow
+            this.renderer,
+            this.flowGenerator
         );
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
@@ -160,11 +162,10 @@ export default class ChoproPlugin extends Plugin {
     }
 
     private async openFlowFileSelector(editor: Editor) {
-        const flowGenerator = new FlowGenerator(this.app, this.settings.flow);
-        await flowGenerator.openFlowFileSelector(editor);
+        await this.flowGenerator.openFlowFileSelector(editor);
     }
 
-    processChoproBlock(source: string, el: HTMLElement): void {
+    async processChoproBlock(source: string, el: HTMLElement): Promise<void> {
         this.logger.debug(`Processing ChoPro block with ${source.length} characters`);
 
         try {
