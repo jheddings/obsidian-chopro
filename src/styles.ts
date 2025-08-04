@@ -1,6 +1,6 @@
 // styles - Style Manager for the ChoPro plugin in Obsidian
 
-import { ChoproPluginSettings } from "./config";
+import { RenderSettings } from "./config";
 
 export class ChoproStyleManager {
     private static readonly STYLE_ID = "chopro-plugin-user-overrides";
@@ -16,7 +16,7 @@ export class ChoproStyleManager {
         }
     }
 
-    static applyStyles(settings: ChoproPluginSettings): void {
+    static applyStyles(settings: RenderSettings): void {
         try {
             this.removeStyles();
 
@@ -27,8 +27,8 @@ export class ChoproStyleManager {
             let overrides = "";
 
             // Validate and sanitize color value
-            const colorValue = this.sanitizeColorValue(settings.rendering.chordColor);
-            const sizeValue = this.sanitizeSizeValue(settings.rendering.chordSize);
+            const colorValue = this.sanitizeColorValue(settings.chordColor);
+            const sizeValue = this.sanitizeSizeValue(settings.chordSize);
 
             // Chord and annotation color and size overrides
             overrides += `
@@ -43,7 +43,7 @@ export class ChoproStyleManager {
             `;
 
             // Italic annotations override
-            if (settings.rendering.italicAnnotations) {
+            if (settings.italicAnnotations) {
                 overrides += `
                 .chopro-annotation {
                     font-style: italic;
@@ -52,7 +52,7 @@ export class ChoproStyleManager {
             }
 
             // Superscript chord modifiers override
-            if (settings.rendering.superscriptChordMods) {
+            if (settings.superscriptChordMods) {
                 overrides += `
                 .chopro-chord-modifier {
                     vertical-align: top;

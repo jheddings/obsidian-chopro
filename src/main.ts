@@ -103,9 +103,9 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ChoproRenderer(this.settings);
+        this.renderer = new ChoproRenderer(this.settings.rendering);
 
-        ChoproStyleManager.applyStyles(this.settings);
+        ChoproStyleManager.applyStyles(this.settings.rendering);
     }
 
     private async openTransposeModal(activeView: MarkdownView): Promise<void> {
@@ -149,7 +149,7 @@ export default class ChoproPlugin extends Plugin {
     }
 
     private async openFlowFileSelector(editor: Editor) {
-        const flowGenerator = new FlowGenerator(this.app, this.settings);
+        const flowGenerator = new FlowGenerator(this.app, this.settings.flow);
         await flowGenerator.openFlowFileSelector(editor);
     }
 

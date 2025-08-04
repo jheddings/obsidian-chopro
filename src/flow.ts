@@ -2,15 +2,15 @@
 
 import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
 
-import { ChoproPluginSettings } from "./config";
+import { FlowSettings } from "./config";
 import { Logger } from "./logger";
 
 export class FlowGenerator {
     private app: App;
-    private settings: ChoproPluginSettings;
+    private settings: FlowSettings;
     private logger: Logger;
 
-    constructor(app: App, settings: ChoproPluginSettings) {
+    constructor(app: App, settings: FlowSettings) {
         this.app = app;
         this.settings = settings;
 
@@ -21,13 +21,9 @@ export class FlowGenerator {
      * Opens a file selector modal for choosing flow files
      */
     async openFlowFileSelector(editor: Editor): Promise<void> {
-        const modal = new FlowFileSelector(
-            this.app,
-            this.settings.flow.filesFolder,
-            async (file) => {
-                await this.insertFlowFromFile(file, editor);
-            }
-        );
+        const modal = new FlowFileSelector(this.app, this.settings.filesFolder, async (file) => {
+            await this.insertFlowFromFile(file, editor);
+        });
         modal.open();
     }
 
@@ -79,7 +75,7 @@ export class FlowGenerator {
             }
         }
 
-        if (this.settings.flow.extraLine) {
+        if (this.settings.extraLine) {
             return flowLines.join("\n\n");
         }
 
