@@ -46,15 +46,10 @@
     "dependencies": {
         "yaml": "^2.8.0"
     },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged"
-        }
-    },
     "lint-staged": {
         "*.{js,jsx,ts,tsx,json,css,scss}": [
-            "prettier --write",
-            "eslint --fix"
+            "prettier --check",
+            "eslint"
         ]
     }
 }
