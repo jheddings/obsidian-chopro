@@ -64,24 +64,26 @@ export class FlowGenerator {
      * Processes an array of flow items into formatted text
      */
     private processFlowArray(flow: string[], file: TFile): string {
-        let insertText = "";
+        let flowLines: string[] = [];
 
         for (const item of flow) {
             this.logger.debug(`Processing flow item: ${item}`);
 
-            if (typeof item === "string") {
-                // check for local wiki links (format: [[#Section]])
-                const localWikiLinkMatch = item.match(/^\[\[#([^\]]+)\]\]$/);
-                if (localWikiLinkMatch) {
-                    const sectionName = localWikiLinkMatch[1];
-                    insertText += `![[${file.basename}#${sectionName}]]\n`;
-                } else {
-                    insertText += `${item}\n`;
-                }
+            // check for local wiki links (format: [[#Section]])
+            const localWikiLinkMatch = item.match(/^\[\[#([^\]]+)\]\]$/);
+            if (localWikiLinkMatch) {
+                const sectionName = localWikiLinkMatch[1];
+                flowLines.push(`![[${file.basename}#${sectionName}]]`);
+            } else {
+                flowLines.push(item);
             }
         }
 
-        return insertText;
+        if (this.settings.flowExtraLine) {
+            return flowLines.join("\n\n");
+        }
+
+        return flowLines.join("\n");
     }
 }
 

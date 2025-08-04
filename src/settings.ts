@@ -43,7 +43,7 @@ class DisplaySettings extends SettingsTabPage {
 
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName("Chord Color")
+            .setName("Chord color")
             .setDesc("Color for chord text (CSS color value)")
             .addText((text) =>
                 text
@@ -56,7 +56,7 @@ class DisplaySettings extends SettingsTabPage {
             );
 
         new Setting(containerEl)
-            .setName("Chord Size")
+            .setName("Chord size")
             .setDesc("Font size for chord text (relative to base font)")
             .addSlider((slider) =>
                 slider
@@ -70,7 +70,7 @@ class DisplaySettings extends SettingsTabPage {
             );
 
         new Setting(containerEl)
-            .setName("Superscript Chord Modifiers")
+            .setName("Superscript chord modifiers")
             .setDesc("Display chord modifiers (7, maj7, sus4, etc.) as superscript")
             .addToggle((toggle) =>
                 toggle
@@ -82,7 +82,7 @@ class DisplaySettings extends SettingsTabPage {
             );
 
         new Setting(containerEl)
-            .setName("Chord Decorators")
+            .setName("Chord decorations")
             .setDesc("Wrap chords with bracket pairs for emphasis")
             .addDropdown((dropdown) =>
                 dropdown
@@ -99,7 +99,7 @@ class DisplaySettings extends SettingsTabPage {
             );
 
         new Setting(containerEl)
-            .setName("Normalized Chord Display")
+            .setName("Normalized chord display")
             .setDesc("Use normalized chord representations (F# → F♯, Bb → B♭)")
             .addToggle((toggle) =>
                 toggle
@@ -111,7 +111,7 @@ class DisplaySettings extends SettingsTabPage {
             );
 
         new Setting(containerEl)
-            .setName("Italic Annotations")
+            .setName("Italic annotations")
             .setDesc("Display inline annotations in italics")
             .addToggle((toggle) =>
                 toggle.setValue(this.plugin.settings.italicAnnotations).onChange(async (value) => {
@@ -157,7 +157,7 @@ class FlowSettings extends SettingsTabPage {
 
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName("Song Folder")
+            .setName("Song folder")
             .setDesc("Folder to search for song files (leave empty for all files)")
             .addText((text) =>
                 text
@@ -167,6 +167,15 @@ class FlowSettings extends SettingsTabPage {
                         this.plugin.settings.flowFilesFolder = value;
                         this.plugin.saveSettings();
                     })
+            );
+
+        new Setting(containerEl)
+            .setName("Blank line")
+            .setDesc("Add a blank line after each flow item")
+            .addToggle((toggle) =>
+                toggle.setValue(this.plugin.settings.flowExtraLine).onChange(async (value) => {
+                    this.plugin.settings.flowExtraLine = value;
+                })
             );
     }
 }
@@ -181,7 +190,7 @@ class AdvancedSettings extends SettingsTabPage {
 
     display(containerEl: HTMLElement): void {
         new Setting(containerEl)
-            .setName("Log Level")
+            .setName("Log level")
             .setDesc("Set the logging level for console output")
             .addDropdown((dropdown) => {
                 dropdown.addOption(LogLevel.ERROR.toString(), "Error");

@@ -8,9 +8,7 @@ flow:
   - "[[#Verse 1]]"
   - "[[#Verse 2]]"
   - "[[#Verse 3]]"
-  - ""
   - ">[!note] Key Change"
-  - ""
   - "[[#Verse 4]]"
 ---
 
