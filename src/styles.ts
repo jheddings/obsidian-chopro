@@ -1,6 +1,6 @@
 // styles - Style Manager for the ChoPro plugin in Obsidian
 
-import { ChoproPluginSettings } from "./config";
+import { RenderSettings } from "./config";
 
 export class ChoproStyleManager {
     private static readonly STYLE_ID = "chopro-plugin-user-overrides";
@@ -16,7 +16,7 @@ export class ChoproStyleManager {
         }
     }
 
-    static applyStyles(settings: ChoproPluginSettings): void {
+    static applyStyles(settings: RenderSettings): void {
         try {
             this.removeStyles();
 

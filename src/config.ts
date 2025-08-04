@@ -2,14 +2,22 @@
 
 import { LogLevel } from "./logger";
 
-export interface ChoproPluginSettings {
+export interface RenderSettings {
     chordColor: string;
     chordSize: number;
     superscriptChordMods: boolean;
     chordDecorations: string;
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
-    flowFilesFolder: string;
-    flowExtraLine: boolean;
+}
+
+export interface FlowSettings {
+    filesFolder: string;
+    extraLine: boolean;
+}
+
+export interface ChoproPluginSettings {
+    rendering: RenderSettings;
+    flow: FlowSettings;
     logLevel: LogLevel;
 }

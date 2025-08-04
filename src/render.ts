@@ -1,6 +1,6 @@
 // chopro - Chord Pro Processor for Obsidian
 
-import { ChoproPluginSettings } from "./config";
+import { RenderSettings } from "./config";
 import {
     BracketChord,
     Annotation,
@@ -22,7 +22,7 @@ import { Logger } from "./logger";
 export class ChoproRenderer {
     private logger = Logger.getLogger("ChoproRenderer");
 
-    constructor(private settings: ChoproPluginSettings) {}
+    constructor(private settings: RenderSettings) {}
 
     /**
      * Render a ChordPro block into DOM elements
