@@ -27,7 +27,7 @@ export class ChoproRenderer {
     /**
      * Render a ChordPro block into DOM elements
      */
-    renderBlock(block: ChoproBlock, container: HTMLElement): void {
+    renderChoproBlock(block: ChoproBlock, container: HTMLElement): void {
         this.logger.debug(`Rendering ${block.lines.length} lines`);
 
         for (const line of block.lines) {

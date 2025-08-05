@@ -144,7 +144,7 @@ class DisplaySettings extends SettingsTabPage {
 
             const sample = choproPreview.replace(/^\s+/m, "");
             const block = ChoproBlock.parseRaw(sample);
-            this.plugin.renderer.renderBlock(block, preview);
+            this.plugin.renderer.renderChoproBlock(block, preview);
         };
 
         // initial preview

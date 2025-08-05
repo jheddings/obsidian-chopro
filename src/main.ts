@@ -111,12 +111,8 @@ export default class ChoproPlugin extends Plugin {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
         this.renderer = new ChoproRenderer(this.settings.rendering);
-        this.flowGenerator = new FlowGenerator(this.app, this.settings.flow);
-        this.calloutProcessor = new ChoproCalloutProcessor(
-            this.app,
-            this.renderer,
-            this.flowGenerator
-        );
+        this.flowGenerator = new FlowGenerator(this, this.settings.flow);
+        this.calloutProcessor = new ChoproCalloutProcessor(this, this.renderer, this.flowGenerator);
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
@@ -173,7 +169,7 @@ export default class ChoproPlugin extends Plugin {
 
             const container = el.createDiv({ cls: "chopro-container" });
             const block = ChoproBlock.parseRaw(source);
-            this.renderer.renderBlock(block, container);
+            this.renderer.renderChoproBlock(block, container);
 
             this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
