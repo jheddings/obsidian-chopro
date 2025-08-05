@@ -11,16 +11,10 @@
     overflow-x: auto;
 }
 
-.chopro-text {
-    color: var(--text-normal);
-    white-space: pre-wrap;
-}
-
-.chopro-preview {
-    line-height: 1.8;
-    padding: 1rem;
-    background: var(--background-secondary);
-    border-radius: 6px;
+.callout[data-callout="chopro"] {
+    background: var(--background-primary);
+    padding: 0;
+    overflow-x: auto;
 }
 
 /* ===== Line and Pair Layout ===== */
@@ -83,43 +77,6 @@
 .chopro-pair .chopro-lyrics:empty::after {
     content: "\00A0";
     min-width: 1ch;
-}
-
-/* ===== ChoPro Callout Styles ===== */
-.chopro-callout-container {
-    line-height: 1.8;
-    white-space: pre;
-    tab-size: 4;
-    padding: 0.5rem;
-    background: var(--background-primary);
-    border-radius: 6px;
-    overflow-x: auto;
-}
-
-.chopro-callout-error {
-    color: var(--text-error);
-    background: var(--background-modifier-error);
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-.chopro-flow-item {
-    margin-bottom: 1rem;
-}
-
-.chopro-flow-callout {
-    padding: 0.5rem;
-    margin: 0.5rem 0;
-    border-left: 3px solid var(--text-accent);
-    background: var(--background-secondary);
-    border-radius: 0 4px 4px 0;
-}
-
-.chopro-flow-text {
-    padding: 0.25rem 0;
-    color: var(--text-muted);
-    font-style: italic;
 }
 
 /* ===== Modal Styles ===== */
