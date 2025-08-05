@@ -31,9 +31,9 @@ export class CalloutProcessor {
 
         this.logger.debug(`Processing ${callouts.length} chopro callouts`);
 
-        for (let i = 0; i < callouts.length; i++) {
-            await this.processCallout(callouts[i] as HTMLElement, ctx);
-        }
+        callouts.forEach(async (callout) => {
+            await this.processCallout(callout as HTMLElement, ctx);
+        });
     }
 
     /**
@@ -126,11 +126,6 @@ export class CalloutProcessor {
         features: CalloutFeatures
     ): Promise<void> {
         callout.empty();
-
-        // remove all callout-related classes to prevent style interference
-        callout.className = "";
-        callout.removeAttribute("data-callout");
-        callout.removeAttribute("style");
 
         let content: string;
 
