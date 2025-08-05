@@ -42,6 +42,8 @@ export class CalloutProcessor {
     async processCallout(callout: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
         const wikilink = this.extractWikilink(callout);
 
+        this.logger.debug(`Processing callout: ${wikilink}`);
+
         const targetFile = this.plugin.app.metadataCache.getFirstLinkpathDest(
             wikilink,
             ctx.sourcePath
@@ -103,6 +105,8 @@ export class CalloutProcessor {
             const [key, ...valueParts] = trimmed.split(":");
             const value = valueParts.join(":").trim();
 
+            this.logger.debug(`Feature key: ${key} => ${value}`);
+
             if (key.trim() === "flow") {
                 if (["on", "true", "yes", "1"].includes(value)) {
                     features.flow = true;
@@ -131,13 +135,13 @@ export class CalloutProcessor {
         let content: string;
 
         if (features.flow) {
+            this.logger.debug("Rendering flow content");
             content = this.flowGenerator.generateFlowMarkdown(file);
         } else {
+            this.logger.debug("Rendering markdown content");
             content = await this.plugin.app.vault.read(file);
         }
 
-        const container = callout.createDiv({ cls: "chopro-callout-container" });
-
-        MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+        MarkdownRenderer.render(this.plugin.app, content, callout, file.path, this.plugin);
     }
 }

@@ -166,21 +166,18 @@ export default class ChoproPlugin extends Plugin {
     async processChoproBlock(source: string, el: HTMLElement): Promise<void> {
         this.logger.debug(`Processing ChoPro block with ${source.length} characters`);
 
-        try {
-            el.empty();
+        el.empty();
 
-            const container = el.createDiv({ cls: "chopro-container" });
+        const container = el.createDiv({ cls: "chopro-container" });
+
+        try {
             const block = ChoproBlock.parseRaw(source);
             this.renderer.renderChoproBlock(block, container);
-
             this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
-            this.logger.error("Failed to process ChoPro block", error);
+            this.logger.error("Failed to process ChoPro block: ", error);
             el.empty();
-            el.createDiv({
-                cls: "chopro-error",
-                text: "Error parsing ChoPro content",
-            });
+            el.createDiv({ cls: "chopro-error", text: "Error parsing ChoPro content" });
         }
     }
 

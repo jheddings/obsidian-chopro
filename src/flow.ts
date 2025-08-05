@@ -18,7 +18,7 @@ export class FlowGenerator {
     }
 
     /**
-     * Opens a file selector modal for choosing flow files
+     * Opens a file selector modal for choosing flow files.
      */
     async openFlowFileSelector(editor: Editor): Promise<void> {
         const modal = new FlowFileSelector(this.app, this.settings.filesFolder, async (file) => {
@@ -28,7 +28,7 @@ export class FlowGenerator {
     }
 
     /**
-     * Inserts flow content from a selected file into the editor
+     * Inserts flow content from a selected file into the editor.
      */
     async insertFlowFromFile(file: TFile, editor: Editor): Promise<void> {
         try {
@@ -85,7 +85,7 @@ export class FlowGenerator {
 }
 
 /**
- * Modal for selecting flow files from the vault
+ * Modal for selecting flow files from the vault.
  */
 export class FlowFileSelector extends FuzzySuggestModal<TFile> {
     private onSelect: (file: TFile) => Promise<void>;
