@@ -6,17 +6,19 @@ import { Logger } from "./logger";
 import { ChoproRenderer } from "./render";
 import { FlowGenerator } from "./flow";
 
+const TRUTHY_VALUES = ["on", "true", "yes", "y"];
+
 /**
  * Returns true if the value is a common boolean.
  */
-export function isTruthy(value: any): boolean {
+function isTruthy(value: any): boolean {
     if (typeof value === "boolean") {
         return value as boolean;
     } else if (typeof value === "string") {
         const lowerValue = value.toLowerCase();
-        return ["on", "true", "yes"].includes(lowerValue);
+        return TRUTHY_VALUES.includes(lowerValue);
     } else if (typeof value === "number") {
-        return value !== 0;
+        return value > 0;
     }
 
     return false;
@@ -111,10 +113,6 @@ export class CalloutProcessor {
         const features: CalloutFeatures = {
             flow: true,
         };
-
-        if (!content) {
-            return features;
-        }
 
         try {
             const yamlData = parseYaml(content);
