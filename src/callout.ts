@@ -1,6 +1,6 @@
 // callout - ChoPro callout processor for Obsidian
 
-import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer } from "obsidian";
+import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
 import { Logger } from "./logger";
 import { ChoproRenderer } from "./render";
@@ -93,25 +93,22 @@ export class CalloutProcessor {
         const content = contentEl?.textContent?.trim() || "";
 
         const features: CalloutFeatures = {
-            flow: false,
+            flow: true,
         };
 
-        const lines = content.split("\n");
+        if (!content) {
+            return features;
+        }
 
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
+        try {
+            const yamlData = parseYaml(content);
+            this.logger.debug("Parsed YAML data:", yamlData);
 
-            const [key, ...valueParts] = trimmed.split(":");
-            const value = valueParts.join(":").trim();
-
-            this.logger.debug(`Feature key: ${key} => ${value}`);
-
-            if (key.trim() === "flow") {
-                if (["on", "true", "yes", "1"].includes(value)) {
-                    features.flow = true;
-                }
+            if ("flow" in yamlData) {
+                features.flow = yamlData.flow as boolean;
             }
+        } catch (error) {
+            this.logger.warn(`Failed to parse features: ${error.message}`);
         }
 
         return features;
