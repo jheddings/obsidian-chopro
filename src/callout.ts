@@ -6,6 +6,22 @@ import { Logger } from "./logger";
 import { ChoproRenderer } from "./render";
 import { FlowGenerator } from "./flow";
 
+/**
+ * Returns true if the value is a common boolean.
+ */
+export function isTruthy(value: any): boolean {
+    if (typeof value === "boolean") {
+        return value as boolean;
+    } else if (typeof value === "string") {
+        const lowerValue = value.toLowerCase();
+        return ["on", "true", "yes"].includes(lowerValue);
+    } else if (typeof value === "number") {
+        return value !== 0;
+    }
+
+    return false;
+}
+
 export interface CalloutFeatures {
     flow: boolean;
 }
@@ -105,7 +121,7 @@ export class CalloutProcessor {
             this.logger.debug("Parsed YAML data:", yamlData);
 
             if ("flow" in yamlData) {
-                features.flow = yamlData.flow as boolean;
+                features.flow = isTruthy(yamlData.flow);
             }
         } catch (error) {
             this.logger.warn(`Failed to parse features: ${error.message}`);
