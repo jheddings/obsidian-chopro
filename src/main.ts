@@ -57,7 +57,9 @@ export default class ChoproPlugin extends Plugin {
         });
 
         this.registerMarkdownPostProcessor(async (el, ctx) => {
-            await this.calloutProcessor.processCallouts(el, ctx);
+            el.querySelectorAll('.callout[data-callout="chopro"]').forEach((callout) => {
+                this.calloutProcessor.processCallout(callout as HTMLElement, ctx);
+            });
         });
 
         this.addCommand({

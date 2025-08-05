@@ -2,8 +2,8 @@
 
 import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer } from "obsidian";
 
-import { ChoproRenderer } from "./render";
 import { Logger } from "./logger";
+import { ChoproRenderer } from "./render";
 import { FlowGenerator } from "./flow";
 
 export interface CalloutFeatures {
@@ -13,11 +13,15 @@ export interface CalloutFeatures {
 export class CalloutProcessor {
     private logger = Logger.getLogger("CalloutProcessor");
 
-    constructor(
-        private plugin: Plugin,
-        private renderer: ChoproRenderer,
-        private flowGenerator: FlowGenerator
-    ) {}
+    private plugin: Plugin;
+    private renderer: ChoproRenderer;
+    private flowGenerator: FlowGenerator;
+
+    constructor(plugin: Plugin, renderer: ChoproRenderer, flowGenerator: FlowGenerator) {
+        this.plugin = plugin;
+        this.renderer = renderer;
+        this.flowGenerator = flowGenerator;
+    }
 
     /**
      * Process ChoPro callouts in markdown content
@@ -28,55 +32,55 @@ export class CalloutProcessor {
         this.logger.debug(`Processing ${callouts.length} chopro callouts`);
 
         for (let i = 0; i < callouts.length; i++) {
-            await this.processChoproCallout(callouts[i] as HTMLElement, ctx);
+            await this.processCallout(callouts[i] as HTMLElement, ctx);
         }
     }
 
     /**
      * Process a single ChoPro callout
      */
-    private async processChoproCallout(
-        callout: HTMLElement,
-        ctx: MarkdownPostProcessorContext
-    ): Promise<void> {
-        const titleEl = callout.querySelector(".callout-title");
-        if (!titleEl) {
-            this.logger.warn("Missing callout title");
-            return;
-        }
-
-        let fileName: string | null = null;
-
-        const linkEl = titleEl.querySelector("a.internal-link");
-        if (linkEl) {
-            const href = linkEl.getAttribute("href");
-            if (href) {
-                fileName = href;
-            }
-        }
-
-        const linkMatch = titleEl.textContent?.match(/\[\[([^\]]+)\]\]/);
-        if (linkMatch) {
-            fileName = linkMatch[1];
-        }
-
-        if (!fileName) {
-            this.logger.warn("Title must contain a file link");
-            return;
-        }
+    async processCallout(callout: HTMLElement, ctx: MarkdownPostProcessorContext): Promise<void> {
+        const wikilink = this.extractWikilink(callout);
 
         const targetFile = this.plugin.app.metadataCache.getFirstLinkpathDest(
-            fileName,
+            wikilink,
             ctx.sourcePath
         );
 
         if (!targetFile) {
-            this.logger.warn(`File not found: ${fileName}`);
+            this.logger.warn(`File not found: ${wikilink}`);
             return;
         }
 
         const features = this.extractFeatures(callout);
         await this.render(callout, targetFile, features);
+    }
+
+    /**
+     * Extract the wikilink from the callout title.
+     */
+    private extractWikilink(callout: HTMLElement): string {
+        const titleEl = callout.querySelector(".callout-title-inner");
+        if (!titleEl) {
+            this.logger.warn("Missing callout title");
+            throw new Error("Callout title is required");
+        }
+
+        const linkEl = titleEl.querySelector("a.internal-link");
+        if (linkEl) {
+            const href = linkEl.getAttribute("href");
+            if (href) {
+                return href;
+            }
+        }
+
+        const linkMatch = titleEl.textContent?.match(/\[\[([^\]]+)\]\]/);
+        if (linkMatch) {
+            return linkMatch[1];
+        }
+
+        this.logger.warn("Title must contain a file link");
+        throw new Error("Title must contain a file link");
     }
 
     /**
@@ -118,6 +122,11 @@ export class CalloutProcessor {
         features: CalloutFeatures
     ): Promise<void> {
         callout.empty();
+
+        // remove all callout-related classes to prevent style interference
+        callout.className = "";
+        callout.removeAttribute("data-callout");
+        callout.removeAttribute("style");
 
         let content: string;
 

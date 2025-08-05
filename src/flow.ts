@@ -9,10 +9,8 @@ export class FlowGenerator {
     private app: App;
     private settings: FlowSettings;
     private logger: Logger;
-    private plugin: Plugin;
 
     constructor(plugin: Plugin, settings: FlowSettings) {
-        this.plugin = plugin;
         this.app = plugin.app;
         this.settings = settings;
 
@@ -32,7 +30,7 @@ export class FlowGenerator {
     /**
      * Inserts flow content from a selected file into the editor
      */
-    insertFlowFromFile(file: TFile, editor: Editor): void {
+    async insertFlowFromFile(file: TFile, editor: Editor): Promise<void> {
         try {
             const insertText = this.generateFlowMarkdown(file);
             editor.replaceSelection(insertText.trim());
@@ -57,7 +55,7 @@ export class FlowGenerator {
     }
 
     /**
-     * Processes generate flow content from a file, resolving local wikilinks.
+     * Processes flow content from a file, resolving local wikilinks.
      */
     generateFlow(file: TFile): string[] {
         const fileCache = this.app.metadataCache.getFileCache(file);
