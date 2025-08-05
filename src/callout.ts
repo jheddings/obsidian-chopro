@@ -137,6 +137,8 @@ export class CalloutProcessor {
             content = await this.plugin.app.vault.read(file);
         }
 
-        MarkdownRenderer.render(this.plugin.app, content, callout, file.path, this.plugin);
+        const container = callout.createEl("blockquote");
+
+        MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 }
