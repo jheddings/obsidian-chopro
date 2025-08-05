@@ -21,7 +21,7 @@ import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose"
 import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
 import { Logger, LogLevel } from "./logger";
-import { ChoproCalloutProcessor } from "./callout";
+import { CalloutProcessor } from "./callout";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     rendering: {
@@ -43,7 +43,7 @@ export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ChoproRenderer;
     flowGenerator: FlowGenerator;
-    calloutProcessor: ChoproCalloutProcessor;
+    calloutProcessor: CalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
 
@@ -112,7 +112,7 @@ export default class ChoproPlugin extends Plugin {
 
         this.renderer = new ChoproRenderer(this.settings.rendering);
         this.flowGenerator = new FlowGenerator(this, this.settings.flow);
-        this.calloutProcessor = new ChoproCalloutProcessor(this, this.renderer, this.flowGenerator);
+        this.calloutProcessor = new CalloutProcessor(this, this.renderer, this.flowGenerator);
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }

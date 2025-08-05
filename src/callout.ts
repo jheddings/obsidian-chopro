@@ -10,8 +10,8 @@ export interface CalloutFeatures {
     flow: boolean;
 }
 
-export class ChoproCalloutProcessor {
-    private logger = Logger.getLogger("ChoproCalloutProcessor");
+export class CalloutProcessor {
+    private logger = Logger.getLogger("CalloutProcessor");
 
     constructor(
         private plugin: Plugin,
@@ -61,16 +61,17 @@ export class ChoproCalloutProcessor {
         }
 
         if (!fileName) {
-            this.logger.warn("ChoPro callout title must contain a file link");
+            this.logger.warn("Title must contain a file link");
             return;
         }
+
         const targetFile = this.plugin.app.metadataCache.getFirstLinkpathDest(
             fileName,
             ctx.sourcePath
         );
 
         if (!targetFile) {
-            this.logger.warn(`ChoPro callout: file not found: ${fileName}`);
+            this.logger.warn(`File not found: ${fileName}`);
             return;
         }
 
