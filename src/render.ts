@@ -13,16 +13,42 @@ import {
     InstrumentalLine,
     ChoproBlock,
     ChordSegment,
+    ContentBlock,
+    ChoproFile,
 } from "./parser";
 import { Logger } from "./logger";
 
 /**
- * Renderer for converting ChordPro AST into DOM elements
+ * Renderer for converting our AST into Obsidian DOM elements
  */
-export class ChoproRenderer {
-    private logger = Logger.getLogger("ChoproRenderer");
+export class ContentRenderer {
+    private logger = Logger.getLogger("ContentRenderer");
+    private settings: RenderSettings;
+    path: string = "";
 
-    constructor(private settings: RenderSettings) {}
+    constructor(settings: RenderSettings) {
+        this.settings = settings;
+    }
+
+    /**
+     * Render a complete ChordPro file.
+     */
+    render(file: ChoproFile, container: HTMLElement): void {
+        // TODO render Frontmatter as metadata container if defined
+
+        file.blocks.forEach((block) => this.renderBlock(block, container));
+    }
+
+    /**
+     * Render a content block
+     */
+    renderBlock(block: ContentBlock, container: HTMLElement): void {
+        if (block instanceof ChoproBlock) {
+            this.renderChoproBlock(block, container);
+        }
+
+        // TODO - handle other block types like MarkdownBlock
+    }
 
     /**
      * Render a ChordPro block into DOM elements

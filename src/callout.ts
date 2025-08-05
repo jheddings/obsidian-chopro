@@ -3,7 +3,6 @@
 import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
 import { Logger } from "./logger";
-import { ChoproRenderer } from "./render";
 import { FlowGenerator } from "./flow";
 
 const TRUTHY_VALUES = ["on", "true", "yes", "y"];
@@ -32,12 +31,10 @@ export class CalloutProcessor {
     private logger = Logger.getLogger("CalloutProcessor");
 
     private plugin: Plugin;
-    private renderer: ChoproRenderer;
     private flowGenerator: FlowGenerator;
 
-    constructor(plugin: Plugin, renderer: ChoproRenderer, flowGenerator: FlowGenerator) {
+    constructor(plugin: Plugin, flowGenerator: FlowGenerator) {
         this.plugin = plugin;
-        this.renderer = renderer;
         this.flowGenerator = flowGenerator;
     }
 
@@ -116,6 +113,11 @@ export class CalloutProcessor {
 
         try {
             const yamlData = parseYaml(content);
+
+            if (yamlData === null || typeof yamlData !== "object") {
+                return features;
+            }
+
             this.logger.debug("Parsed YAML data:", yamlData);
 
             if ("flow" in yamlData) {
@@ -140,7 +142,15 @@ export class CalloutProcessor {
 
         let content: string;
 
-        if (features.flow) {
+        // TODO improve this method to process the file using our internal parser
+        // and render by block rather than one large markdown string
+
+        const fileCache = this.plugin.app.metadataCache.getFileCache(file);
+        const metadata = fileCache?.frontmatter || {};
+
+        const hasFlow = metadata.flow !== undefined;
+
+        if (features.flow && hasFlow) {
             this.logger.debug("Rendering flow content");
             content = this.flowGenerator.generateFlowMarkdown(file);
         } else {

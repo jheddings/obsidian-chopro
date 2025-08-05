@@ -12,7 +12,7 @@ import {
 } from "obsidian";
 
 import { ChoproFile } from "./parser";
-import { ChoproRenderer } from "./render";
+import { ContentRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
 import { FlowGenerator } from "./flow";
@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
-    renderer: ChoproRenderer;
+    renderer: ContentRenderer;
     flowGenerator: FlowGenerator;
     calloutProcessor: CalloutProcessor;
 
@@ -110,9 +110,9 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ChoproRenderer(this.settings.rendering);
+        this.renderer = new ContentRenderer(this.settings.rendering);
         this.flowGenerator = new FlowGenerator(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(this, this.renderer, this.flowGenerator);
+        this.calloutProcessor = new CalloutProcessor(this, this.flowGenerator);
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
