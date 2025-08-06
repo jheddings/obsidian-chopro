@@ -21,6 +21,8 @@ module.exports = [
         },
         rules: {
             semi: "off",
+            curly: ["error", "all"],
+
             "@typescript-eslint/member-delimiter-style": "off",
             "@typescript-eslint/quotes": "off",
             "@typescript-eslint/indent": "off",

@@ -11,11 +11,10 @@
     overflow-x: auto;
 }
 
-.chopro-preview {
-    line-height: 1.8;
-    padding: 1rem;
-    background: var(--background-secondary);
-    border-radius: 6px;
+.callout[data-callout="chopro"] {
+    background: var(--background-primary);
+    padding: 0;
+    overflow-x: auto;
 }
 
 /* ===== Line and Pair Layout ===== */

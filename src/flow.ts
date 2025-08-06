@@ -1,6 +1,6 @@
-// flow - Flow content processing for ChoPro Obsidian Plugin
+// flow - flow content processing for the ChordPro Plugin
 
-import { App, Editor, TFile, Notice, FuzzySuggestModal } from "obsidian";
+import { App, Editor, TFile, Notice, FuzzySuggestModal, Plugin } from "obsidian";
 
 import { FlowSettings } from "./config";
 import { Logger } from "./logger";
@@ -10,15 +10,15 @@ export class FlowGenerator {
     private settings: FlowSettings;
     private logger: Logger;
 
-    constructor(app: App, settings: FlowSettings) {
-        this.app = app;
+    constructor(plugin: Plugin, settings: FlowSettings) {
+        this.app = plugin.app;
         this.settings = settings;
 
         this.logger = Logger.getLogger("FlowGenerator");
     }
 
     /**
-     * Opens a file selector modal for choosing flow files
+     * Opens a file selector modal for choosing flow files.
      */
     async openFlowFileSelector(editor: Editor): Promise<void> {
         const modal = new FlowFileSelector(this.app, this.settings.filesFolder, async (file) => {
@@ -28,38 +28,43 @@ export class FlowGenerator {
     }
 
     /**
-     * Inserts flow content from a selected file into the editor
+     * Inserts flow content from a selected file into the editor.
      */
     async insertFlowFromFile(file: TFile, editor: Editor): Promise<void> {
         try {
-            const fileCache = this.app.metadataCache.getFileCache(file);
-            const flow = fileCache?.frontmatter?.flow;
-
-            if (!flow) {
-                new Notice("Selected file has no flow");
-                return;
-            }
-
-            if (typeof flow === "string") {
-                editor.replaceSelection(flow);
-                new Notice("Flow content inserted");
-            } else if (Array.isArray(flow)) {
-                const insertText = this.processFlowArray(flow, file);
-                editor.replaceSelection(insertText.trim());
-                new Notice("Processed flow content");
-            } else {
-                new Notice("Flow property must be a string or array");
-            }
+            const insertText = this.generateFlowMarkdown(file);
+            editor.replaceSelection(insertText.trim());
+            new Notice("Processed flow content");
         } catch (error) {
             console.error("Error processing flow file:", error);
-            new Notice("Error processing flow file");
+            new Notice(error.message || "Error processing flow file");
         }
     }
 
     /**
-     * Processes an array of flow items into formatted text
+     * Processes an array of flow items into markdown text.
      */
-    private processFlowArray(flow: string[], file: TFile): string {
+    generateFlowMarkdown(file: TFile): string {
+        let flowLines = this.generateFlow(file);
+
+        if (this.settings.extraLine) {
+            return flowLines.join("\n\n");
+        }
+
+        return flowLines.join("\n");
+    }
+
+    /**
+     * Processes flow content from a file, resolving local wikilinks.
+     */
+    generateFlow(file: TFile): string[] {
+        const fileCache = this.app.metadataCache.getFileCache(file);
+        const flow = fileCache?.frontmatter?.flow;
+
+        if (!flow) {
+            throw new Error("Selected file has no flow");
+        }
+
         let flowLines: string[] = [];
 
         for (const item of flow) {
@@ -75,16 +80,12 @@ export class FlowGenerator {
             }
         }
 
-        if (this.settings.extraLine) {
-            return flowLines.join("\n\n");
-        }
-
-        return flowLines.join("\n");
+        return flowLines;
     }
 }
 
 /**
- * Modal for selecting flow files from the vault
+ * Modal for selecting flow files from the vault.
  */
 export class FlowFileSelector extends FuzzySuggestModal<TFile> {
     private onSelect: (file: TFile) => Promise<void>;

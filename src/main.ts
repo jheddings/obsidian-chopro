@@ -12,7 +12,7 @@ import {
 } from "obsidian";
 
 import { ChoproFile } from "./parser";
-import { ChoproRenderer } from "./render";
+import { ContentRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
 import { FlowGenerator } from "./flow";
@@ -21,6 +21,7 @@ import { ChoproTransposer, TransposeOptions, TransposeUtils } from "./transpose"
 import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
 import { Logger, LogLevel } from "./logger";
+import { CalloutProcessor } from "./callout";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     rendering: {
@@ -40,7 +41,9 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
-    renderer: ChoproRenderer;
+    renderer: ContentRenderer;
+    flowGenerator: FlowGenerator;
+    calloutProcessor: CalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
 
@@ -49,8 +52,12 @@ export default class ChoproPlugin extends Plugin {
 
         await this.loadSettings();
 
-        this.registerMarkdownCodeBlockProcessor("chopro", (source, el, _ctx) => {
-            this.processChoproBlock(source, el);
+        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el, _ctx) => {
+            await this.processChoproBlock(source, el);
+        });
+
+        this.registerMarkdownPostProcessor(async (el, ctx) => {
+            await this.calloutProcessor.processCallouts(el, ctx);
         });
 
         this.addCommand({
@@ -103,7 +110,9 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ChoproRenderer(this.settings.rendering);
+        this.renderer = new ContentRenderer(this.settings.rendering);
+        this.flowGenerator = new FlowGenerator(this, this.settings.flow);
+        this.calloutProcessor = new CalloutProcessor(this, this.flowGenerator);
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
@@ -149,28 +158,24 @@ export default class ChoproPlugin extends Plugin {
     }
 
     private async openFlowFileSelector(editor: Editor) {
-        const flowGenerator = new FlowGenerator(this.app, this.settings.flow);
-        await flowGenerator.openFlowFileSelector(editor);
+        await this.flowGenerator.openFlowFileSelector(editor);
     }
 
-    processChoproBlock(source: string, el: HTMLElement): void {
+    async processChoproBlock(source: string, el: HTMLElement): Promise<void> {
         this.logger.debug(`Processing ChoPro block with ${source.length} characters`);
 
+        el.empty();
+
+        const container = el.createDiv({ cls: "chopro-container" });
+
         try {
-            el.empty();
-
-            const container = el.createDiv({ cls: "chopro-container" });
             const block = ChoproBlock.parseRaw(source);
-            this.renderer.renderBlock(block, container);
-
+            this.renderer.renderChoproBlock(block, container);
             this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
-            this.logger.error("Failed to process ChoPro block", error);
+            this.logger.error("Failed to process ChoPro block: ", error);
             el.empty();
-            el.createDiv({
-                cls: "chopro-error",
-                text: "Error parsing ChoPro content",
-            });
+            el.createDiv({ cls: "chopro-error", text: "Error parsing ChoPro content" });
         }
     }
 
