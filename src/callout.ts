@@ -13,10 +13,14 @@ const TRUTHY_VALUES = ["on", "true", "yes", "y"];
 function isTruthy(value: any): boolean {
     if (typeof value === "boolean") {
         return value as boolean;
-    } else if (typeof value === "string") {
+    }
+
+    if (typeof value === "string") {
         const lowerValue = value.toLowerCase();
         return TRUTHY_VALUES.includes(lowerValue);
-    } else if (typeof value === "number") {
+    }
+
+    if (typeof value === "number") {
         return value > 0;
     }
 
@@ -78,25 +82,24 @@ export class CalloutProcessor {
      */
     private extractWikilink(callout: HTMLElement): string {
         const titleEl = callout.querySelector(".callout-title-inner");
+
         if (!titleEl) {
-            this.logger.warn("Missing callout title");
             throw new Error("Callout title is required");
         }
 
         const linkEl = titleEl.querySelector("a.internal-link");
-        if (linkEl) {
-            const href = linkEl.getAttribute("href");
-            if (href) {
-                return href;
-            }
+        const href = linkEl?.getAttribute("href");
+
+        if (href) {
+            return href;
         }
 
         const linkMatch = titleEl.textContent?.match(/\[\[([^\]]+)\]\]/);
+
         if (linkMatch) {
             return linkMatch[1];
         }
 
-        this.logger.warn("Title must contain a file link");
         throw new Error("Title must contain a file link");
     }
 
@@ -107,27 +110,37 @@ export class CalloutProcessor {
         const contentEl = callout.querySelector(".callout-content");
         const content = contentEl?.textContent?.trim() || "";
 
-        const features: CalloutFeatures = {
-            flow: true,
-        };
+        // initialize feature defaults
+        const features: CalloutFeatures = { flow: true };
+
+        if (!content) {
+            return features;
+        }
 
         try {
             const yamlData = parseYaml(content);
 
-            if (yamlData === null || typeof yamlData !== "object") {
-                return features;
-            }
-
-            this.logger.debug("Parsed YAML data:", yamlData);
-
-            if ("flow" in yamlData) {
-                features.flow = isTruthy(yamlData.flow);
+            if (yamlData && typeof yamlData === "object") {
+                this.logger.debug("Parsed YAML data:", yamlData);
+                this.mergeFeatures(features, yamlData);
+            } else {
+                this.logger.warn("Unable to parse features");
             }
         } catch (error) {
             this.logger.warn(`Failed to parse features: ${error.message}`);
         }
 
         return features;
+    }
+
+    /**
+     * Merge features from YAML into the features object.
+     */
+    private mergeFeatures(features: CalloutFeatures, yaml: any): void {
+        if ("flow" in yaml) {
+            this.logger.debug(`flow :: ${yaml.flow}`);
+            features.flow = isTruthy(yaml.flow);
+        }
     }
 
     /**
@@ -140,17 +153,15 @@ export class CalloutProcessor {
     ): Promise<void> {
         callout.empty();
 
-        let content: string;
-
         // TODO improve this method to process the file using our internal parser
         // and render by block rather than one large markdown string
 
         const fileCache = this.plugin.app.metadataCache.getFileCache(file);
-        const metadata = fileCache?.frontmatter || {};
+        const hasFlowData = fileCache?.frontmatter?.flow !== undefined;
 
-        const hasFlow = metadata.flow !== undefined;
+        let content: string;
 
-        if (features.flow && hasFlow) {
+        if (features.flow && hasFlowData) {
             this.logger.debug("Rendering flow content");
             content = this.flowGenerator.generateFlowMarkdown(file);
         } else {
@@ -160,6 +171,6 @@ export class CalloutProcessor {
 
         const container = callout.createEl("blockquote");
 
-        MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 }

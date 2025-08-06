@@ -50,7 +50,9 @@ export class NoteTransposer {
         interval: number,
         preferredAccidental?: Accidental
     ): void {
-        if (interval === 0) return;
+        if (interval === 0) {
+            return;
+        }
 
         const originalIndex = MusicTheory.getNoteIndex(note);
         const newIndex = (originalIndex + interval + 12) % 12;

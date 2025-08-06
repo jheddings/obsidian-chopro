@@ -90,7 +90,9 @@ export abstract class ChordSegment extends LineSegment {
      * Get the normalized chord quality in standard form.
      */
     get quality(): string | undefined {
-        if (!this.modifier) return undefined;
+        if (!this.modifier) {
+            return undefined;
+        }
 
         let normalized = this.modifier;
 

@@ -106,7 +106,9 @@ export class ChordLineConverter extends ChordConverter {
         const indexedSegments = chordLine.segments as IndexedSegment[];
 
         // if no chords were found, return just the lyrics
-        if (indexedSegments.length === 0) return lyricLine;
+        if (indexedSegments.length === 0) {
+            return lyricLine;
+        }
 
         const segments: LineSegment[] = [];
         let currentLyricPos = 0;
