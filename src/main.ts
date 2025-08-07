@@ -13,7 +13,7 @@ import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
 import { Logger, LogLevel } from "./logger";
 import { CalloutProcessor } from "./callout";
-import { TransposeModal } from "./modals";
+import { FlowFileSelector, TransposeModal } from "./modals";
 
 const DEFAULT_SETTINGS: ChoproPluginSettings = {
     rendering: {
@@ -150,7 +150,15 @@ export default class ChoproPlugin extends Plugin {
     }
 
     private async openFlowFileSelector(editor: Editor) {
-        await this.flowGenerator.openFlowFileSelector(editor);
+        const modal = new FlowFileSelector(
+            this.app,
+            this.settings.flow.filesFolder,
+            async (file) => {
+                await this.flowGenerator.insertFlowFromFile(file, editor);
+            }
+        );
+
+        modal.open();
     }
 
     async processChoproBlock(source: string, el: HTMLElement): Promise<void> {

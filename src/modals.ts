@@ -1,6 +1,6 @@
 // modals - Modal classes for the ChoPro Obsidian Plugin
 
-import { App, Modal, Setting, ButtonComponent, Notice } from "obsidian";
+import { App, Modal, Setting, ButtonComponent, Notice, TFile, FuzzySuggestModal } from "obsidian";
 
 import { TransposeOptions, TransposeUtils } from "./transpose";
 import { Logger } from "./logger";
@@ -115,5 +115,45 @@ export class TransposeModal extends Modal {
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();
+    }
+}
+
+/**
+ * Modal for selecting flow files from the vault.
+ */
+export class FlowFileSelector extends FuzzySuggestModal<TFile> {
+    private onSelect: (file: TFile) => Promise<void>;
+    private folderPath: string;
+
+    constructor(app: App, folderPath: string, onSelect: (file: TFile) => Promise<void>) {
+        super(app);
+        this.onSelect = onSelect;
+        this.folderPath = folderPath;
+    }
+
+    getItems(): TFile[] {
+        let files = this.app.vault.getMarkdownFiles();
+
+        if (this.folderPath && this.folderPath.trim() !== "") {
+            files = files.filter(
+                (file) =>
+                    file.path.startsWith(this.folderPath + "/") || file.path === this.folderPath
+            );
+        }
+
+        // Only include files that have a flow property in frontmatter
+        return files.filter((file) => {
+            const cache = this.app.metadataCache.getFileCache(file);
+            return cache?.frontmatter?.flow !== undefined;
+        });
+    }
+
+    onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
+        this.close();
+        this.onSelect(item);
+    }
+
+    getItemText(item: TFile): string {
+        return item.path;
     }
 }
