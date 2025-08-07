@@ -1,6 +1,6 @@
 // flow - flow content processing for the ChordPro Plugin
 
-import { App, Editor, TFile, Notice, FuzzySuggestModal, Plugin } from "obsidian";
+import { App, Editor, TFile, Notice, Plugin } from "obsidian";
 
 import { FlowSettings } from "./config";
 import { Logger } from "./logger";
@@ -15,16 +15,6 @@ export class FlowGenerator {
         this.settings = settings;
 
         this.logger = Logger.getLogger("FlowGenerator");
-    }
-
-    /**
-     * Opens a file selector modal for choosing flow files.
-     */
-    async openFlowFileSelector(editor: Editor): Promise<void> {
-        const modal = new FlowFileSelector(this.app, this.settings.filesFolder, async (file) => {
-            await this.insertFlowFromFile(file, editor);
-        });
-        modal.open();
     }
 
     /**
@@ -81,45 +71,5 @@ export class FlowGenerator {
         }
 
         return flowLines;
-    }
-}
-
-/**
- * Modal for selecting flow files from the vault.
- */
-export class FlowFileSelector extends FuzzySuggestModal<TFile> {
-    private onSelect: (file: TFile) => Promise<void>;
-    private folderPath: string;
-
-    constructor(app: App, folderPath: string, onSelect: (file: TFile) => Promise<void>) {
-        super(app);
-        this.onSelect = onSelect;
-        this.folderPath = folderPath;
-    }
-
-    getItems(): TFile[] {
-        let files = this.app.vault.getMarkdownFiles();
-
-        if (this.folderPath && this.folderPath.trim() !== "") {
-            files = files.filter(
-                (file) =>
-                    file.path.startsWith(this.folderPath + "/") || file.path === this.folderPath
-            );
-        }
-
-        // Only include files that have a flow property in frontmatter
-        return files.filter((file) => {
-            const cache = this.app.metadataCache.getFileCache(file);
-            return cache?.frontmatter?.flow !== undefined;
-        });
-    }
-
-    onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
-        this.close();
-        this.onSelect(item);
-    }
-
-    getItemText(item: TFile): string {
-        return item.path;
     }
 }
