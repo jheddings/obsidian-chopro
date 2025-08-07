@@ -56,7 +56,7 @@ export default class ChoproPlugin extends Plugin {
             id: "chopro-transpose",
             name: "Transpose chords in current file",
             editorCallback: (editor: Editor, view: MarkdownView) => {
-                this.openTransposeModal(view);
+                this.transposeActiveView(view);
             },
         });
 
@@ -64,7 +64,7 @@ export default class ChoproPlugin extends Plugin {
             id: "chopro-insert-flow",
             name: "Insert flow content from file",
             editorCallback: (editor: Editor, _view: MarkdownView) => {
-                this.openFlowFileSelector(editor);
+                this.insertFlowContent(editor);
             },
         });
 
@@ -109,7 +109,7 @@ export default class ChoproPlugin extends Plugin {
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
 
-    private async openTransposeModal(activeView: MarkdownView): Promise<void> {
+    private async transposeActiveView(activeView: MarkdownView): Promise<void> {
         const file = activeView.file;
 
         if (!file) {
@@ -149,7 +149,7 @@ export default class ChoproPlugin extends Plugin {
         modal.open();
     }
 
-    private async openFlowFileSelector(editor: Editor) {
+    private async insertFlowContent(editor: Editor) {
         const modal = new FlowFileSelector(
             this.app,
             this.settings.flow.filesFolder,
