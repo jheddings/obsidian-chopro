@@ -5,6 +5,9 @@ import { App, Modal, Setting, ButtonComponent, Notice, TFile, FuzzySuggestModal 
 import { TransposeOptions, TransposeUtils } from "./transpose";
 import { Logger } from "./logger";
 
+/**
+ * Modal for transposing chords in a song.
+ */
 export class TransposeModal extends Modal {
     private fromKey: string | null = null;
     private toKey: string = "C";
