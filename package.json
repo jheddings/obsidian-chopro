@@ -1,6 +1,6 @@
 {
     "name": "obsidian-chopro-plugin",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "description": "Render ChoPro format chord sheets in Obsidian",
     "author": "Jason Heddings",
     "license": "MIT",
