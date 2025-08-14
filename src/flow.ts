@@ -61,7 +61,7 @@ export class FlowGenerator {
             this.logger.debug(`Processing flow item: ${item}`);
 
             // check for local wiki links (format: [[#Section]])
-            const localWikiLinkMatch = item.match(/^\[\[#([^\]]+)\]\]$/);
+            const localWikiLinkMatch = item.match(/^!\[\[#([^\]]+)\]\]$/);
             if (localWikiLinkMatch) {
                 const sectionName = localWikiLinkMatch[1];
                 flowLines.push(`![[${file.basename}#${sectionName}]]`);
