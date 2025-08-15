@@ -50,10 +50,16 @@ export class ContentRenderer {
         }
     }
 
+    /**
+     * Render a markdown block into DOM elements
+     */
     renderMarkdownBlock(block: MarkdownBlock, container: HTMLElement): void {
         const content = block.content;
         const markdown = container.createDiv({ cls: "markdown" });
         markdown.setText(content);
+
+        // TODO render markdown ad DOM elements
+        //await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 
     /**
