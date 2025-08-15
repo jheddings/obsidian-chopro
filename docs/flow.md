@@ -11,18 +11,7 @@ The flow system works by defining a `flow` property in your song files' frontmat
 
 ## Setting Up Flow Files
 
-Add a `flow` property to your song files' frontmatter. The flow can be either a string or an array:
-
-### String Flow
-
-```yaml
----
-title: Simple Song
-flow: "This is direct content to insert"
----
-```
-
-### Array Flow
+Add a `flow` property to your song files' frontmatter.
 
 ```yaml
 ---
@@ -35,8 +24,6 @@ flow:
     - "![[#Verse 4]]"
 ---
 ```
-
-## Flow Item Types
 
 ### Section References
 
@@ -95,7 +82,8 @@ The insert command would generate:
 ![[amazing-grace#Verse 1]]
 
 > [!note] Key change for harmony
-> ![[amazing-grace#Verse 2]]
+
+![[amazing-grace#Verse 2]]
 ```
 
 ## Using Flow with Callouts
@@ -132,13 +120,15 @@ flow:
 ```chopro
 [C]Lyrics with [F]chords
 ```
-````
 
 ## Chorus
 
 ```chopro
 [G]Chorus lyrics [C]here
 ```
+
+...
+````
 
 ### Flow Design
 
