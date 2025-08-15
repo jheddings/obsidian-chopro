@@ -34,13 +34,11 @@ export class FlowGenerator {
 
     /**
      * Processes an array of flow items into markdown text.
-     * @param file The file containing the flow data
-     * @param resolve If true, resolves embed links to actual content. If false, keeps embed links intact.
      */
-    async generateFlowMarkdown(file: TFile, resolve: boolean = false): Promise<string> {
+    async generateFlowMarkdown(file: TFile, resolveEmbeds: boolean = false): Promise<string> {
         let flowLines: string[] = await this.generateFlow(file);
 
-        if (resolve) {
+        if (resolveEmbeds) {
             flowLines = await Promise.all(
                 flowLines.map((line) => this.resolveFlowItem(line, file))
             );
