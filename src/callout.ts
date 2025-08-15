@@ -159,7 +159,7 @@ export class CalloutProcessor {
         let content: string;
 
         if (features.flow && hasFlowData) {
-            this.logger.debug("Rendering flow content with resolved embeds");
+            this.logger.debug("Rendering flow content");
             content = await this.flowGenerator.generateFlowMarkdown(file, true);
         } else {
             this.logger.debug("Rendering markdown content");
