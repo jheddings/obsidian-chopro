@@ -1,6 +1,6 @@
 # ChoPro Callout Feature
 
-The ChoPro plugin now supports a custom callout type `chopro` that allows you to transclude and render ChoPro songs with advanced features like flow control and key transposition.
+The ChoPro plugin supports a custom callout type `chopro` that allows you to transclude and render ChoPro songs with advanced flow control features.
 
 ## Basic Usage
 
@@ -12,56 +12,34 @@ Create a ChoPro callout by using the `[!chopro]` syntax with a link to your song
 
 This will render the entire song file as ChoPro content.
 
-## Features
-
-### 1. Flow Control
+## Flow Control
 
 Control which sections of a song are rendered and in what order using the `flow` property.
 
-#### Enable Flow from Frontmatter
+### Enable Flow from Frontmatter
 
 ```markdown
 > [!chopro] [[standard]]
 > flow: on
 ```
 
-This uses the `flow` array defined in the song file's frontmatter to determine the rendering order.
+When `flow: on` is specified and the target file has a `flow` property in its frontmatter, the callout will render the content according to the flow definition instead of showing the entire file.
 
-#### Custom Flow Array
-
-```markdown
-> [!chopro] [[standard]]
-> flow:
->
-> - "[[#Verse 1]]"
-> - ">[!note] Key Change to D"
-> - "[[#Verse 4]]"
-```
-
-This renders only the specified sections in the given order, including inline callouts for notes.
-
-### 2. Key Transposition
-
-Transpose the song to a different key:
+### Disable Flow
 
 ```markdown
 > [!chopro] [[standard]]
-> key: G
+> flow: off
 ```
 
-This will transpose all chords in the song from the original key to G major.
+When `flow: off` is specified (or when no flow property is provided), the callout renders the entire file content, ignoring any flow definition.
 
-### 3. Combined Features
+### Default Behavior
 
-You can combine flow control and transposition:
+If no flow property is specified in the callout, flow is enabled by default. This means:
 
-```markdown
-> [!chopro] [[standard]]
-> flow: on
-> key: D
-```
-
-This will use the frontmatter flow and transpose to D major.
+- If the target file has flow frontmatter, it will be used
+- If the target file has no flow frontmatter, the entire file is rendered
 
 ## Examples
 
@@ -73,56 +51,46 @@ This will use the frontmatter flow and transpose to D major.
 
 Renders the entire "Amazing Grace" song file.
 
-### Example 2: Custom Set List
+### Example 2: Using Flow Control
 
 ```markdown
 # Sunday Morning Set List
 
 > [!chopro] [[amazing-grace]]
-> flow:
->
-> - "[[#Verse 1]]"
-> - "[[#Verse 2]]"
-> - ">[!note] Key change for harmony"
-> - "[[#Verse 3]]"
->   key: G
-
-> [!chopro] [[how-great-thou-art]]
 > flow: on
-> key: C
 ```
 
-### Example 3: Practice Session
+This renders the song using its frontmatter flow definition.
+
+### Example 3: Disabling Flow
 
 ```markdown
-# Guitar Practice - Key of D
-
-> [!chopro] [[song1]]
-> key: D
-
-> [!chopro] [[song2]]  
-> key: D
-
-> [!chopro] [[song3]]
-> key: D
+> [!chopro] [[amazing-grace]]
+> flow: off
 ```
 
-## Flow Syntax
+This renders the entire file content, ignoring any flow definition.
 
-### Section References
+### Example 4: Mixed Set List
 
-- `"[[#Section Name]]"` - Renders the specified section from the song file
-- Sections must exist as `## Section Name` headings in the target file
+```markdown
+# Practice Session
 
-### Inline Callouts
+> [!chopro] [[song-with-flow]]
+> flow: on
 
-- `">[!note] Message"` - Creates an inline callout/note
-- `">[!tip] Practice slowly"` - Creates a tip callout
-- Any Obsidian callout type is supported
+> [!chopro] [[simple-song]]
+> flow: off
+```
 
-### Plain Text
+## How Flow Content is Processed
 
-- `"Any other text"` - Renders as styled flow text
+When flow is enabled, the callout processor:
+
+1. **Resolves section references**: `![[#Section]]` items extract and include the actual section content
+2. **Processes inline callouts**: `>[!note] Text` items create proper Obsidian callouts
+3. **Includes plain text**: Other items are rendered as styled text
+4. **Handles missing content**: Shows warnings for missing files or sections
 
 ## Song File Structure
 
@@ -133,11 +101,10 @@ For flow to work properly, your song files should be structured like this:
 title: Amazing Grace
 key: C
 flow:
-    - "[[#Verse 1]]"
-    - "[[#Verse 2]]"
-    - "[[#Verse 3]]"
-    - ">[!note] Key Change"
-    - "[[#Verse 4]]"
+  - "![[#Verse 1]]"
+  - "![[#Verse 2]]"
+  - ">[!note] Key Change"
+  - "![[#Verse 3]]"
 ---
 
 # Amazing Grace
@@ -148,7 +115,6 @@ flow:
 [C]Amazing grace, how [F]sweet the [C]sound
 That saved a [Am]wretch like [G]me
 ```
-````
 
 ## Verse 2
 
@@ -156,8 +122,7 @@ That saved a [Am]wretch like [G]me
 'Twas [C]grace that taught my [F]heart to [C]fear
 And grace my [Am]fears rel[G]ieved
 ```
-
-```
+````
 
 ## Error Handling
 
@@ -165,8 +130,7 @@ The plugin will display helpful error messages if:
 
 - The referenced file doesn't exist
 - A section referenced in flow doesn't exist
-- Invalid YAML syntax in flow arrays
-- Invalid key names for transposition
+- Invalid YAML syntax in the callout content
 
 ## Styling
 
@@ -179,4 +143,9 @@ The callout content is styled with CSS classes:
 - `.chopro-callout-error` - Error messages
 
 You can customize these in your CSS snippets or theme.
+
+## Related Features
+
+- **Flow System**: See [flow.md](flow.md) for detailed information about the flow system and the "Insert flow content from file" command
+- **Transpose Command**: Use the "Transpose chords in current file" command to transpose entire files between keys
 ```

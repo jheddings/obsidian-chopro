@@ -31,72 +31,33 @@ Was [C]blind but [Am]now I [F]see[C]
 
 ## ChoPro Callouts
 
-The plugin also supports custom `[!chopro]` callouts for advanced song rendering with flow control and transposition:
+The plugin supports custom `[!chopro]` callouts for advanced song rendering with flow control:
 
 ```markdown
 > [!chopro] [[song-name]]
 > flow: on
-> key: G
 ```
 
 This feature allows you to:
 
-- Transclude entire song files or specific sections
-- Control rendering order with flow arrays
-- Transpose songs to different keys
+- Transclude entire song files or render with custom flow
+- Control rendering order with flow definitions in frontmatter
 - Create dynamic set lists and practice sheets
 
-See [CALLOUT_FEATURE.md](docs/CALLOUT_FEATURE.md) for detailed documentation.
+See [docs/callout.md](docs/callout.md) for detailed documentation.
 
 ## Commands
 
-These actions are available using the Command Palette.
+These actions are available using the Command Palette:
 
-- **Transpose chords in current file**: open the transpose dialog for the current file
-- **Insert flow content from file**: insert song flow content from files with flow properties
+- **Transpose chords in current file**: Open the transpose dialog for the current file
+- **Insert flow content from file**: Insert song flow content from files with flow properties
 
-## Flow Content
+## Flow System
 
-The plugin supports a powerful flow system for organizing and reusing song content across different files. This feature allows you to define the structure of a song in one file and then insert that flow into other documents.
+The plugin supports a powerful flow system for organizing and reusing song content. Define flow patterns in your song files' frontmatter and use them with callouts or the insert command.
 
-### Setting Up Flow Files
-
-Add a `flow` property to your song files' frontmatter. The flow can be either a string or an array:
-
-#### String Flow
-
-```yaml
----
-title: Simple Song
-flow: "This is direct content to insert"
----
-```
-
-#### Array Flow
-
-```yaml
----
-title: Amazing Grace
-flow:
-    - "#Verse 1"
-    - "#Verse 2"
-    - "#Verse 3"
-    - "#Verse 4"
----
-```
-
-### How Flow Works
-
-When you use the "Insert flow content from file" command:
-
-1. **Section References**: Items starting with `#` create transclusion links to sections in the selected file
-    - `"#Verse 1"` becomes `![[filename#Verse 1]]`
-    - These will display the actual section content inline
-
-2. **Direct Content**: Items not starting with `#` are inserted as literal text
-    - `"Repeat chorus twice"` is inserted exactly as written
-
-Only files containing a `flow` property in their frontmatter will appear in the file selector.
+See [docs/flow.md](docs/flow.md) for detailed documentation.
 
 ## Configuration
 
