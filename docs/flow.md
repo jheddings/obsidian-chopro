@@ -28,11 +28,11 @@ flow: "This is direct content to insert"
 ---
 title: Amazing Grace
 flow:
-  - "![[#Verse 1]]"
-  - "![[#Verse 2]]"
-  - "![[#Verse 3]]"
-  - ">[!note] Key Change"
-  - "![[#Verse 4]]"
+    - "![[#Verse 1]]"
+    - "![[#Verse 2]]"
+    - "![[#Verse 3]]"
+    - ">[!note] Key Change"
+    - "![[#Verse 4]]"
 ---
 ```
 
@@ -83,9 +83,9 @@ Given a file `amazing-grace.md` with this frontmatter:
 ```yaml
 ---
 flow:
-  - "![[#Verse 1]]"
-  - ">[!note] Key change for harmony"
-  - "![[#Verse 2]]"
+    - "![[#Verse 1]]"
+    - ">[!note] Key change for harmony"
+    - "![[#Verse 2]]"
 ---
 ```
 
@@ -93,8 +93,9 @@ The insert command would generate:
 
 ```markdown
 ![[amazing-grace#Verse 1]]
->[!note] Key change for harmony
-![[amazing-grace#Verse 2]]
+
+> [!note] Key change for harmony
+> ![[amazing-grace#Verse 2]]
 ```
 
 ## Using Flow with Callouts
@@ -114,14 +115,14 @@ Flow behavior can be configured in the plugin settings:
 
 Structure your song files with clear headings:
 
-```markdown
+````markdown
 ---
 title: Song Title
 flow:
-  - "![[#Verse 1]]"
-  - "![[#Chorus]]"
-  - "![[#Verse 2]]"
-  - "![[#Chorus]]"
+    - "![[#Verse 1]]"
+    - "![[#Chorus]]"
+    - "![[#Verse 2]]"
+    - "![[#Chorus]]"
 ---
 
 # Song Title
@@ -131,12 +132,12 @@ flow:
 ```chopro
 [C]Lyrics with [F]chords
 ```
+````
 
 ## Chorus
 
 ```chopro
 [G]Chorus lyrics [C]here
-```
 ```
 
 ### Flow Design
@@ -191,14 +192,14 @@ flow:
 ---
 title: Complex Song
 flow:
-  - "![[#Intro]]"
-  - "![[#Verse 1]]"
-  - "![[#Chorus]]"
-  - ">[!note] Guitar solo"
-  - "![[#Verse 2]]"
-  - "![[#Chorus]]"
-  - ">[!tip] Slow down for ending"
-  - "![[#Outro]]"
+    - "![[#Intro]]"
+    - "![[#Verse 1]]"
+    - "![[#Chorus]]"
+    - ">[!note] Guitar solo"
+    - "![[#Verse 2]]"
+    - "![[#Chorus]]"
+    - ">[!tip] Slow down for ending"
+    - "![[#Outro]]"
 ---
 ```
 
@@ -208,11 +209,11 @@ flow:
 ---
 title: Medley
 flow:
-  - ">[!info] Part 1 - Amazing Grace"
-  - "![[#Amazing Grace Verse 1]]"
-  - "![[#Amazing Grace Chorus]]"
-  - ">[!info] Part 2 - How Great Thou Art"
-  - "![[#How Great Verse 1]]"
-  - "![[#How Great Chorus]]"
+    - ">[!info] Part 1 - Amazing Grace"
+    - "![[#Amazing Grace Verse 1]]"
+    - "![[#Amazing Grace Chorus]]"
+    - ">[!info] Part 2 - How Great Thou Art"
+    - "![[#How Great Verse 1]]"
+    - "![[#How Great Chorus]]"
 ---
 ```

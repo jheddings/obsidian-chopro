@@ -101,10 +101,10 @@ For flow to work properly, your song files should be structured like this:
 title: Amazing Grace
 key: C
 flow:
-  - "![[#Verse 1]]"
-  - "![[#Verse 2]]"
-  - ">[!note] Key Change"
-  - "![[#Verse 3]]"
+    - "![[#Verse 1]]"
+    - "![[#Verse 2]]"
+    - ">[!note] Key Change"
+    - "![[#Verse 3]]"
 ---
 
 # Amazing Grace
@@ -148,4 +148,7 @@ You can customize these in your CSS snippets or theme.
 
 - **Flow System**: See [flow.md](flow.md) for detailed information about the flow system and the "Insert flow content from file" command
 - **Transpose Command**: Use the "Transpose chords in current file" command to transpose entire files between keys
+
+```
+
 ```
