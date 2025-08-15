@@ -153,9 +153,6 @@ export class CalloutProcessor {
     ): Promise<void> {
         callout.empty();
 
-        // TODO improve this method to process the file using our internal parser
-        // and render by block rather than one large markdown string
-
         const fileCache = this.plugin.app.metadataCache.getFileCache(file);
         const hasFlowData = fileCache?.frontmatter?.flow !== undefined;
 
@@ -163,7 +160,7 @@ export class CalloutProcessor {
 
         if (features.flow && hasFlowData) {
             this.logger.debug("Rendering flow content");
-            content = this.flowGenerator.generateFlowMarkdown(file);
+            content = await this.flowGenerator.generateFlowMarkdown(file, true);
         } else {
             this.logger.debug("Rendering markdown content");
             content = await this.plugin.app.vault.read(file);
@@ -172,5 +169,9 @@ export class CalloutProcessor {
         const container = callout.createEl("blockquote");
 
         await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+
+        // TODO render to DOM elements using the renderer
+        //const choproFile = ChoproFile.parse(content);
+        //this.plugin.renderer.render(choproFile, container);
     }
 }

@@ -15,6 +15,7 @@ import {
     ChordSegment,
     ContentBlock,
     ChoproFile,
+    MarkdownBlock,
 } from "./parser";
 import { Logger } from "./logger";
 
@@ -24,7 +25,6 @@ import { Logger } from "./logger";
 export class ContentRenderer {
     private logger = Logger.getLogger("ContentRenderer");
     private settings: RenderSettings;
-    path: string = "";
 
     constructor(settings: RenderSettings) {
         this.settings = settings;
@@ -43,11 +43,23 @@ export class ContentRenderer {
      * Render a content block
      */
     renderBlock(block: ContentBlock, container: HTMLElement): void {
-        if (block instanceof ChoproBlock) {
+        if (block instanceof MarkdownBlock) {
+            this.renderMarkdownBlock(block, container);
+        } else if (block instanceof ChoproBlock) {
             this.renderChoproBlock(block, container);
         }
+    }
 
-        // TODO - handle other block types like MarkdownBlock
+    /**
+     * Render a markdown block into DOM elements
+     */
+    renderMarkdownBlock(block: MarkdownBlock, container: HTMLElement): void {
+        const content = block.content;
+        const markdown = container.createDiv({ cls: "markdown" });
+        markdown.setText(content);
+
+        // TODO render markdown ad DOM elements
+        //await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 
     /**

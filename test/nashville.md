@@ -3,19 +3,19 @@ title: House of the Rising Sun
 artist: The Animals
 tempo: 117
 flow:
-  - "#Intro"
-  - "#Verse 1"
-  - "#Turn"
-  - "#Verse 2"
-  - "#Turn"
-  - "#Verse 3"
-  - "#Turn"
-  - "#Verse 4"
-  - "#Turn"
-  - "#Verse 5"
-  - "#Turn"
-  - "#Outro"
-  - "#Ending"
+  - "![[#Intro]]"
+  - "![[#Verse 1]]"
+  - "![[#Turn]]"
+  - "![[#Verse 2]]"
+  - "![[#Turn]]"
+  - "![[#Verse 3]]"
+  - "![[#Turn]]"
+  - "![[#Verse 4]]"
+  - "![[#Turn]]"
+  - "![[#Verse 5]]"
+  - "![[#Turn]]"
+  - "![[#Outro]]"
+  - "![[#Ending]]"
 ---
 
 # Intro
