@@ -1,4 +1,4 @@
-# ChoPro Callout Feature
+# ChoPro Callouts
 
 The ChoPro plugin supports a custom callout type `chopro` that allows you to transclude and render ChoPro songs with advanced flow control features.
 
