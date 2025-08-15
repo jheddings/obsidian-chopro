@@ -69,11 +69,11 @@ export class FlowGenerator {
         for (const item of flow) {
             this.logger.debug(`Processing flow item: ${item}`);
 
-            // check for local wiki links (format: [[#Section]])
-            const localWikiLinkMatch = item.match(/^!\[\[#([^\]]+)\]\]$/);
-            if (localWikiLinkMatch) {
-                const sectionName = localWikiLinkMatch[1];
-                flowLines.push(`![[${file.basename}#${sectionName}]]`);
+            // check for local embed links (format: ![[#Section]])
+            const localEmbedLinkMatch = item.match(/^!\[\[#([^\]]+)\]\]$/);
+            if (localEmbedLinkMatch) {
+                const sectionName = localEmbedLinkMatch[1];
+                flowLines.push(`![[${file.path}#${sectionName}]]`);
             } else {
                 flowLines.push(item);
             }
