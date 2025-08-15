@@ -54,7 +54,7 @@ export class FlowGenerator {
     }
 
     /**
-     * Processes flow content from a file, resolving embeds ourselves instead of relying on Obsidian transclusion.
+     * Processes flow content from a file.
      */
     async generateFlow(file: TFile): Promise<string[]> {
         const fileCache = this.app.metadataCache.getFileCache(file);
@@ -86,11 +86,9 @@ export class FlowGenerator {
      * Resolves a single flow item, either by extracting embedded content or keeping it as-is.
      */
     private async resolveFlowItem(item: string, sourceFile: TFile): Promise<string> {
-        // Check for embed patterns: ![[file]] or ![[file#section]] or ![[#section]]
         const embedMatch = item.match(/^!\[\[([^\]]+)\]\]$/);
 
         if (!embedMatch) {
-            // Not an embed, return as-is
             return item;
         }
 
@@ -142,7 +140,6 @@ export class FlowGenerator {
             return `> [!warning] No headings found in file: ${file.name}`;
         }
 
-        // Find the heading that matches the section name
         const targetHeading = fileCache.headings.find(
             (heading) => heading.heading.toLowerCase() === sectionName.toLowerCase()
         );
@@ -152,7 +149,6 @@ export class FlowGenerator {
             return `> [!warning] Section "${sectionName}" not found in ${file.name}`;
         }
 
-        // Find the next heading at the same or higher level to determine section end
         const nextHeading = fileCache.headings.find(
             (heading) =>
                 heading.position.start.line > targetHeading.position.start.line &&
@@ -163,7 +159,6 @@ export class FlowGenerator {
         const startLine = targetHeading.position.start.line;
         const endLine = nextHeading ? nextHeading.position.start.line - 1 : lines.length - 1;
 
-        // Extract the section content
         const sectionContent = lines
             .slice(startLine, endLine + 1)
             .join("\n")
