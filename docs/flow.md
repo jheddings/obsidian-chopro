@@ -169,10 +169,10 @@ Flow is particularly useful for creating:
 ---
 title: Simple Hymn
 flow:
-  - "![[#Verse 1]]"
-  - "![[#Chorus]]"
-  - "![[#Verse 2]]"
-  - "![[#Chorus]]"
+    - "![[#Verse 1]]"
+    - "![[#Chorus]]"
+    - "![[#Verse 2]]"
+    - "![[#Chorus]]"
 ---
 ```
 
