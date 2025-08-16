@@ -14,6 +14,14 @@ export abstract class FlowItem {
         this.content = content;
     }
 
+    static parse(item: string, sourceFile: TFile, app: App): FlowItem {
+        if (EmbedFlowItem.test(item)) {
+            return EmbedFlowItem.parse(item, sourceFile, app);
+        }
+
+        return TextFlowItem.parse(item, sourceFile);
+    }
+
     abstract resolve(app: App, resolver: FlowContentResolver): Promise<string>;
 }
 
@@ -25,15 +33,25 @@ export class TextFlowItem extends FlowItem {
         super(content);
     }
 
+    static test(item: string): boolean {
+        return !EmbedFlowItem.test(item);
+    }
+
+    static parse(item: string, _sourceFile: TFile): TextFlowItem {
+        return new TextFlowItem(item);
+    }
+
     async resolve(): Promise<string> {
         return this.content;
     }
 }
 
 /**
- * An embed item that resolves to file or section content.
+ * Abstract base class for embed items that resolve to file or section content.
  */
-export class EmbedFlowItem extends FlowItem {
+export abstract class EmbedFlowItem extends FlowItem {
+    static EMBED_ITEM_PATTERN = /^!\[\[([^#\]]*)(#([^\]]+))?\]\]$/;
+
     filePath?: string;
     section?: string;
 
@@ -43,12 +61,149 @@ export class EmbedFlowItem extends FlowItem {
         this.section = section;
     }
 
+    static test(item: string): boolean {
+        return EmbedFlowItem.EMBED_ITEM_PATTERN.test(item);
+    }
+
+    static parse(item: string, sourceFile: TFile, app: App): EmbedFlowItem {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+
+        if (!embedMatch) {
+            throw new Error("Invalid embed format");
+        }
+
+        if (EmbedLocalSectionFlowItem.test(item)) {
+            return EmbedLocalSectionFlowItem.parse(item, sourceFile, app);
+        }
+
+        if (EmbedFileSectionFlowItem.test(item)) {
+            return EmbedFileSectionFlowItem.parse(item, sourceFile, app);
+        }
+
+        if (EmbedFileFlowItem.test(item)) {
+            return EmbedFileFlowItem.parse(item, sourceFile, app);
+        }
+
+        throw new Error("Unknown embed format");
+    }
+
     async resolve(app: App, resolver: FlowContentResolver): Promise<string> {
         return resolver.resolveEmbedContent(this, app);
     }
 
     getCacheKey(): string {
         return `${this.filePath}${this.section ? "#" + this.section : ""}`;
+    }
+}
+
+/**
+ * Embed item for local section references: ![[#Section]]
+ */
+export class EmbedLocalSectionFlowItem extends EmbedFlowItem {
+    static test(item: string): boolean {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+        if (!embedMatch) {
+            return false;
+        }
+
+        // For local section, the file part should be empty and section should exist
+        const filePart = embedMatch[1];
+        const sectionPart = embedMatch[3];
+        return !filePart && !!sectionPart;
+    }
+
+    static parse(item: string, sourceFile: TFile, _app: App): EmbedLocalSectionFlowItem {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+
+        if (!embedMatch) {
+            throw new Error("Invalid embed format");
+        }
+
+        const sectionName = embedMatch[3];
+
+        if (!sectionName) {
+            throw new Error("Not a local section reference");
+        }
+
+        return new EmbedLocalSectionFlowItem(item, sourceFile.path, sectionName);
+    }
+}
+
+/**
+ * Embed item for file with section references: ![[filename#section]]
+ */
+export class EmbedFileSectionFlowItem extends EmbedFlowItem {
+    static test(item: string): boolean {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+        if (!embedMatch) {
+            return false;
+        }
+
+        // For file section, both file part and section part should exist
+        const filePart = embedMatch[1];
+        const sectionPart = embedMatch[3];
+        return !!filePart && !!sectionPart;
+    }
+
+    static parse(item: string, sourceFile: TFile, app: App): EmbedFileSectionFlowItem {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+
+        if (!embedMatch) {
+            throw new Error("Invalid embed format");
+        }
+
+        const fileName = embedMatch[1];
+        const sectionName = embedMatch[3];
+
+        if (!fileName || !sectionName) {
+            throw new Error("Not a file section reference");
+        }
+
+        const targetFile = app.metadataCache.getFirstLinkpathDest(fileName, sourceFile.path);
+
+        return new EmbedFileSectionFlowItem(
+            item,
+            targetFile?.path || fileName, // fallback to filename if not found
+            sectionName
+        );
+    }
+}
+
+/**
+ * Embed item for simple file references: ![[filename]]
+ */
+export class EmbedFileFlowItem extends EmbedFlowItem {
+    static test(item: string): boolean {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+        if (!embedMatch) {
+            return false;
+        }
+
+        // For simple file, file part should exist but section part should not
+        const filePart = embedMatch[1];
+        const sectionPart = embedMatch[3];
+        return !!filePart && !sectionPart;
+    }
+
+    static parse(item: string, sourceFile: TFile, app: App): EmbedFileFlowItem {
+        const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
+
+        if (!embedMatch) {
+            throw new Error("Invalid embed format");
+        }
+
+        const fileName = embedMatch[1];
+
+        if (!fileName || embedMatch[3]) {
+            throw new Error("Not a simple file reference");
+        }
+
+        const targetFile = app.metadataCache.getFirstLinkpathDest(fileName, sourceFile.path);
+
+        return new EmbedFileFlowItem(
+            item,
+            targetFile?.path || fileName // fallback to ref if not found
+        );
     }
 }
 
@@ -65,11 +220,9 @@ export interface FlowDefinition {
  */
 export class FlowParser {
     private app: App;
-    private logger: Logger;
 
     constructor(app: App) {
         this.app = app;
-        this.logger = Logger.getLogger("FlowParser");
     }
 
     /**
@@ -95,43 +248,7 @@ export class FlowParser {
      * Parse a single flow item string into a structured FlowItem
      */
     private parseFlowItem(item: string, sourceFile: TFile): FlowItem {
-        // Check for embed pattern: ![[...]]
-        const embedMatch = item.match(/^!\[\[([^\]]+)\]\]$/);
-
-        if (!embedMatch) {
-            return new TextFlowItem(item);
-        }
-
-        const embedRef = embedMatch[1];
-
-        // Local section reference: ![[#Section]]
-        if (embedRef.startsWith("#")) {
-            return new EmbedFlowItem(item, sourceFile.path, embedRef.substring(1));
-        }
-
-        // File with section: ![[filename#section]]
-        const fileSectionMatch = embedRef.match(/^([^#]+)#(.+)$/);
-        if (fileSectionMatch) {
-            const fileName = fileSectionMatch[1];
-            const targetFile = this.app.metadataCache.getFirstLinkpathDest(
-                fileName,
-                sourceFile.path
-            );
-
-            return new EmbedFlowItem(
-                item,
-                targetFile?.path || fileName, // fallback to filename if not found
-                fileSectionMatch[2]
-            );
-        }
-
-        // Simple file reference: ![[filename]]
-        const targetFile = this.app.metadataCache.getFirstLinkpathDest(embedRef, sourceFile.path);
-
-        return new EmbedFlowItem(
-            item,
-            targetFile?.path || embedRef // fallback to ref if not found
-        );
+        return FlowItem.parse(item, sourceFile, this.app);
     }
 }
 
@@ -146,13 +263,6 @@ export class FlowContentResolver {
     constructor(app: App) {
         this.app = app;
         this.logger = Logger.getLogger("FlowContentResolver");
-    }
-
-    /**
-     * Resolve a flow item to its actual content
-     */
-    async resolveFlowItem(item: FlowItem): Promise<string> {
-        return item.resolve(this.app, this);
     }
 
     /**
@@ -255,12 +365,10 @@ export class FlowContentResolver {
 export class FlowCommandHandler {
     private parser: FlowParser;
     private settings: FlowSettings;
-    private logger: Logger;
 
     constructor(parser: FlowParser, settings: FlowSettings) {
         this.parser = parser;
         this.settings = settings;
-        this.logger = Logger.getLogger("FlowCommandHandler");
     }
 
     /**
@@ -329,7 +437,7 @@ export class FlowCalloutRenderer {
         }
 
         const resolvedItems = await Promise.all(
-            flowDef.items.map((item) => this.resolver.resolveFlowItem(item))
+            flowDef.items.map((item) => item.resolve(this.app, this.resolver))
         );
 
         // Combine frontmatter + resolved content
