@@ -19,10 +19,10 @@ export abstract class FlowItem {
             return EmbedFlowItem.parse(item, sourceFile, app);
         }
 
-        return TextFlowItem.parse(item, sourceFile);
+        return TextFlowItem.parse(item);
     }
 
-    abstract resolve(app: App, resolver: FlowContentResolver): Promise<string>;
+    abstract resolve(): Promise<string>;
 }
 
 /**
@@ -37,7 +37,7 @@ export class TextFlowItem extends FlowItem {
         return !EmbedFlowItem.test(item);
     }
 
-    static parse(item: string, _sourceFile: TFile): TextFlowItem {
+    static parse(item: string): TextFlowItem {
         return new TextFlowItem(item);
     }
 
@@ -52,13 +52,42 @@ export class TextFlowItem extends FlowItem {
 export abstract class EmbedFlowItem extends FlowItem {
     static EMBED_ITEM_PATTERN = /^!\[\[([^#\]]*)(#([^\]]+))?\]\]$/;
 
-    filePath?: string;
-    section?: string;
+    protected targetFile: TFile | null;
+    protected section?: string;
 
-    constructor(content: string, filePath?: string, section?: string) {
+    private app: App;
+    private logger: Logger;
+
+    constructor(content: string, app: App, targetFile: TFile | null, section?: string) {
         super(content);
-        this.filePath = filePath;
+
+        this.app = app;
+        this.targetFile = targetFile;
         this.section = section;
+
+        this.logger = Logger.getLogger("EmbedFlowItem");
+    }
+
+    get link(): string {
+        let link = "";
+
+        if (this.targetFile) {
+            link += this.targetFile.path;
+        }
+
+        if (this.section) {
+            link += `#${this.section}`;
+        }
+
+        return `![[${link}]]`;
+    }
+
+    get file(): TFile | null {
+        return this.targetFile;
+    }
+
+    get sectionName(): string | undefined {
+        return this.section;
     }
 
     static test(item: string): boolean {
@@ -87,12 +116,68 @@ export abstract class EmbedFlowItem extends FlowItem {
         throw new Error("Unknown embed format");
     }
 
-    async resolve(app: App, resolver: FlowContentResolver): Promise<string> {
-        return resolver.resolveEmbedContent(this, app);
+    /**
+     * Resolve an embed item to its content (implementation for EmbedFlowItem)
+     */
+    async resolve(): Promise<string> {
+        if (!this.targetFile) {
+            return `> [!error] Invalid embed: ${this.content}`;
+        }
+
+        try {
+            if (this.section) {
+                return await this.extractSectionContent(this.targetFile, this.section);
+            } else {
+                const content = await this.app.vault.read(this.targetFile);
+                return content.trim();
+            }
+        } catch (error) {
+            this.logger.error(`Error reading ${this.targetFile.path}:`, error);
+            return `> [!error] Error reading file: ${this.targetFile.path}`;
+        }
     }
 
-    getCacheKey(): string {
-        return `${this.filePath}${this.section ? "#" + this.section : ""}`;
+    /**
+     * Extract content from a specific section of a file
+     */
+    private async extractSectionContent(file: TFile, sectionName: string): Promise<string> {
+        const fileContent = await this.app.vault.read(file);
+        const fileCache = this.app.metadataCache.getFileCache(file);
+
+        if (!fileCache?.headings) {
+            this.logger.warn(`No headings found in file: ${file.name}`);
+            return `> [!warning] No headings found in file: ${file.name}`;
+        }
+
+        const targetHeading = fileCache.headings.find(
+            (heading) => heading.heading.toLowerCase() === sectionName.toLowerCase()
+        );
+
+        if (!targetHeading) {
+            this.logger.warn(`Section "${sectionName}" not found in ${file.name}`);
+            return `> [!warning] Section "${sectionName}" not found in ${file.name}`;
+        }
+
+        const nextHeading = fileCache.headings.find(
+            (heading) =>
+                heading.position.start.line > targetHeading.position.start.line &&
+                heading.level <= targetHeading.level
+        );
+
+        const lines = fileContent.split("\n");
+        const startLine = targetHeading.position.start.line;
+        const endLine = nextHeading ? nextHeading.position.start.line - 1 : lines.length - 1;
+
+        const sectionContent = lines
+            .slice(startLine, endLine + 1)
+            .join("\n")
+            .trim();
+
+        if (!sectionContent) {
+            return `> [!info] Section "${sectionName}" is empty`;
+        }
+
+        return sectionContent;
     }
 }
 
@@ -112,7 +197,7 @@ export class EmbedLocalSectionFlowItem extends EmbedFlowItem {
         return !filePart && !!sectionPart;
     }
 
-    static parse(item: string, sourceFile: TFile, _app: App): EmbedLocalSectionFlowItem {
+    static parse(item: string, sourceFile: TFile, app: App): EmbedLocalSectionFlowItem {
         const embedMatch = item.match(EmbedFlowItem.EMBED_ITEM_PATTERN);
 
         if (!embedMatch) {
@@ -125,7 +210,7 @@ export class EmbedLocalSectionFlowItem extends EmbedFlowItem {
             throw new Error("Not a local section reference");
         }
 
-        return new EmbedLocalSectionFlowItem(item, sourceFile.path, sectionName);
+        return new EmbedLocalSectionFlowItem(item, app, sourceFile, sectionName);
     }
 }
 
@@ -163,7 +248,8 @@ export class EmbedFileSectionFlowItem extends EmbedFlowItem {
 
         return new EmbedFileSectionFlowItem(
             item,
-            targetFile?.path || fileName, // fallback to filename if not found
+            app,
+            targetFile, // can be null if not found
             sectionName
         );
     }
@@ -202,7 +288,8 @@ export class EmbedFileFlowItem extends EmbedFlowItem {
 
         return new EmbedFileFlowItem(
             item,
-            targetFile?.path || fileName // fallback to ref if not found
+            app,
+            targetFile // can be null if not found
         );
     }
 }
@@ -253,113 +340,6 @@ export class FlowParser {
 }
 
 /**
- * Content resolver - responsible for resolving embed references to actual content
- */
-export class FlowContentResolver {
-    private app: App;
-    private logger: Logger;
-    private contentCache: Map<string, string> = new Map();
-
-    constructor(app: App) {
-        this.app = app;
-        this.logger = Logger.getLogger("FlowContentResolver");
-    }
-
-    /**
-     * Resolve an embed item to its content (public method for EmbedFlowItem)
-     */
-    async resolveEmbedContent(item: EmbedFlowItem, app: App): Promise<string> {
-        const cacheKey = item.getCacheKey();
-
-        if (this.contentCache.has(cacheKey)) {
-            return this.contentCache.get(cacheKey)!;
-        }
-
-        const content = await this.doResolveEmbedContent(item, app);
-        this.contentCache.set(cacheKey, content);
-
-        return content;
-    }
-
-    /**
-     * Internal method to resolve embed content
-     */
-    private async doResolveEmbedContent(item: EmbedFlowItem, app: App): Promise<string> {
-        if (!item.filePath) {
-            return `> [!error] Invalid embed: ${item.content}`;
-        }
-
-        const file = app.vault.getAbstractFileByPath(item.filePath);
-        if (!file || !(file instanceof TFile)) {
-            this.logger.warn(`Could not find file: ${item.filePath}`);
-            return `> [!warning] Could not find file: ${item.filePath}`;
-        }
-
-        try {
-            if (item.section) {
-                return await this.extractSectionContent(file, item.section);
-            } else {
-                const content = await app.vault.read(file);
-                return content.trim();
-            }
-        } catch (error) {
-            this.logger.error(`Error reading ${item.filePath}:`, error);
-            return `> [!error] Error reading file: ${item.filePath}`;
-        }
-    }
-
-    /**
-     * Extract content from a specific section of a file
-     */
-    private async extractSectionContent(file: TFile, sectionName: string): Promise<string> {
-        const fileContent = await this.app.vault.read(file);
-        const fileCache = this.app.metadataCache.getFileCache(file);
-
-        if (!fileCache?.headings) {
-            this.logger.warn(`No headings found in file: ${file.name}`);
-            return `> [!warning] No headings found in file: ${file.name}`;
-        }
-
-        const targetHeading = fileCache.headings.find(
-            (heading) => heading.heading.toLowerCase() === sectionName.toLowerCase()
-        );
-
-        if (!targetHeading) {
-            this.logger.warn(`Section "${sectionName}" not found in ${file.name}`);
-            return `> [!warning] Section "${sectionName}" not found in ${file.name}`;
-        }
-
-        const nextHeading = fileCache.headings.find(
-            (heading) =>
-                heading.position.start.line > targetHeading.position.start.line &&
-                heading.level <= targetHeading.level
-        );
-
-        const lines = fileContent.split("\n");
-        const startLine = targetHeading.position.start.line;
-        const endLine = nextHeading ? nextHeading.position.start.line - 1 : lines.length - 1;
-
-        const sectionContent = lines
-            .slice(startLine, endLine + 1)
-            .join("\n")
-            .trim();
-
-        if (!sectionContent) {
-            return `> [!info] Section "${sectionName}" is empty`;
-        }
-
-        return sectionContent;
-    }
-
-    /**
-     * Clear the content cache
-     */
-    clearCache(): void {
-        this.contentCache.clear();
-    }
-}
-
-/**
  * Command handler for inserting flow content as embed links into editor
  */
 export class FlowCommandHandler {
@@ -388,8 +368,8 @@ export class FlowCommandHandler {
 
             if (item instanceof EmbedFlowItem) {
                 // Convert local section refs to full file refs
-                if (item.filePath === file.path && item.section) {
-                    return `![[${file.path}#${item.section}]]`;
+                if (item.file?.path === file.path && item.sectionName) {
+                    return `![[${file.path}#${item.sectionName}]]`;
                 }
                 return item.content;
             }
@@ -408,19 +388,12 @@ export class FlowCommandHandler {
 export class FlowCalloutRenderer {
     private app: App;
     private parser: FlowParser;
-    private resolver: FlowContentResolver;
     private settings: FlowSettings;
     private logger: Logger;
 
-    constructor(
-        app: App,
-        parser: FlowParser,
-        resolver: FlowContentResolver,
-        settings: FlowSettings
-    ) {
+    constructor(app: App, parser: FlowParser, settings: FlowSettings) {
         this.app = app;
         this.parser = parser;
-        this.resolver = resolver;
         this.settings = settings;
         this.logger = Logger.getLogger("FlowCalloutRenderer");
     }
@@ -436,9 +409,7 @@ export class FlowCalloutRenderer {
             return await this.getFileWithFrontmatter(file);
         }
 
-        const resolvedItems = await Promise.all(
-            flowDef.items.map((item) => item.resolve(this.app, this.resolver))
-        );
+        const resolvedItems = await Promise.all(flowDef.items.map((item) => item.resolve()));
 
         // Combine frontmatter + resolved content
         const frontmatter = await this.getFrontmatter(file);
@@ -470,20 +441,13 @@ export class FlowCalloutRenderer {
  */
 export class FlowManager {
     private parser: FlowParser;
-    private resolver: FlowContentResolver;
     private commandHandler: FlowCommandHandler;
     private calloutRenderer: FlowCalloutRenderer;
 
     constructor(plugin: Plugin, settings: FlowSettings) {
         this.parser = new FlowParser(plugin.app);
-        this.resolver = new FlowContentResolver(plugin.app);
         this.commandHandler = new FlowCommandHandler(this.parser, settings);
-        this.calloutRenderer = new FlowCalloutRenderer(
-            plugin.app,
-            this.parser,
-            this.resolver,
-            settings
-        );
+        this.calloutRenderer = new FlowCalloutRenderer(plugin.app, this.parser, settings);
     }
 
     /**
@@ -505,13 +469,6 @@ export class FlowManager {
      */
     async getResolvedContent(file: TFile): Promise<string> {
         return this.calloutRenderer.generateResolvedMarkdown(file);
-    }
-
-    /**
-     * Clear any cached content
-     */
-    clearCache(): void {
-        this.resolver.clearCache();
     }
 }
 
