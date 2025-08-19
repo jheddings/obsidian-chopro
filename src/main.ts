@@ -55,7 +55,7 @@ export default class ChoproPlugin extends Plugin {
         this.addCommand({
             id: "chopro-transpose",
             name: "Transpose chords in current file",
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (_editor: Editor, view: MarkdownView) => {
                 this.transposeActiveView(view);
             },
         });
@@ -71,7 +71,7 @@ export default class ChoproPlugin extends Plugin {
         this.addCommand({
             id: "chopro-convert-chord-over-lyrics",
             name: "Convert chord-over-lyrics to bracketed chords",
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (_editor: Editor, view: MarkdownView) => {
                 this.convertChordOverLyrics(view);
             },
         });
