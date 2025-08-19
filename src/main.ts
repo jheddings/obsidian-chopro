@@ -155,7 +155,7 @@ export default class ChoproPlugin extends Plugin {
             this.settings.flow.filesFolder,
             async (file) => {
                 try {
-                    const insertText = await this.flowManager.getEmbedLinks(file);
+                    const insertText = await this.flowManager.getSimpleFlowContent(file);
                     editor.replaceSelection(insertText.trim());
                     new Notice("Processed flow content");
                 } catch (error) {

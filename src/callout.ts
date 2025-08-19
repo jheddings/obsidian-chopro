@@ -157,7 +157,7 @@ export class CalloutProcessor {
 
         if (features.flow && this.flowManager.hasFlowDefinition(file)) {
             this.logger.debug("Rendering flow content");
-            content = await this.flowManager.getResolvedContent(file);
+            content = await this.flowManager.getResolvedFlowContent(file);
         } else {
             this.logger.debug("Rendering markdown content");
             content = await this.plugin.app.vault.read(file);
