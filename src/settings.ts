@@ -85,9 +85,12 @@ abstract class TextInputSetting extends BaseSetting<string> {
         return new Setting(containerEl)
             .setName(this.name)
             .setDesc(this.description)
-            .addText((text) => {
-                text.setValue(this.value);
-                text.setPlaceholder(this.placeholder);
+            .addText((textInput) => {
+                textInput.setValue(this.value);
+                textInput.setPlaceholder(this.placeholder);
+                textInput.onChange(async (value) => {
+                    this.value = value;
+                });
             });
     }
 
@@ -176,6 +179,234 @@ class ChordColor extends TextInputSetting {
     }
 }
 
+/**
+ * User setting for chord size.
+ */
+class ChordSize extends SliderSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Chord size",
+            description: "Font size for chord text (relative to base font)",
+        });
+    }
+
+    get value(): number {
+        return this.plugin.settings.rendering.chordSize;
+    }
+
+    set value(value: number) {
+        this.plugin.settings.rendering.chordSize = value;
+    }
+
+    get default(): number {
+        return 1.0;
+    }
+
+    get minimum(): number {
+        return 0.5;
+    }
+
+    get maximum(): number {
+        return 2.0;
+    }
+
+    get step(): number {
+        return 0.05;
+    }
+}
+
+/**
+ * User setting for superscript chord modifiers.
+ */
+class SuperscriptChordMods extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Superscript chord modifiers",
+            description: "Display chord modifiers (7, maj7, sus4, etc.) as superscript",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.rendering.superscriptChordMods;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.rendering.superscriptChordMods = value;
+    }
+
+    get default(): boolean {
+        return false;
+    }
+}
+
+/**
+ * User setting for chord decorations.
+ */
+class ChordDecorations extends DropdownSetting<string> {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Chord decorations",
+            description: "Wrap chords with bracket pairs for emphasis",
+        });
+    }
+
+    get value(): string {
+        return this.plugin.settings.rendering.chordDecorations;
+    }
+
+    set value(value: string) {
+        this.plugin.settings.rendering.chordDecorations = value;
+    }
+
+    get default(): string {
+        return "none";
+    }
+
+    get options(): { key: string; label: string; value: string }[] {
+        return [
+            { key: "none", label: "None", value: "none" },
+            { key: "square", label: "[ ]", value: "square" },
+            { key: "round", label: "( )", value: "round" },
+            { key: "curly", label: "{ }", value: "curly" },
+            { key: "angle", label: "< >", value: "angle" },
+        ];
+    }
+}
+
+/**
+ * User setting for normalized chord display.
+ */
+class NormalizedChordDisplay extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Normalized chord display",
+            description: "Use normalized chord representations (F# → F♯, Bb → B♭)",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.rendering.normalizedChordDisplay;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.rendering.normalizedChordDisplay = value;
+    }
+
+    get default(): boolean {
+        return false;
+    }
+}
+
+/**
+ * User setting for italic annotations.
+ */
+class ItalicAnnotations extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Italic annotations",
+            description: "Display inline annotations in italics",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.rendering.italicAnnotations;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.rendering.italicAnnotations = value;
+    }
+
+    get default(): boolean {
+        return false;
+    }
+}
+
+/**
+ * User setting for song folder.
+ */
+class SongFolder extends TextInputSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Song folder",
+            description: "Folder to search for song files (leave empty for all files)",
+        });
+    }
+
+    get value(): string {
+        return this.plugin.settings.flow.filesFolder;
+    }
+
+    set value(value: string) {
+        this.plugin.settings.flow.filesFolder = value;
+    }
+
+    get default(): string {
+        return "";
+    }
+}
+
+/**
+ * User setting for blank lines in flow.
+ */
+class BlankLinesInFlow extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Blank lines in flow",
+            description: "Add a blank line after each flow item",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.flow.extraLine;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.flow.extraLine = value;
+    }
+
+    get default(): boolean {
+        return false;
+    }
+}
+
+/**
+ * Control the log level user setting.
+ */
+class LogLevelSetting extends DropdownSetting<LogLevel> {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Log level",
+            description: "Set the logging level for console output.",
+        });
+    }
+
+    get value(): LogLevel {
+        return this.plugin.settings.logLevel ?? this.default;
+    }
+
+    set value(val: LogLevel) {
+        this.plugin.settings.logLevel = val;
+        this.plugin.saveSettings();
+    }
+
+    get default(): LogLevel {
+        return LogLevel.INFO;
+    }
+
+    get options(): { key: string; label: string; value: LogLevel }[] {
+        return Object.entries(LogLevel)
+            .filter(([_key, value]) => typeof value === "number")
+            .map(([key, value]) => ({
+                key: key,
+                label: key.toLowerCase(),
+                value: value as LogLevel,
+            }));
+    }
+}
+
+/**
+ * Base class for settings tab pages.
+ */
 abstract class SettingsTabPage {
     public isActive: boolean = false;
 
@@ -215,89 +446,12 @@ class DisplaySettings extends SettingsTabPage {
     }
 
     display(containerEl: HTMLElement): void {
-        // NOTE: updated approach
         new ChordColor(this.plugin).display(containerEl);
-
-        // NOTE: legacy approach
-        new Setting(containerEl)
-            .setName("Chord color")
-            .setDesc("Color for chord text (CSS color value)")
-            .addText((text) =>
-                text
-                    .setPlaceholder("#2563eb")
-                    .setValue(this.plugin.settings.rendering.chordColor)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.chordColor = value;
-                        updatePreview();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Chord size")
-            .setDesc("Font size for chord text (relative to base font)")
-            .addSlider((slider) =>
-                slider
-                    .setLimits(0.5, 2.0, 0.05)
-                    .setValue(this.plugin.settings.rendering.chordSize)
-                    .setDynamicTooltip()
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.chordSize = value;
-                        updatePreview();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Superscript chord modifiers")
-            .setDesc("Display chord modifiers (7, maj7, sus4, etc.) as superscript")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.rendering.superscriptChordMods)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.superscriptChordMods = value;
-                        updatePreview();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Chord decorations")
-            .setDesc("Wrap chords with bracket pairs for emphasis")
-            .addDropdown((dropdown) =>
-                dropdown
-                    .addOption("none", "None")
-                    .addOption("square", "[ ]")
-                    .addOption("round", "( )")
-                    .addOption("curly", "{ }")
-                    .addOption("angle", "< >")
-                    .setValue(this.plugin.settings.rendering.chordDecorations)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.chordDecorations = value;
-                        updatePreview();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Normalized chord display")
-            .setDesc("Use normalized chord representations (F# → F♯, Bb → B♭)")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.rendering.normalizedChordDisplay)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.normalizedChordDisplay = value;
-                        updatePreview();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Italic annotations")
-            .setDesc("Display inline annotations in italics")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.rendering.italicAnnotations)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rendering.italicAnnotations = value;
-                        updatePreview();
-                    })
-            );
+        new ChordSize(this.plugin).display(containerEl);
+        new SuperscriptChordMods(this.plugin).display(containerEl);
+        new ChordDecorations(this.plugin).display(containerEl);
+        new NormalizedChordDisplay(this.plugin).display(containerEl);
+        new ItalicAnnotations(this.plugin).display(containerEl);
 
         const previewDiv = containerEl.createDiv({ cls: "setting-item" });
         previewDiv
@@ -335,27 +489,8 @@ class FlowSettings extends SettingsTabPage {
     }
 
     display(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName("Song folder")
-            .setDesc("Folder to search for song files (leave empty for all files)")
-            .addText((text) =>
-                text
-                    .setPlaceholder("folder/path")
-                    .setValue(this.plugin.settings.flow.filesFolder)
-                    .onChange(async (value) => {
-                        this.plugin.settings.flow.filesFolder = value;
-                        this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(containerEl)
-            .setName("Blank line")
-            .setDesc("Add a blank line after each flow item")
-            .addToggle((toggle) =>
-                toggle.setValue(this.plugin.settings.flow.extraLine).onChange(async (value) => {
-                    this.plugin.settings.flow.extraLine = value;
-                })
-            );
+        new SongFolder(this.plugin).display(containerEl);
+        new BlankLinesInFlow(this.plugin).display(containerEl);
     }
 }
 
@@ -368,20 +503,7 @@ class AdvancedSettings extends SettingsTabPage {
     }
 
     display(containerEl: HTMLElement): void {
-        new Setting(containerEl)
-            .setName("Log level")
-            .setDesc("Set the logging level for console output")
-            .addDropdown((dropdown) => {
-                dropdown.addOption(LogLevel.ERROR.toString(), "Error");
-                dropdown.addOption(LogLevel.WARN.toString(), "Warning");
-                dropdown.addOption(LogLevel.INFO.toString(), "Info");
-                dropdown.addOption(LogLevel.DEBUG.toString(), "Debug");
-                dropdown.setValue(this.plugin.settings.logLevel.toString());
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.logLevel = parseInt(value) as LogLevel;
-                    await this.plugin.saveSettings();
-                });
-            });
+        new LogLevelSetting(this.plugin).display(containerEl);
     }
 }
 
