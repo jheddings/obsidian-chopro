@@ -3,6 +3,179 @@ import { ChoproBlock } from "./parser";
 import { LogLevel } from "./logger";
 import ChoproPlugin from "./main";
 
+/** Configuration for a setting element. */
+interface SettingConfig {
+    name: string | DocumentFragment;
+    description: string;
+}
+
+/**
+ * Base class for reusable setting elements.
+ */
+abstract class BaseSetting<T> {
+    protected name: string | DocumentFragment;
+    protected description: string;
+
+    constructor(config: SettingConfig) {
+        this.name = config.name;
+        this.description = config.description;
+    }
+
+    abstract get value(): T;
+
+    abstract set value(val: T);
+
+    abstract get default(): T;
+
+    /**
+     * Creates the setting element in the provided container.
+     */
+    abstract display(containerEl: HTMLElement): Setting;
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
+/**
+ * Toggle setting for boolean values.
+ */
+abstract class ToggleSetting extends BaseSetting<boolean> {
+    display(containerEl: HTMLElement): Setting {
+        return new Setting(containerEl)
+            .setName(this.name)
+            .setDesc(this.description)
+            .addToggle((toggle) => {
+                toggle.setValue(this.value);
+                toggle.onChange(async (value) => {
+                    this.value = value;
+                });
+            });
+    }
+}
+
+/**
+ * Slider setting for numeric values.
+ */
+abstract class SliderSetting extends BaseSetting<number> {
+    display(containerEl: HTMLElement): Setting {
+        return new Setting(containerEl)
+            .setName(this.name)
+            .setDesc(this.description)
+            .addSlider((slider) => {
+                slider.setLimits(this.minimum, this.maximum, this.step);
+                slider.setDynamicTooltip();
+                slider.setValue(this.value);
+                slider.onChange(async (value) => {
+                    this.value = value;
+                });
+            });
+    }
+
+    abstract get minimum(): number;
+
+    abstract get maximum(): number;
+
+    abstract get step(): number;
+}
+
+/**
+ * Text area setting for single-line input.
+ */
+abstract class TextInputSetting extends BaseSetting<string> {
+    display(containerEl: HTMLElement): Setting {
+        return new Setting(containerEl)
+            .setName(this.name)
+            .setDesc(this.description)
+            .addText((text) => {
+                text.setValue(this.value);
+                text.setPlaceholder(this.placeholder);
+            });
+    }
+
+    get placeholder(): string {
+        return this.default;
+    }
+}
+
+/**
+ * Text area setting for multi-line input.
+ */
+abstract class TextAreaSetting extends TextInputSetting {
+    display(containerEl: HTMLElement): Setting {
+        return new Setting(containerEl)
+            .setName(this.name)
+            .setDesc(this.description)
+            .addTextArea((textArea) => {
+                textArea.setValue(this.value);
+                textArea.setPlaceholder(this.placeholder);
+                textArea.onChange(async (value) => {
+                    this.value = value;
+                });
+            });
+    }
+}
+
+/**
+ * Dropdown setting for enumerated values.
+ */
+abstract class DropdownSetting<T> extends BaseSetting<T> {
+    display(containerEl: HTMLElement): Setting {
+        return new Setting(containerEl)
+            .setName(this.name)
+            .setDesc(this.description)
+            .addDropdown((dropdown) => {
+                this.options.forEach(({ key, label }) => {
+                    dropdown.addOption(key, label);
+                });
+                dropdown.setValue(this.getKeyForValue(this.value));
+                dropdown.onChange(async (key) => {
+                    this.value = this.getValueForKey(key);
+                });
+            });
+    }
+
+    abstract get options(): { key: string; label: string; value: T }[];
+
+    /**
+     * Get the key for a given value.
+     */
+    protected getKeyForValue(value: T): string {
+        const option = this.options.find((opt) => opt.value === value);
+        return option?.key ?? this.options[0]?.key ?? "";
+    }
+
+    /**
+     * Get the value for a given key.
+     */
+    protected getValueForKey(key: string): T {
+        const option = this.options.find((opt) => opt.key === key);
+        return option?.value ?? this.options[0]?.value;
+    }
+}
+
+/**
+ * User setting for chord color.
+ */
+class ChordColor extends TextInputSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Chord color",
+            description: "Color for chord text (CSS color value)",
+        });
+    }
+
+    get value(): string {
+        return this.plugin.settings.rendering.chordColor;
+    }
+
+    set value(value: string) {
+        this.plugin.settings.rendering.chordColor = value;
+    }
+
+    get default(): string {
+        return "#2563eb";
+    }
+}
+
 abstract class SettingsTabPage {
     public isActive: boolean = false;
 
@@ -42,6 +215,10 @@ class DisplaySettings extends SettingsTabPage {
     }
 
     display(containerEl: HTMLElement): void {
+        // NOTE: updated approach
+        new ChordColor(this.plugin).display(containerEl);
+
+        // NOTE: legacy approach
         new Setting(containerEl)
             .setName("Chord color")
             .setDesc("Color for chord text (CSS color value)")
