@@ -16,8 +16,6 @@ abstract class BaseSetting<T> {
     protected name: string | DocumentFragment;
     protected description: string;
 
-    protected _onChange?: (value: T) => void;
-
     constructor(config: SettingConfig) {
         this.name = config.name;
         this.description = config.description;
@@ -33,14 +31,6 @@ abstract class BaseSetting<T> {
      * Creates the setting element in the provided container.
      */
     abstract display(containerEl: HTMLElement): Setting;
-
-    /**
-     * Event hook when the value changes.
-     */
-    onChange(callback: (value: T) => void) {
-        this._onChange = callback;
-        return this;
-    }
 }
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -57,7 +47,6 @@ abstract class ToggleSetting extends BaseSetting<boolean> {
                 toggle.setValue(this.value);
                 toggle.onChange(async (value) => {
                     this.value = value;
-                    this._onChange?.(value);
                 });
             });
     }
@@ -77,7 +66,6 @@ abstract class SliderSetting extends BaseSetting<number> {
                 slider.setValue(this.value);
                 slider.onChange(async (value) => {
                     this.value = value;
-                    this._onChange?.(value);
                 });
             });
     }
@@ -102,7 +90,6 @@ abstract class TextInputSetting extends BaseSetting<string> {
                 textInput.setPlaceholder(this.placeholder);
                 textInput.onChange(async (value) => {
                     this.value = value;
-                    this._onChange?.(value);
                 });
             });
     }
@@ -125,7 +112,6 @@ abstract class TextAreaSetting extends TextInputSetting {
                 textArea.setPlaceholder(this.placeholder);
                 textArea.onChange(async (value) => {
                     this.value = value;
-                    this._onChange?.(value);
                 });
             });
     }
@@ -146,7 +132,6 @@ abstract class DropdownSetting<T> extends BaseSetting<T> {
                 dropdown.setValue(this.getKeyForValue(this.value));
                 dropdown.onChange(async (key) => {
                     this.value = this.getValueForKey(key);
-                    this._onChange?.(this.value);
                 });
             });
     }
