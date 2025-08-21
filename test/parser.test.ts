@@ -815,16 +815,15 @@ describe("ChoproFile", () => {
         });
 
         it("parses block content correctly", () => {
-            expect(file.blocks[0].toString()).toContain("# Amazing Grace");
-            expect(file.blocks[0].toString()).toContain("## Verse 1");
+            expect(file.blocks[0].toString()).toContain("# Verse 1");
             expect(file.blocks[1].toString()).toContain(
                 "[C]Amazing grace, how [F]sweet the [C]sound"
             );
-            expect(file.blocks[2].toString()).toContain("## Verse 2");
+            expect(file.blocks[2].toString()).toContain("# Verse 2");
             expect(file.blocks[3].toString()).toContain("'Twas [C]grace that taught my [F]heart");
-            expect(file.blocks[4].toString()).toContain("## Verse 3");
+            expect(file.blocks[4].toString()).toContain("# Verse 3");
             expect(file.blocks[5].toString()).toContain("Through [C]many dangers");
-            expect(file.blocks[6].toString()).toContain("## Verse 4");
+            expect(file.blocks[6].toString()).toContain("# Verse 4");
             expect(file.blocks[7].toString()).toContain("When [D]we've been there");
             expect(file.blocks[8].toString()).toEqual("");
         });

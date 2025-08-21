@@ -6,7 +6,7 @@ import { ChoproFile } from "./parser";
 import { ContentRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
-import { FlowGenerator } from "./flow";
+import { FlowManager } from "./flow";
 import { ChordLineConverter } from "./convert";
 import { ChoproTransposer, TransposeUtils } from "./transpose";
 import { ChoproPluginSettings } from "./config";
@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ContentRenderer;
-    flowGenerator: FlowGenerator;
+    flowManager: FlowManager;
     calloutProcessor: CalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
@@ -55,7 +55,7 @@ export default class ChoproPlugin extends Plugin {
         this.addCommand({
             id: "chopro-transpose",
             name: "Transpose chords in current file",
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (_editor: Editor, view: MarkdownView) => {
                 this.transposeActiveView(view);
             },
         });
@@ -71,7 +71,7 @@ export default class ChoproPlugin extends Plugin {
         this.addCommand({
             id: "chopro-convert-chord-over-lyrics",
             name: "Convert chord-over-lyrics to bracketed chords",
-            editorCallback: (editor: Editor, view: MarkdownView) => {
+            editorCallback: (_editor: Editor, view: MarkdownView) => {
                 this.convertChordOverLyrics(view);
             },
         });
@@ -103,8 +103,8 @@ export default class ChoproPlugin extends Plugin {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
         this.renderer = new ContentRenderer(this.settings.rendering);
-        this.flowGenerator = new FlowGenerator(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(this, this.flowGenerator);
+        this.flowManager = new FlowManager(this, this.settings.flow);
+        this.calloutProcessor = new CalloutProcessor(this, this.flowManager);
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
@@ -154,7 +154,14 @@ export default class ChoproPlugin extends Plugin {
             this.app,
             this.settings.flow.filesFolder,
             async (file) => {
-                await this.flowGenerator.insertFlowFromFile(file, editor);
+                try {
+                    const insertText = await this.flowManager.getSimpleFlowContent(file);
+                    editor.replaceSelection(insertText.trim());
+                    new Notice("Processed flow content");
+                } catch (error) {
+                    console.error("Error processing flow file:", error);
+                    new Notice(error.message || "Error processing flow file");
+                }
             }
         );
 

@@ -3,7 +3,7 @@
 import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
 import { Logger } from "./logger";
-import { FlowGenerator } from "./flow";
+import { FlowManager } from "./flow";
 
 const TRUTHY_VALUES = ["on", "true", "yes", "y"];
 
@@ -35,11 +35,11 @@ export class CalloutProcessor {
     private logger = Logger.getLogger("CalloutProcessor");
 
     private plugin: Plugin;
-    private flowGenerator: FlowGenerator;
+    private flowManager: FlowManager;
 
-    constructor(plugin: Plugin, flowGenerator: FlowGenerator) {
+    constructor(plugin: Plugin, flowManager: FlowManager) {
         this.plugin = plugin;
-        this.flowGenerator = flowGenerator;
+        this.flowManager = flowManager;
     }
 
     /**
@@ -153,14 +153,11 @@ export class CalloutProcessor {
     ): Promise<void> {
         callout.empty();
 
-        const fileCache = this.plugin.app.metadataCache.getFileCache(file);
-        const hasFlowData = fileCache?.frontmatter?.flow !== undefined;
-
         let content: string;
 
-        if (features.flow && hasFlowData) {
+        if (features.flow && this.flowManager.hasFlowDefinition(file)) {
             this.logger.debug("Rendering flow content");
-            content = await this.flowGenerator.generateFlowMarkdown(file, true);
+            content = await this.flowManager.getResolvedFlowContent(file);
         } else {
             this.logger.debug("Rendering markdown content");
             content = await this.plugin.app.vault.read(file);
