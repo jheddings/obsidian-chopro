@@ -394,13 +394,13 @@ class LogLevelSetting extends DropdownSetting<LogLevel> {
     }
 
     get options(): { key: string; label: string; value: LogLevel }[] {
-        return Object.entries(LogLevel)
-            .filter(([_key, value]) => typeof value === "number")
-            .map(([key, value]) => ({
-                key: key,
-                label: key.toLowerCase(),
-                value: value as LogLevel,
-            }));
+        return [
+            { key: "debug", label: "Debug", value: LogLevel.DEBUG },
+            { key: "info", label: "Info", value: LogLevel.INFO },
+            { key: "warn", label: "Warn", value: LogLevel.WARN },
+            { key: "error", label: "Error", value: LogLevel.ERROR },
+            { key: "silent", label: "Silent", value: LogLevel.SILENT },
+        ];
     }
 }
 
