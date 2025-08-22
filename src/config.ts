@@ -1,6 +1,6 @@
 // config model for the Obsidian ChordPro plugin
 
-import { LogLevel } from "./logger";
+import { LogLevel } from "obskit";
 
 export interface RenderSettings {
     chordColor: string;

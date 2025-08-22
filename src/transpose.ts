@@ -1,5 +1,7 @@
 // transpose - chord conversion for the ChoPro Plugin
 
+import { Logger } from "obskit";
+
 import {
     BracketChord,
     LetterNotation,
@@ -24,8 +26,6 @@ import {
     KeyInfo,
     MusicTheory,
 } from "./music";
-
-import { Logger } from "./logger";
 
 export interface TransposeOptions {
     fromKey?: KeyInfo;

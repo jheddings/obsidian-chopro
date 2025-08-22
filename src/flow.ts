@@ -1,8 +1,8 @@
 // flow.ts - flow content processing for the ChordPro Plugin
 
+import { Logger } from "obskit";
 import { App, TFile, Plugin, stringifyYaml } from "obsidian";
 import { FlowSettings } from "./config";
-import { Logger } from "./logger";
 
 /**
  * Represents a flow item that will be resolved when rendered.

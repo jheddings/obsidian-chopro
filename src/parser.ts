@@ -1,8 +1,8 @@
 // parser - parsing elements and data structures for ChoPro plugin
 
+import { Logger } from "obskit";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { AbstractNote, MusicNote, NashvilleNumber } from "./music";
-import { Logger } from "./logger";
 
 export abstract class LineSegment {
     constructor() {}

@@ -1,9 +1,9 @@
 // modals - Modal classes for the ChoPro Obsidian Plugin
 
+import { Logger } from "obskit";
 import { App, Modal, Setting, ButtonComponent, Notice, TFile, FuzzySuggestModal } from "obsidian";
 
 import { TransposeOptions, TransposeUtils } from "./transpose";
-import { Logger } from "./logger";
 
 /**
  * Modal for transposing chords in a song.
