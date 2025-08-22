@@ -92,13 +92,13 @@
 }
 
 /* ===== Settings Styles ===== */
-.chopro-settings-tab-container {
+.obskit-settings-tab-container {
     display: flex;
     border-bottom: 1px solid var(--background-modifier-border);
     margin-bottom: 20px;
 }
 
-.chopro-settings-tab-button {
+.obskit-settings-tab-button {
     padding: 10px 20px;
     border: none;
     background: transparent;
@@ -108,11 +108,11 @@
     transition: all 0.2s ease;
 }
 
-.chopro-settings-tab-button:hover {
+.obskit-settings-tab-button:hover {
     background: var(--background-modifier-hover);
 }
 
-.chopro-settings-tab-button-active {
+.obskit-settings-tab-button-active {
     color: var(--text-accent);
     border-bottom-color: var(--interactive-accent);
     background: var(--background-modifier-active-hover);
