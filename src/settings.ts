@@ -266,12 +266,41 @@ class DisplaySettings extends SettingsTabPage {
     }
 
     display(containerEl: HTMLElement): void {
-        new ChordColor(this.plugin).display(containerEl);
-        new ChordSize(this.plugin).display(containerEl);
-        new SuperscriptChordMods(this.plugin).display(containerEl);
-        new ChordDecorations(this.plugin).display(containerEl);
-        new NormalizedChordDisplay(this.plugin).display(containerEl);
-        new ItalicAnnotations(this.plugin).display(containerEl);
+        new ChordColor(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new ChordSize(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new SuperscriptChordMods(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new ChordDecorations(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new NormalizedChordDisplay(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new ItalicAnnotations(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
 
         const previewDiv = containerEl.createDiv({ cls: "setting-item" });
         previewDiv
