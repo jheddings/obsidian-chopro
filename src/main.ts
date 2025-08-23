@@ -1,5 +1,6 @@
 // main - ChoPro Obsidian Plugin
 
+import { Logger, LogLevel } from "obskit";
 import { Plugin, Notice, MarkdownView, Editor } from "obsidian";
 
 import { ChoproFile } from "./parser";
@@ -11,7 +12,6 @@ import { ChordLineConverter } from "./convert";
 import { ChoproTransposer, TransposeUtils } from "./transpose";
 import { ChoproPluginSettings } from "./config";
 import { ChoproSettingTab } from "./settings";
-import { Logger, LogLevel } from "./logger";
 import { CalloutProcessor } from "./callout";
 import { FlowFileSelector, TransposeModal } from "./modals";
 

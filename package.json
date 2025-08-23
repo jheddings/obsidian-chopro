@@ -9,10 +9,14 @@
         "prepare": "husky",
         "dev": "node esbuild.config.mjs",
         "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "clean": "rm -f main.js",
+        "clobber": "npm run clean && rm -rf node_modules",
         "test": "jest test/*.test.ts",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
-        "lint": "eslint --fix .",
-        "preflight": "npm run build && npm test && npm run format && npm run lint",
+        "format:check": "prettier --check .",
+        "preflight": "npm run build && npm run format && npm run lint:fix && npm test",
         "release": "npm run preflight && git push && git push --tags",
         "version": "node version.mjs && npm run format && git add manifest.json versions.json",
         "postversion": "git commit --amend -m \"obsidian-chopro-$npm_package_version\" && git tag -f $npm_package_version"
@@ -44,7 +48,7 @@
         "typescript": "5.9.2"
     },
     "dependencies": {
-        "obskit": "^1.1.4",
+        "obskit": "^1.4.1",
         "yaml": "^2.8.1"
     },
     "lint-staged": {

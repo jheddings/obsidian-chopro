@@ -1,5 +1,6 @@
 // chopro - Chord Pro Processor for Obsidian
 
+import { Logger } from "obskit";
 import { RenderSettings } from "./config";
 import {
     BracketChord,
@@ -17,7 +18,6 @@ import {
     ChoproFile,
     MarkdownBlock,
 } from "./parser";
-import { Logger } from "./logger";
 
 /**
  * Renderer for converting our AST into Obsidian DOM elements

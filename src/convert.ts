@@ -1,5 +1,7 @@
 // convert - chord format converter for the Obsidian ChoPro plugin
 
+import { Logger } from "obskit";
+
 import {
     ChoproFile,
     ChoproBlock,
@@ -15,7 +17,6 @@ import {
     ChordSegment,
     IndexedSegment,
 } from "./parser";
-import { Logger } from "./logger";
 
 export abstract class ChordConverter {
     constructor() {}

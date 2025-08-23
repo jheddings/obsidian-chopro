@@ -1,8 +1,8 @@
 // callout - ChoPro callout processor for Obsidian
 
+import { Logger } from "obskit";
 import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
-import { Logger } from "./logger";
 import { FlowManager } from "./flow";
 
 const TRUTHY_VALUES = ["on", "true", "yes", "y"];
