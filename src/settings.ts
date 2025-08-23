@@ -1,15 +1,17 @@
 import { App } from "obsidian";
-import { ChoproBlock } from "./parser";
-import ChoproPlugin from "./main";
+
 import {
+    LogLevel,
     PluginSettingsTab,
     SettingsTabPage,
-    LogLevel,
     TextInputSetting,
     DropdownSetting,
     SliderSetting,
     ToggleSetting,
 } from "obskit";
+
+import { ChoproBlock } from "./parser";
+import ChoproPlugin from "./main";
 
 /**
  * User setting for chord color.
