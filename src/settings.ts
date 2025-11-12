@@ -74,6 +74,42 @@ class ChordSize extends SliderSetting {
 }
 
 /**
+ * User setting for chord pair spacing.
+ */
+class ChordPairSpacing extends SliderSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Chord pair spacing",
+            description: "Horizontal spacing between chord-lyric pairs",
+        });
+    }
+
+    get value(): number {
+        return this.plugin.settings.rendering.chordPairSpacing;
+    }
+
+    set value(value: number) {
+        this.plugin.settings.rendering.chordPairSpacing = value;
+    }
+
+    get default(): number {
+        return 0.1;
+    }
+
+    get minimum(): number {
+        return 0;
+    }
+
+    get maximum(): number {
+        return 1.0;
+    }
+
+    get step(): number {
+        return 0.1;
+    }
+}
+
+/**
  * User setting for superscript chord modifiers.
  */
 class SuperscriptChordMods extends ToggleSetting {
@@ -275,6 +311,12 @@ class DisplaySettings extends SettingsTabPage {
             .display(containerEl);
 
         new ChordSize(this.plugin)
+            .onChange((_value) => {
+                updatePreview();
+            })
+            .display(containerEl);
+
+        new ChordPairSpacing(this.plugin)
             .onChange((_value) => {
                 updatePreview();
             })
