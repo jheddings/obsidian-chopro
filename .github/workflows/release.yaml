@@ -30,11 +30,14 @@ jobs:
               id: version
               run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
+            - name: Create release archive
+              run: zip -j "obsidian-chopro-${{ github.ref_name }}.zip" ./main.js ./manifest.json ./styles.css
+
             - name: Create release
               run: |
                   gh release create ${{ github.ref_name }} \
                     --title "obsidian-chopro-${{ github.ref_name }}" \
                     --generate-notes --draft \
-                    ./main.js ./manifest.json ./styles.css
+                    "obsidian-chopro-${{ github.ref_name }}.zip"
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
