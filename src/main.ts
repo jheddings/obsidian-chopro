@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
         chordDecorations: "none",
         normalizedChordDisplay: false,
         italicAnnotations: true,
+        chordPairSpacing: 0.1, // em
     },
     flow: {
         filesFolder: "",

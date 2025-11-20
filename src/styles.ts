@@ -28,7 +28,8 @@ export class ChoproStyleManager {
 
             // Validate and sanitize color value
             const colorValue = this.sanitizeColorValue(settings.chordColor);
-            const sizeValue = this.sanitizeSizeValue(settings.chordSize);
+            const sizeValue = this.clamp(settings.chordSize, 0.5, 3.0, 1.0);
+            const spacingValue = this.clamp(settings.chordPairSpacing, 0, 1.0, 0.1);
 
             // Chord and annotation color and size overrides
             overrides += `
@@ -39,6 +40,13 @@ export class ChoproStyleManager {
                 }
                 .chopro-line:has(.chopro-pair) {
                     min-height: ${1.5 + sizeValue}em;
+                }
+            `;
+
+            // Chord pair spacing override
+            overrides += `
+                .chopro-pair {
+                    margin-right: ${spacingValue}em;
                 }
             `;
 
@@ -79,11 +87,10 @@ export class ChoproStyleManager {
         return colorPattern.test(color.trim()) ? color.trim() : "#2563eb";
     }
 
-    private static sanitizeSizeValue(size: number): number {
-        // Ensure size is within reasonable bounds
-        if (typeof size !== "number" || isNaN(size)) {
-            return 1.0;
+    private static clamp(value: number, min: number, max: number, fallback: number): number {
+        if (typeof value !== "number" || isNaN(value)) {
+            return fallback;
         }
-        return Math.max(0.5, Math.min(3.0, size));
+        return Math.max(min, Math.min(max, value));
     }
 }
