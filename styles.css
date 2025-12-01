@@ -34,11 +34,19 @@
 
 .chopro-pair {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
     vertical-align: baseline;
     flex-shrink: 0;
     min-width: var(--chord-min-width, 1ch);
     margin-right: 0.1em;
+}
+
+.chopro-pair::after {
+    content: "-";
+    flex: 1 0 0;
+    min-width: 0;
+    overflow: hidden;
+    opacity: 0.5;
 }
 
 /* ===== Chord and Annotation Styles ===== */
@@ -72,6 +80,7 @@
 
 .chopro-pair .chopro-lyrics {
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .chopro-pair .chopro-lyrics:empty::after {
