@@ -9,6 +9,7 @@ export interface RenderSettings {
     chordDecorations: string;
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
+    chordPairSpacing: number;
 }
 
 export interface FlowSettings {
