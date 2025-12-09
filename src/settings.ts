@@ -180,6 +180,31 @@ class ItalicAnnotations extends ToggleSetting {
 }
 
 /**
+ * User setting for showing metadata header in Reading View.
+ */
+class ShowMetadataHeader extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Show metadata header",
+            description:
+                "Display song metadata (title, artist, key, tempo) at the top of notes in Reading View",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.rendering.showMetadataHeader;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.rendering.showMetadataHeader = value;
+    }
+
+    get default(): boolean {
+        return false;
+    }
+}
+
+/**
  * User setting for song folder.
  */
 class SongFolder extends TextInputSetting {
@@ -303,6 +328,8 @@ class DisplaySettings extends SettingsTabPage {
                 updatePreview();
             })
             .display(containerEl);
+
+        new ShowMetadataHeader(this.plugin).display(containerEl);
 
         const previewDiv = containerEl.createDiv({ cls: "setting-item" });
         previewDiv

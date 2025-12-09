@@ -1,9 +1,9 @@
 // main - ChoPro Obsidian Plugin
 
 import { Logger, LogLevel } from "obskit";
-import { Plugin, Notice, MarkdownView, Editor } from "obsidian";
+import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext } from "obsidian";
 
-import { ChoproFile } from "./parser";
+import { ChoproFile, Frontmatter } from "./parser";
 import { ContentRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
         chordDecorations: "none",
         normalizedChordDisplay: false,
         italicAnnotations: true,
+        showMetadataHeader: false,
     },
     flow: {
         filesFolder: "",
@@ -44,12 +45,13 @@ export default class ChoproPlugin extends Plugin {
 
         await this.loadSettings();
 
-        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el, _ctx) => {
+        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el) => {
             await this.processChoproBlock(source, el);
         });
 
         this.registerMarkdownPostProcessor(async (el, ctx) => {
             await this.calloutProcessor.processCallouts(el, ctx);
+            this.injectMetadataHeader(el, ctx);
         });
 
         this.addCommand({
@@ -183,6 +185,47 @@ export default class ChoproPlugin extends Plugin {
             this.logger.error("Failed to process ChoPro block: ", error);
             el.empty();
             el.createDiv({ cls: "chopro-error", text: "Error parsing ChoPro content" });
+        }
+    }
+
+    /**
+     * Inject metadata header at the top of the document.
+     */
+    private injectMetadataHeader(el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
+        if (!this.settings.rendering.showMetadataHeader) {
+            return;
+        }
+
+        // Find the document container to check for existing headers
+        const docContainer =
+            el.closest(".markdown-preview-sizer") ||
+            el.closest(".markdown-preview-view") ||
+            el.closest(".cm-content");
+
+        // Check if header already exists (don't add multiple)
+        if (docContainer?.querySelector(".chopro-header")) {
+            this.logger.debug("Header already exists; skipping");
+            return;
+        }
+
+        // Get frontmatter from context
+        const frontmatterData = ctx.frontmatter;
+        if (!frontmatterData || Object.keys(frontmatterData).length === 0) {
+            this.logger.debug("No frontmatter found; skipping");
+            return;
+        }
+
+        this.logger.debug("Injecting metadata header");
+
+        const frontmatter = new Frontmatter(frontmatterData as Record<string, any>);
+        const headerDiv = el.createDiv({ cls: "chopro-header-wrapper" });
+        this.renderer.renderMetadataHeader(frontmatter, headerDiv);
+
+        // Move the header to be the first child of el
+        if (headerDiv.firstChild) {
+            el.insertBefore(headerDiv.firstChild, el.firstChild);
+            headerDiv.remove();
+            this.logger.info("Metadata header injected successfully");
         }
     }
 
