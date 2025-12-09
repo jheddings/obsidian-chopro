@@ -287,6 +287,10 @@ export abstract class ChoproLine {
             return EmptyLine.parse(line);
         }
 
+        if (DirectiveLine.test(line)) {
+            return DirectiveLine.parse(line);
+        }
+
         if (CommentLine.test(line)) {
             return CommentLine.parse(line);
         }
@@ -358,6 +362,35 @@ export class TextLine extends ChoproLine {
      */
     toString(): string {
         return this.content;
+    }
+}
+
+export class DirectiveLine extends ChoproLine {
+    public static readonly LINE_PATTERN = /^\{([^:]+)(:(.+))?\}$/;
+
+    constructor(public line: string) {
+        super();
+    }
+
+    static test(line: string): boolean {
+        return DirectiveLine.LINE_PATTERN.test(line);
+    }
+
+    static parse(line: string): DirectiveLine {
+        const match = line.match(DirectiveLine.LINE_PATTERN);
+
+        if (!match) {
+            throw new Error("Invalid directive format");
+        }
+
+        return new DirectiveLine(line);
+    }
+
+    /**
+     * Convert the directive line to its normalized ChordPro representation.
+     */
+    toString(): string {
+        return `${this.line}`;
     }
 }
 

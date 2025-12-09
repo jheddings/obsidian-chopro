@@ -6,6 +6,7 @@ import {
     TextSegment,
     ChoproFile,
     CommentLine,
+    DirectiveLine,
     EmptyLine,
     TextLine,
     ChoproBlock,
@@ -480,6 +481,63 @@ describe("TextLine", () => {
 
         test.each(invalidTextLines)("rejects invalid text line '%s'", (line) => {
             expect(TextLine.test(line)).toBe(false);
+        });
+    });
+});
+
+describe("DirectiveLine", () => {
+    const testCases = [
+        "{title: Amazing Grace}",
+        "{artist: John Newton}",
+        "{key: C}",
+        "{capo: 2}",
+        "{tempo: 120}",
+        "{comment: This is a comment}",
+        "{start_of_chorus}",
+        "{end_of_chorus}",
+        "{soc}",
+    ];
+
+    describe("parsing", () => {
+        test.each(testCases)("parses %s correctly", (input) => {
+            const directive = DirectiveLine.parse(input);
+            expect(directive.line).toEqual(input);
+
+            const roundTrip = directive.toString();
+            expect(roundTrip).toEqual(input);
+
+            // parse again to ensure round-trip compatibility
+            const takeTwo = DirectiveLine.parse(roundTrip);
+            expect(takeTwo.line).toEqual(directive.line);
+        });
+    });
+
+    describe("validation", () => {
+        const validDirectives = [
+            "{title: Test Song}",
+            "{artist: Test Artist}",
+            "{key: G}",
+            "{start_of_verse}",
+            "{sov}",
+            "{capo: 3}",
+        ];
+
+        test.each(validDirectives)("accepts valid directive %s", (directive) => {
+            expect(DirectiveLine.test(directive)).toBe(true);
+        });
+
+        const invalidDirectives = [
+            "This is not a directive",
+            "# Comment",
+            "[C]Chord line",
+            "",
+            "{ incomplete",
+            "incomplete }",
+            "title: Missing braces",
+        ];
+
+        test.each(invalidDirectives)("rejects invalid directive %s", (directive) => {
+            expect(DirectiveLine.test(directive)).toBe(false);
         });
     });
 });

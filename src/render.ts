@@ -87,7 +87,7 @@ export class ContentRenderer {
             this.renderTextLine(container, line.content);
         }
 
-        // NOTE - CommentLine's are ignored when rendering
+        // NOTE - other lines are ignored when rendering
     }
 
     /**
