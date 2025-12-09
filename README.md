@@ -15,6 +15,7 @@ An Obsidian plugin that renders ChordPro format chord sheets with accurate chord
 - **Chord Normalization**: Automatic cleanup and standardization of chord notation
 - **Transpose Files**: Transpose entire files between keys or chord notations
 - **ChoPro Callouts**: Custom `[!chopro]` callouts for advanced song transclusion with flow control and key transposition
+- **Metadata Rendering**: Render metadata from frontmatter in a typical chord sheet format
 
 ## Usage
 
