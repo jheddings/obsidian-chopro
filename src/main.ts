@@ -196,37 +196,56 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
-        // Find the document container to check for existing headers
-        const docContainer =
-            el.closest(".markdown-preview-sizer") ||
-            el.closest(".markdown-preview-view") ||
-            el.closest(".cm-content");
+        const frontmatter = ctx.frontmatter;
+        if (!frontmatter) {
+            this.logger.debug("No frontmatter found; skipping header injection");
+            return;
+        }
 
-        // Check if header already exists (don't add multiple)
-        if (docContainer?.querySelector(".chopro-header")) {
+        const docContainer = this.findDocumentContainer(el);
+        if (!docContainer) {
+            this.logger.debug("No document container found; skipping header injection");
+            return;
+        }
+
+        if (docContainer.querySelector(".chopro-header")) {
             this.logger.debug("Header already exists; skipping");
             return;
         }
 
-        // Get frontmatter from context
-        const frontmatterData = ctx.frontmatter;
-        if (!frontmatterData || Object.keys(frontmatterData).length === 0) {
-            this.logger.debug("No frontmatter found; skipping");
+        if (!docContainer.querySelector(".chopro-container")) {
+            this.logger.debug("No chopro blocks found; skipping header injection");
             return;
         }
 
-        this.logger.debug("Injecting metadata header");
+        const metadata = new Frontmatter(frontmatter as Record<string, any>);
+        const header = this.createMetadataHeader(metadata);
 
-        const frontmatter = new Frontmatter(frontmatterData as Record<string, any>);
-        const headerDiv = el.createDiv({ cls: "chopro-header-wrapper" });
-        this.renderer.renderMetadataHeader(frontmatter, headerDiv);
-
-        // Move the header to be the first child of el
-        if (headerDiv.firstChild) {
-            el.insertBefore(headerDiv.firstChild, el.firstChild);
-            headerDiv.remove();
+        if (header) {
+            el.prepend(header);
             this.logger.info("Metadata header injected successfully");
         }
+    }
+
+    /**
+     * Find the document container element for the current view.
+     */
+    private findDocumentContainer(el: HTMLElement): Element | null {
+        return (
+            el.closest(".markdown-preview-sizer") ||
+            el.closest(".markdown-preview-view") ||
+            el.closest(".cm-content")
+        );
+    }
+
+    /**
+     * Create a metadata header element from frontmatter.
+     * Returns null if no content was rendered.
+     */
+    private createMetadataHeader(frontmatter: Frontmatter): Element | null {
+        const tempContainer = createDiv();
+        this.renderer.renderMetadataHeader(frontmatter, tempContainer);
+        return tempContainer.firstElementChild;
     }
 
     async convertChordOverLyrics(view: MarkdownView): Promise<void> {
