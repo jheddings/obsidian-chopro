@@ -17,6 +17,7 @@ import {
     ContentBlock,
     ChoproFile,
     MarkdownBlock,
+    Frontmatter,
 } from "./parser";
 
 /**
@@ -74,6 +75,60 @@ export class ContentRenderer {
     }
 
     /**
+     * Render song metadata header from frontmatter.
+     * Layout: Left side (title, artist), Right side (key, tempo/time)
+     */
+    renderMetadataHeader(frontmatter: Frontmatter, container: HTMLElement): void {
+        const title = frontmatter.get("title");
+        const artist = frontmatter.get("artist");
+        const key = frontmatter.get("key");
+        const tempo = frontmatter.get("tempo");
+        const time = frontmatter.get("time");
+
+        // Only render if we have at least title or artist
+        if (!title && !artist) {
+            this.logger.debug("No title or artist found, skipping metadata header");
+            return;
+        }
+
+        const header = container.createDiv({ cls: "chopro-header" });
+
+        // Left column: title and artist
+        const leftCol = header.createDiv({ cls: "chopro-header-left" });
+
+        if (title) {
+            leftCol.createDiv({ cls: "chopro-header-title", text: title });
+        }
+        if (artist) {
+            leftCol.createDiv({ cls: "chopro-header-artist", text: artist });
+        }
+
+        // Right column: key and tempo/time info
+        const rightCol = header.createDiv({ cls: "chopro-header-right" });
+
+        if (key) {
+            rightCol.createDiv({ cls: "chopro-header-info", text: `Key of ${key}` });
+        }
+
+        // Build tempo/time line (e.g., "85 BPM in 4/4")
+        const tempoTimeParts: string[] = [];
+        if (tempo) {
+            tempoTimeParts.push(`${tempo} BPM`);
+        }
+        if (tempo && time) {
+            tempoTimeParts.push("in");
+        }
+        if (time) {
+            tempoTimeParts.push(time);
+        }
+        if (tempoTimeParts.length > 0) {
+            rightCol.createDiv({ cls: "chopro-header-info", text: tempoTimeParts.join(" ") });
+        }
+
+        this.logger.debug("Metadata header rendered");
+    }
+
+    /**
      * Render a single line based on its type
      */
     private renderLine(container: HTMLElement, line: ChoproLine): void {
@@ -87,7 +142,7 @@ export class ContentRenderer {
             this.renderTextLine(container, line.content);
         }
 
-        // NOTE - CommentLine's are ignored when rendering
+        // NOTE - other lines are ignored when rendering
     }
 
     /**

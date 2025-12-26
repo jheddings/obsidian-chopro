@@ -1,9 +1,9 @@
 // main - ChoPro Obsidian Plugin
 
 import { Logger, LogLevel } from "obskit";
-import { Plugin, Notice, MarkdownView, Editor } from "obsidian";
+import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext } from "obsidian";
 
-import { ChoproFile } from "./parser";
+import { ChoproFile, Frontmatter } from "./parser";
 import { ContentRenderer } from "./render";
 import { ChoproBlock } from "./parser";
 import { ChoproStyleManager } from "./styles";
@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
         chordDecorations: "none",
         normalizedChordDisplay: false,
         italicAnnotations: true,
+        showMetadataHeader: false,
     },
     flow: {
         filesFolder: "",
@@ -44,12 +45,13 @@ export default class ChoproPlugin extends Plugin {
 
         await this.loadSettings();
 
-        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el, _ctx) => {
+        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el) => {
             await this.processChoproBlock(source, el);
         });
 
         this.registerMarkdownPostProcessor(async (el, ctx) => {
             await this.calloutProcessor.processCallouts(el, ctx);
+            this.injectMetadataHeader(el, ctx);
         });
 
         this.addCommand({
@@ -184,6 +186,66 @@ export default class ChoproPlugin extends Plugin {
             el.empty();
             el.createDiv({ cls: "chopro-error", text: "Error parsing ChoPro content" });
         }
+    }
+
+    /**
+     * Inject metadata header at the top of the document.
+     */
+    private injectMetadataHeader(el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
+        if (!this.settings.rendering.showMetadataHeader) {
+            return;
+        }
+
+        const frontmatter = ctx.frontmatter;
+        if (!frontmatter) {
+            this.logger.debug("No frontmatter found; skipping header injection");
+            return;
+        }
+
+        const docContainer = this.findDocumentContainer(el);
+        if (!docContainer) {
+            this.logger.debug("No document container found; skipping header injection");
+            return;
+        }
+
+        if (docContainer.querySelector(".chopro-header")) {
+            this.logger.debug("Header already exists; skipping");
+            return;
+        }
+
+        if (!docContainer.querySelector(".chopro-container")) {
+            this.logger.debug("No chopro blocks found; skipping header injection");
+            return;
+        }
+
+        const metadata = new Frontmatter(frontmatter as Record<string, any>);
+        const header = this.createMetadataHeader(metadata);
+
+        if (header) {
+            el.prepend(header);
+            this.logger.info("Metadata header injected successfully");
+        }
+    }
+
+    /**
+     * Find the document container element for the current view.
+     */
+    private findDocumentContainer(el: HTMLElement): Element | null {
+        return (
+            el.closest(".markdown-preview-sizer") ||
+            el.closest(".markdown-preview-view") ||
+            el.closest(".cm-content")
+        );
+    }
+
+    /**
+     * Create a metadata header element from frontmatter.
+     * Returns null if no content was rendered.
+     */
+    private createMetadataHeader(frontmatter: Frontmatter): Element | null {
+        const tempContainer = createDiv();
+        this.renderer.renderMetadataHeader(frontmatter, tempContainer);
+        return tempContainer.firstElementChild;
     }
 
     async convertChordOverLyrics(view: MarkdownView): Promise<void> {

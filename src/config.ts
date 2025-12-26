@@ -9,6 +9,7 @@ export interface RenderSettings {
     chordDecorations: string;
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
+    showMetadataHeader: boolean;
 }
 
 export interface FlowSettings {
