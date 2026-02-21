@@ -39,8 +39,10 @@ repo-guard:
 release bump="patch": preflight repo-guard
 	#!/usr/bin/env bash
 	npm version {{bump}} --no-git-tag-version
-	node version.mjs
-	VERSION=$(node -p "require('./package.json').version")
+	VERSION=$(jq -r '.version' package.json)
+	MIN_APP=$(jq -r '.minAppVersion' manifest.json)
+	jq --arg v "$VERSION" '.version = $v' manifest.json > tmp.$$.json && mv tmp.$$.json manifest.json
+	jq --arg v "$VERSION" --arg m "$MIN_APP" '. + {($v): $m}' versions.json > tmp.$$.json && mv tmp.$$.json versions.json
 	npx prettier --write package.json package-lock.json manifest.json versions.json
 	git add package.json package-lock.json manifest.json versions.json
 	git commit -m "obsidian-chopro-$VERSION"
