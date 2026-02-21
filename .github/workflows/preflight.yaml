@@ -27,11 +27,8 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Run format checks
-              run: npm run format:check
+            - name: Install just
+              uses: extractions/setup-just@v2
 
-            - name: Run lint checks
-              run: npm run lint
-
-            - name: Run unit tests
-              run: npm test
+            - name: Run preflight checks
+              run: just preflight
