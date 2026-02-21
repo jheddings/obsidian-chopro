@@ -27,8 +27,14 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Install just
-              uses: extractions/setup-just@v2
+            - name: Run format checks
+              run: npx prettier --check .
 
-            - name: Run preflight checks
-              run: just preflight
+            - name: Run lint checks
+              run: npx eslint .
+
+            - name: Build
+              run: npm run build
+
+            - name: Run tests
+              run: npx jest test/*.test.ts
