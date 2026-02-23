@@ -1,0 +1,98 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this bug! Please fill out the sections below to help us understand and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Provide a clear and concise description of what the bug is.
+      placeholder: |
+        Example: When I click the "Save" button on the profile page, nothing happens and my changes are not saved.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Tell us how to reproduce this issue. Be as specific as possible.
+      placeholder: |
+        1. Go to the profile page
+        2. Click on "Edit Profile"
+        3. Change my email address
+        4. Click "Save"
+        5. Notice that the email is not updated
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: Describe what you expected to happen instead.
+      placeholder: |
+        Example: I expected my profile changes to be saved and see a success message.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened?
+      description: Describe what actually happened. Include any error messages you saw.
+      placeholder: |
+        Example: The button didn't respond and no error message appeared. When I refreshed the page, my old information was still there.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or Videos
+      description: If applicable, add screenshots or videos to help explain the problem. You can drag and drop images here.
+      placeholder: Drag and drop images here or paste them.
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Help us understand your setup
+      placeholder: |
+        - Device: [e.g., iPhone 12, MacBook Pro, Windows PC]
+        - Browser: [e.g., Chrome 120, Safari 17, Firefox 121]
+        - Operating System: [e.g., iOS 17, macOS 14, Windows 11]
+        - App Version: [if applicable]
+      value: |
+        - Device: 
+        - Browser: 
+        - Operating System: 
+        - App Version:
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context about the problem here. For example:
+        - Does this happen every time or only sometimes?
+        - When did you first notice this issue?
+        - Are there any workarounds you've found?
+        - What were you trying to accomplish when this happened?
+      placeholder: Any additional information that might help us fix this bug.
+
+  - type: dropdown
+    id: occurrence
+    attributes:
+      label: How often does this happen?
+      options:
+        - label: Every time
+        - label: Sometimes
+        - label: Only happened once
+        - label: I'm not sure

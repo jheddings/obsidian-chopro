@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/jheddings/obsidian-chopro/discussions
+    about: Have a question or want to discuss something? Start a discussion instead!
