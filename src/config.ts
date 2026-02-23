@@ -2,7 +2,7 @@
 
 import { LogLevel } from "obskit";
 
-export interface RenderSettings {
+export type RenderSettings = {
     chordColor: string;
     chordSize: number;
     superscriptChordMods: boolean;
@@ -10,15 +10,15 @@ export interface RenderSettings {
     normalizedChordDisplay: boolean;
     italicAnnotations: boolean;
     showMetadataHeader: boolean;
-}
+};
 
-export interface FlowSettings {
+export type FlowSettings = {
     filesFolder: string;
     extraLine: boolean;
-}
+};
 
-export interface ChoproPluginSettings {
+export type ChoproPluginSettings = {
     rendering: RenderSettings;
     flow: FlowSettings;
     logLevel: LogLevel;
-}
+};

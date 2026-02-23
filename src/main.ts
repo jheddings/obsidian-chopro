@@ -100,7 +100,7 @@ export default class ChoproPlugin extends Plugin {
     }
 
     async saveSettings(): Promise<void> {
-        await this.saveData(this.settings);
+        await config.save(this, this.settings);
         this.applySettings();
         this.logger.debug("Settings saved");
     }

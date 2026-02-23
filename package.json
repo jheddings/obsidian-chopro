@@ -37,7 +37,7 @@
         "typescript": "5.9.3"
     },
     "dependencies": {
-        "obskit": "^1.4.4",
+        "obskit": "^1.5.0",
         "yaml": "^2.8.2"
     },
     "lint-staged": {
