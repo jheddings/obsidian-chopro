@@ -1,15 +1,8 @@
-
-# Intellij
-*.iml
-.idea
-
 # npm
 node_modules
 
-# Don't include the compiled main.js file in the repo.
-# They should be uploaded to GitHub releases instead.
+# build output
 main.js
-obsidian-chopro-*.zip
 
 # Exclude sourcemaps
 *.map
@@ -21,3 +14,6 @@ data.json
 .DS_Store
 *.swp
 *~
+tmp
+
+settings.local.json
