@@ -74,11 +74,11 @@ to ensure backwards compatibility with existing user data.
 
 ## Build & Tooling
 
-| Command         | Purpose                                    |
-| --------------- | ------------------------------------------ |
-| `npm run dev`   | Watch mode with inline sourcemaps          |
-| `npm run build` | Type-check (`tsc -noEmit`) + prod bundle   |
-| `npx jest`      | Run test suite                             |
+| Command         | Purpose                                  |
+| --------------- | ---------------------------------------- |
+| `npm run dev`   | Watch mode with inline sourcemaps        |
+| `npm run build` | Type-check (`tsc -noEmit`) + prod bundle |
+| `npx jest`      | Run test suite                           |
 
 - **Bundler**: esbuild targeting ES6, CommonJS output to `main.js`
 - **Externals**: obsidian, electron, @codemirror/\*, @lezer/\*, builtin-modules

@@ -1,91 +1,91 @@
 name: Feature Request
 description: Suggest a new feature or enhancement
-title: '[Feature]: '
-labels: ['enhancement']
+title: "[Feature]: "
+labels: ["enhancement"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for suggesting a new feature! Please fill out the sections below to help us understand your idea.
+    - type: markdown
+      attributes:
+          value: |
+              Thanks for suggesting a new feature! Please fill out the sections below to help us understand your idea.
 
-  - type: textarea
-    id: description
-    attributes:
-      label: What would you like to see?
-      description: Provide a clear and concise description of the feature you'd like to see.
-      placeholder: |
-        Example: I would like to be able to export my data to a CSV file.
-    validations:
-      required: true
+    - type: textarea
+      id: description
+      attributes:
+          label: What would you like to see?
+          description: Provide a clear and concise description of the feature you'd like to see.
+          placeholder: |
+              Example: I would like to be able to export my data to a CSV file.
+      validations:
+          required: true
 
-  - type: textarea
-    id: problem
-    attributes:
-      label: What problem does this solve?
-      description: Explain the problem or need this feature would address. Help us understand why this is important to you.
-      placeholder: |
-        Example: Right now, I can only view my data on the screen, but I need to analyze it in Excel or share it with my team. This makes it hard to create reports.
-    validations:
-      required: true
+    - type: textarea
+      id: problem
+      attributes:
+          label: What problem does this solve?
+          description: Explain the problem or need this feature would address. Help us understand why this is important to you.
+          placeholder: |
+              Example: Right now, I can only view my data on the screen, but I need to analyze it in Excel or share it with my team. This makes it hard to create reports.
+      validations:
+          required: true
 
-  - type: textarea
-    id: use-case
-    attributes:
-      label: How would you use this feature?
-      description: Walk us through a typical scenario where you'd use this feature.
-      placeholder: |
-        Example: 
-        1. I would go to the reports page
-        2. Select the data I want to export
-        3. Click an "Export to CSV" button
-        4. Save the file to my computer
-        5. Open it in Excel for further analysis
-    validations:
-      required: true
+    - type: textarea
+      id: use-case
+      attributes:
+          label: How would you use this feature?
+          description: Walk us through a typical scenario where you'd use this feature.
+          placeholder: |
+              Example: 
+              1. I would go to the reports page
+              2. Select the data I want to export
+              3. Click an "Export to CSV" button
+              4. Save the file to my computer
+              5. Open it in Excel for further analysis
+      validations:
+          required: true
 
-  - type: textarea
-    id: proposed-solution
-    attributes:
-      label: How do you imagine this working?
-      description: |
-        Describe how you think this feature should work. Don't worry about technical details - just describe it from your perspective as a user.
-      placeholder: |
-        Example: There could be a button at the top of the reports page labeled "Export". When I click it, a menu appears with options like "Export to CSV", "Export to Excel", or "Export to PDF". After selecting an option, the file downloads automatically.
+    - type: textarea
+      id: proposed-solution
+      attributes:
+          label: How do you imagine this working?
+          description: |
+              Describe how you think this feature should work. Don't worry about technical details - just describe it from your perspective as a user.
+          placeholder: |
+              Example: There could be a button at the top of the reports page labeled "Export". When I click it, a menu appears with options like "Export to CSV", "Export to Excel", or "Export to PDF". After selecting an option, the file downloads automatically.
 
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Have you tried any workarounds?
-      description: Are there any current workarounds you're using? What other solutions have you considered?
-      placeholder: |
-        Example: Right now I'm manually copying and pasting data, but this is time-consuming and error-prone when there's a lot of data.
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Have you tried any workarounds?
+          description: Are there any current workarounds you're using? What other solutions have you considered?
+          placeholder: |
+              Example: Right now I'm manually copying and pasting data, but this is time-consuming and error-prone when there's a lot of data.
 
-  - type: textarea
-    id: examples
-    attributes:
-      label: Examples or References
-      description: |
-        Are there any other apps or websites that do something similar? Feel free to share links, screenshots, or examples.
-      placeholder: |
-        Example: Google Analytics has a nice export feature that lets you download reports. [Screenshot attached]
+    - type: textarea
+      id: examples
+      attributes:
+          label: Examples or References
+          description: |
+              Are there any other apps or websites that do something similar? Feel free to share links, screenshots, or examples.
+          placeholder: |
+              Example: Google Analytics has a nice export feature that lets you download reports. [Screenshot attached]
 
-  - type: dropdown
-    id: priority
-    attributes:
-      label: How important is this to you?
-      description: Help us understand the priority from your perspective.
-      options:
-        - 'Nice to have - would be convenient'
-        - 'Important - would improve my workflow significantly'
-        - 'Critical - I really need this to use the app effectively'
-        - 'Unsure'
-    validations:
-      required: true
+    - type: dropdown
+      id: priority
+      attributes:
+          label: How important is this to you?
+          description: Help us understand the priority from your perspective.
+          options:
+              - "Nice to have - would be convenient"
+              - "Important - would improve my workflow significantly"
+              - "Critical - I really need this to use the app effectively"
+              - "Unsure"
+      validations:
+          required: true
 
-  - type: textarea
-    id: additional
-    attributes:
-      label: Additional Context
-      description: |
-        Add any other technical context, ideas, or considerations about the feature request here.
-      placeholder: Any additional information that might be helpful.
+    - type: textarea
+      id: additional
+      attributes:
+          label: Additional Context
+          description: |
+              Add any other technical context, ideas, or considerations about the feature request here.
+          placeholder: Any additional information that might be helpful.
