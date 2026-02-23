@@ -1,6 +1,6 @@
 // main - ChoPro Obsidian Plugin
 
-import { Logger, LogLevel } from "obskit";
+import { Logger, LogLevel, PluginConfig } from "obskit";
 import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext } from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
@@ -31,6 +31,10 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     },
     logLevel: LogLevel.ERROR,
 };
+
+const config = new PluginConfig<ChoproPluginSettings>({
+    defaults: DEFAULT_SETTINGS,
+});
 
 export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
@@ -90,13 +94,13 @@ export default class ChoproPlugin extends Plugin {
     }
 
     async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = await config.load(this);
         this.applySettings();
         this.logger.debug("Settings loaded");
     }
 
     async saveSettings(): Promise<void> {
-        await this.saveData(this.settings);
+        await config.save(this, this.settings);
         this.applySettings();
         this.logger.debug("Settings saved");
     }
