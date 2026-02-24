@@ -17,6 +17,7 @@
 This task is independent and touches the fewest files. It adds the callback type and wires it through the constructor.
 
 **Files:**
+
 - Modify: `src/render.ts:26-64`
 - Modify: `src/main.ts:4,111`
 
@@ -29,7 +30,7 @@ In `src/render.ts`, add a type alias before the class and update the constructor
  * Optional callback for rendering markdown content into DOM elements.
  * Injected by the plugin to avoid coupling the renderer to Obsidian's API.
  */
-export type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>
+export type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>;
 ```
 
 Update the constructor to accept the callback:
@@ -96,7 +97,14 @@ Update `render`:
 In `src/main.ts`, add `MarkdownRenderer` to the obsidian import (line 4):
 
 ```typescript
-import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext, MarkdownRenderer } from "obsidian"
+import {
+    Plugin,
+    Notice,
+    MarkdownView,
+    Editor,
+    MarkdownPostProcessorContext,
+    MarkdownRenderer,
+} from "obsidian";
 ```
 
 Update `applySettings()` (line 111) to pass the callback:
@@ -118,7 +126,7 @@ Update `applySettings()` (line 111) to pass the callback:
 Also update the import from render.ts (line 7) to include the type:
 
 ```typescript
-import { ContentRenderer } from "./render"
+import { ContentRenderer } from "./render";
 ```
 
 (The `MarkdownRenderFn` type doesn't need to be imported in main.ts since it's inferred from the callback parameter.)
@@ -152,6 +160,7 @@ is provided (e.g., in tests)."
 This task makes the callout processor render each linked song's metadata header from that song's own frontmatter. It requires the renderer (from Task 1) to be available.
 
 **Files:**
+
 - Modify: `src/callout.ts:1-6,34-43,149-173`
 - Modify: `src/main.ts:113`
 
@@ -160,13 +169,13 @@ This task makes the callout processor render each linked song's metadata header 
 In `src/callout.ts`, update imports to include the parser types:
 
 ```typescript
-import { Logger } from "obskit"
-import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian"
+import { Logger } from "obskit";
+import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
-import { FlowManager } from "./flow"
-import { ContentRenderer } from "./render"
-import { ChoproFile } from "./parser"
-import { RenderSettings } from "./config"
+import { FlowManager } from "./flow";
+import { ContentRenderer } from "./render";
+import { ChoproFile } from "./parser";
+import { RenderSettings } from "./config";
 ```
 
 Update the class to accept the renderer and settings:
@@ -284,6 +293,7 @@ header, not the set list document's metadata."
 This task removes the fragile DOM-walking header injection and replaces it with a `layout-change` event listener. This is the core fix for #235.
 
 **Files:**
+
 - Modify: `src/main.ts:47-59,108-116,195-253`
 - Modify: `styles.css:122-126`
 
@@ -374,6 +384,7 @@ Note the `:scope > .chopro-header` selector: this checks for a header that is a 
 **Step 3: Remove old header injection code**
 
 Delete the following methods from `ChoproPlugin` in `src/main.ts`:
+
 - `injectMetadataHeader` (lines 198-232)
 - `findDocumentContainer` (lines 237-243)
 
@@ -424,25 +435,30 @@ first callout in a set list would get a metadata header."
 These tests must be performed in Obsidian after loading the plugin.
 
 **Test 1: Single song document with metadata header enabled**
+
 1. Open a song document that has frontmatter with `title` and `artist`
 2. Enable "Show metadata header" in plugin settings
 3. Verify the header appears at the top of the reading view with title/artist
 
 **Test 2: Set list with multiple callouts (#235)**
+
 1. Create a set list document with two `[!chopro]` callouts linking to different songs
 2. Each song should have its own frontmatter with different titles/artists
 3. Verify each callout renders its own per-song metadata header
 4. Verify the set list's own metadata header appears at the document level (if the set list has title/artist)
 
 **Test 3: Document without chopro content**
+
 1. Open a regular markdown document with title/artist frontmatter
 2. Verify no metadata header is injected (the guard checks for `.chopro-container`)
 
 **Test 4: Markdown blocks render properly**
+
 1. Create a document that has non-chopro markdown content mixed with chopro code blocks
 2. Verify the markdown content is rendered properly (not as plain text)
 
 **Test 5: Metadata header disabled**
+
 1. Disable "Show metadata header" in plugin settings
 2. Verify no headers appear in any view
 
