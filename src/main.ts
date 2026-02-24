@@ -119,7 +119,12 @@ export default class ChoproPlugin extends Plugin {
             MarkdownRenderer.render(this.app, content, container, "", this)
         );
         this.flowManager = new FlowManager(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(this, this.flowManager);
+        this.calloutProcessor = new CalloutProcessor(
+            this,
+            this.flowManager,
+            this.renderer,
+            this.settings.rendering
+        );
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }

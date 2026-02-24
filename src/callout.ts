@@ -4,6 +4,9 @@ import { Logger } from "obskit";
 import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
 
 import { FlowManager } from "./flow";
+import { ContentRenderer } from "./render";
+import { ChoproFile } from "./parser";
+import { RenderSettings } from "./config";
 
 const TRUTHY_VALUES = ["on", "true", "yes", "y"];
 
@@ -36,10 +39,19 @@ export class CalloutProcessor {
 
     private plugin: Plugin;
     private flowManager: FlowManager;
+    private renderer: ContentRenderer;
+    private renderSettings: RenderSettings;
 
-    constructor(plugin: Plugin, flowManager: FlowManager) {
+    constructor(
+        plugin: Plugin,
+        flowManager: FlowManager,
+        renderer: ContentRenderer,
+        renderSettings: RenderSettings
+    ) {
         this.plugin = plugin;
         this.flowManager = flowManager;
+        this.renderer = renderer;
+        this.renderSettings = renderSettings;
     }
 
     /**
@@ -165,10 +177,14 @@ export class CalloutProcessor {
 
         const container = callout.createEl("blockquote");
 
-        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+        // Render per-song metadata header from the target file's frontmatter
+        if (this.renderSettings.showMetadataHeader) {
+            const parsed = ChoproFile.parse(content);
+            if (parsed.frontmatter) {
+                this.renderer.renderMetadataHeader(parsed.frontmatter, container);
+            }
+        }
 
-        // TODO render to DOM elements using the renderer
-        //const choproFile = ChoproFile.parse(content);
-        //this.plugin.renderer.render(choproFile, container);
+        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 }
