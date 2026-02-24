@@ -1,7 +1,14 @@
 // main - ChoPro Obsidian Plugin
 
 import { Logger, LogLevel, PluginConfig } from "obskit";
-import { Plugin, Notice, MarkdownView, Editor, MarkdownRenderer } from "obsidian";
+import {
+    Plugin,
+    Notice,
+    MarkdownView,
+    Editor,
+    MarkdownPostProcessorContext,
+    MarkdownRenderer,
+} from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
 import { ContentRenderer } from "./render";
@@ -53,9 +60,11 @@ export default class ChoproPlugin extends Plugin {
             await this.processChoproBlock(source, el);
         });
 
-        this.registerMarkdownPostProcessor(async (el, ctx) => {
-            await this.calloutProcessor.processCallouts(el, ctx);
-        });
+        this.registerMarkdownPostProcessor(
+            async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+                await this.calloutProcessor.processCallouts(el, ctx);
+            }
+        );
 
         this.registerEvent(
             this.app.workspace.on("layout-change", () => {
