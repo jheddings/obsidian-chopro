@@ -67,8 +67,14 @@ export default class ChoproPlugin extends Plugin {
         );
 
         this.registerEvent(
+            this.app.workspace.on("active-leaf-change", () => {
+                this.updateMetadataHeader();
+            })
+        );
+
+        this.registerEvent(
             this.app.workspace.on("layout-change", () => {
-                this.handleLayoutChange();
+                this.updateMetadataHeader();
             })
         );
 
@@ -214,28 +220,31 @@ export default class ChoproPlugin extends Plugin {
     }
 
     /**
-     * Handle layout changes to inject/update the document-level metadata header.
-     * Uses a guard pattern to short-circuit quickly in the common case.
+     * Update the document-level metadata header.
+     * Removes any existing header and re-injects if appropriate.
      */
-    private handleLayoutChange(): void {
-        if (!this.settings.rendering.showMetadataHeader) {
-            return;
-        }
-
+    private updateMetadataHeader(): void {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!view) {
             return;
         }
 
-        const file = view.file;
-        if (!file) {
+        const contentEl = view.contentEl;
+
+        // Remove any existing header first
+        contentEl.querySelector(":scope > .chopro-header")?.remove();
+
+        if (!this.settings.rendering.showMetadataHeader) {
             return;
         }
 
-        const contentEl = view.contentEl;
+        // Only show in reading view
+        if (view.getMode() !== "preview") {
+            return;
+        }
 
-        // Already injected for this view
-        if (contentEl.querySelector(":scope > .chopro-header")) {
+        const file = view.file;
+        if (!file) {
             return;
         }
 
@@ -257,7 +266,7 @@ export default class ChoproPlugin extends Plugin {
 
         if (header) {
             contentEl.prepend(header);
-            this.logger.info("Document metadata header injected via layout-change");
+            this.logger.debug("Document metadata header injected");
         }
     }
 
