@@ -7,3 +7,6 @@ package-lock.json
 *.d.ts
 
 settings.local.json
+
+# test data files contain intentional spacing for ChordPro notation
+test/**/*.md
