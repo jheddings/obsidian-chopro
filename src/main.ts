@@ -210,7 +210,7 @@ export default class ChoproPlugin extends Plugin {
 
         try {
             const block = ChoproBlock.parseRaw(source);
-            this.renderer.renderChoproBlock(block, container);
+            await this.renderer.renderBlock(block, container);
             this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
             this.logger.error("Failed to process ChoPro block: ", error);
