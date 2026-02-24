@@ -44,6 +44,9 @@
         "*.{js,jsx,ts,tsx,json,css,scss}": [
             "prettier --check",
             "eslint"
+        ],
+        "*.md": [
+            "prettier --check"
         ]
     }
 }

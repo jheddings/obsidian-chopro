@@ -120,11 +120,6 @@
 
 /* ===== Metadata Header Styles ===== */
 
-/* only show in Reading View (not Live Preview) */
-.markdown-source-view:not(.is-live-preview) .chopro-header {
-    display: none;
-}
-
 /* Main header container */
 .chopro-header {
     display: flex;

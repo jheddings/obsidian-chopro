@@ -84,21 +84,22 @@ treats markdown as plain text. There's a commented-out
 proper markdown rendering without coupling to Obsidian's API:
 
 ```typescript
-type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>
+type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>;
 
 class ContentRenderer {
-    constructor(settings: RenderSettings, private renderMarkdown?: MarkdownRenderFn) {}
+    constructor(
+        settings: RenderSettings,
+        private renderMarkdown?: MarkdownRenderFn
+    ) {}
 }
 ```
 
 The plugin passes the callback when constructing the renderer:
 
 ```typescript
-this.renderer = new ContentRenderer(
-    this.settings.rendering,
-    (content, container) =>
-        MarkdownRenderer.render(this.app, content, container, "", this)
-)
+this.renderer = new ContentRenderer(this.settings.rendering, (content, container) =>
+    MarkdownRenderer.render(this.app, content, container, "", this)
+);
 ```
 
 This keeps `ContentRenderer` testable (no Obsidian dependency) while enabling
