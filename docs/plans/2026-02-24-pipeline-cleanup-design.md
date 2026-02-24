@@ -65,7 +65,9 @@ classes for boolean toggles. Move all configurable rules into `styles.css` using
 - `main.ts`: Call `applyToContainer()` in `processChoproBlock()` after creating the
   container div. Remove `applyStyles()` from `applySettings()` and `removeStyles()`
   from `onunload()`.
-- `callout.ts`: Apply styles to callout containers via `applyToContainer()`.
+- `settings.ts`: Apply styles to the settings preview container via
+  `applyToContainer()`. Callout containers inherit styles automatically because
+  their embedded `chopro` code blocks go through `processChoproBlock()`.
 
 ### 2. ContentRenderer Entry Point Consolidation
 
