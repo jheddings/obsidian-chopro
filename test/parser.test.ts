@@ -16,6 +16,7 @@ import {
     ChordLine,
     ChordSegment,
 } from "../src/parser";
+import { loadChoproFile } from "./helpers";
 import { verifyChordsInLine } from "./util";
 
 describe("ChordSegment", () => {
@@ -791,7 +792,7 @@ describe("ChoproFile", () => {
         const filePath = path.resolve(__dirname, filename);
         const fileContent = fs.readFileSync(filePath, "utf-8");
 
-        const file = ChoproFile.load(filePath);
+        const file = loadChoproFile(filePath);
 
         const roundTrip = file.toString();
         expect(roundTrip).toEqual(fileContent);

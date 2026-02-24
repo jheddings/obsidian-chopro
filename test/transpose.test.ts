@@ -9,6 +9,7 @@ import {
     TransposeUtils,
 } from "../src/transpose";
 
+import { loadChoproFile } from "./helpers";
 import { verifyChordsInBlock } from "./util";
 
 describe("NoteTransposer", () => {
@@ -213,7 +214,7 @@ describe("TransposeUtils", () => {
             "should detect $expected for $filename",
             ({ filename, expected }) => {
                 const filePath = path.resolve(__dirname, filename);
-                const file = ChoproFile.load(filePath);
+                const file = loadChoproFile(filePath);
                 const key = TransposeUtils.detectKey(file);
 
                 expect(key).toEqual(expected);
@@ -230,7 +231,7 @@ describe("ChoproTransposer", () => {
      */
     const loadTestFile = (filename: string): ChoproFile => {
         const filePath = path.resolve(__dirname, filename);
-        return ChoproFile.load(filePath);
+        return loadChoproFile(filePath);
     };
 
     describe("transpose standard.md", () => {
