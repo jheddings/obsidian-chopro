@@ -23,10 +23,10 @@ export class ChoproStyleManager {
      * Called when settings change so existing rendered views update immediately.
      */
     static updateAllContainers(settings: RenderSettings): void {
-        const containers = document.querySelectorAll<HTMLElement>(".chopro-container");
-        containers.forEach((container) => {
+        const containers = Array.from(document.querySelectorAll<HTMLElement>(".chopro-container"));
+        for (const container of containers) {
             this.applyToContainer(container, settings);
-        });
+        }
     }
 
     private static sanitizeColorValue(color: string): string {
@@ -34,7 +34,8 @@ export class ChoproStyleManager {
             return "#2563eb";
         }
 
-        const colorPattern = /^(#([0-9a-fA-F]{3}){1,2}|rgb\(.*\)|hsl\(.*\)|[a-zA-Z]+)$/;
+        const colorPattern =
+            /^(#([0-9a-fA-F]{3}){1,2}|rgb\([\d\s,.%]+\)|hsl\([\d\s,.%]+\)|[a-zA-Z]+)$/;
         return colorPattern.test(color.trim()) ? color.trim() : "#2563eb";
     }
 
