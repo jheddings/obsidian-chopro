@@ -70,10 +70,10 @@ body:
               - Operating System: [e.g., iOS 17, macOS 14, Windows 11]
               - App Version: [if applicable]
           value: |
-              - Device: 
-              - Browser: 
+              - Device:
               - Operating System: 
-              - App Version:
+              - Obsidian Version:
+              - Plugin Version:
 
     - type: textarea
       id: additional
