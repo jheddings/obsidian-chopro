@@ -1,7 +1,14 @@
 // main - ChoPro Obsidian Plugin
 
 import { Logger, LogLevel, PluginConfig } from "obskit";
-import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext } from "obsidian";
+import {
+    Plugin,
+    Notice,
+    MarkdownView,
+    Editor,
+    MarkdownPostProcessorContext,
+    MarkdownRenderer,
+} from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
 import { ContentRenderer } from "./render";
@@ -108,7 +115,9 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ContentRenderer(this.settings.rendering);
+        this.renderer = new ContentRenderer(this.settings.rendering, (content, container) =>
+            MarkdownRenderer.render(this.app, content, container, "", this)
+        );
         this.flowManager = new FlowManager(this, this.settings.flow);
         this.calloutProcessor = new CalloutProcessor(this, this.flowManager);
 
