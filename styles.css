@@ -120,17 +120,12 @@
 
 /* ===== Metadata Header Styles ===== */
 
-/* only show in Reading View (not Live Preview) */
-.markdown-source-view:not(.is-live-preview) .chopro-header {
-    display: none;
-}
-
 /* Main header container */
 .chopro-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1rem 0;
+    padding: 1rem var(--file-margins);
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--background-modifier-border);
 }
@@ -169,4 +164,9 @@
     color: var(--text-normal);
     line-height: 1.4;
     white-space: nowrap;
+}
+
+/* Remove file-margins padding when header is inside a callout */
+.callout[data-callout="chopro"] .chopro-header {
+    padding: 1rem 0;
 }

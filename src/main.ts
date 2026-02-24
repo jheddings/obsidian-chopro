@@ -1,7 +1,14 @@
 // main - ChoPro Obsidian Plugin
 
 import { Logger, LogLevel, PluginConfig } from "obskit";
-import { Plugin, Notice, MarkdownView, Editor, MarkdownPostProcessorContext } from "obsidian";
+import {
+    Plugin,
+    Notice,
+    MarkdownView,
+    Editor,
+    MarkdownPostProcessorContext,
+    MarkdownRenderer,
+} from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
 import { ContentRenderer } from "./render";
@@ -53,10 +60,23 @@ export default class ChoproPlugin extends Plugin {
             await this.processChoproBlock(source, el);
         });
 
-        this.registerMarkdownPostProcessor(async (el, ctx) => {
-            await this.calloutProcessor.processCallouts(el, ctx);
-            this.injectMetadataHeader(el, ctx);
-        });
+        this.registerMarkdownPostProcessor(
+            async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+                await this.calloutProcessor.processCallouts(el, ctx);
+            }
+        );
+
+        this.registerEvent(
+            this.app.workspace.on("active-leaf-change", () => {
+                this.updateMetadataHeader();
+            })
+        );
+
+        this.registerEvent(
+            this.app.workspace.on("layout-change", () => {
+                this.updateMetadataHeader();
+            })
+        );
 
         this.addCommand({
             id: "chopro-transpose",
@@ -108,9 +128,16 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ContentRenderer(this.settings.rendering);
+        this.renderer = new ContentRenderer(this.settings.rendering, (content, container) =>
+            MarkdownRenderer.render(this.app, content, container, "", this)
+        );
         this.flowManager = new FlowManager(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(this, this.flowManager);
+        this.calloutProcessor = new CalloutProcessor(
+            this,
+            this.flowManager,
+            this.renderer,
+            this.settings.rendering
+        );
 
         ChoproStyleManager.applyStyles(this.settings.rendering);
     }
@@ -193,32 +220,44 @@ export default class ChoproPlugin extends Plugin {
     }
 
     /**
-     * Inject metadata header at the top of the document.
+     * Update the document-level metadata header.
+     * Removes any existing header and re-injects if appropriate.
      */
-    private injectMetadataHeader(el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
+    private updateMetadataHeader(): void {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view) {
+            return;
+        }
+
+        const contentEl = view.contentEl;
+
+        // Remove any existing header first
+        contentEl.querySelector(":scope > .chopro-header")?.remove();
+
         if (!this.settings.rendering.showMetadataHeader) {
             return;
         }
 
-        const frontmatter = ctx.frontmatter;
+        // Only show in reading view
+        if (view.getMode() !== "preview") {
+            return;
+        }
+
+        const file = view.file;
+        if (!file) {
+            return;
+        }
+
+        // Not a chopro document
+        if (!contentEl.querySelector(".chopro-container")) {
+            return;
+        }
+
+        // Check frontmatter for song metadata
+        const cache = this.app.metadataCache.getFileCache(file);
+        const frontmatter = cache?.frontmatter;
+
         if (!frontmatter) {
-            this.logger.debug("No frontmatter found; skipping header injection");
-            return;
-        }
-
-        const docContainer = this.findDocumentContainer(el);
-        if (!docContainer) {
-            this.logger.debug("No document container found; skipping header injection");
-            return;
-        }
-
-        if (docContainer.querySelector(".chopro-header")) {
-            this.logger.debug("Header already exists; skipping");
-            return;
-        }
-
-        if (!docContainer.querySelector(".chopro-container")) {
-            this.logger.debug("No chopro blocks found; skipping header injection");
             return;
         }
 
@@ -226,20 +265,9 @@ export default class ChoproPlugin extends Plugin {
         const header = this.createMetadataHeader(metadata);
 
         if (header) {
-            el.prepend(header);
-            this.logger.info("Metadata header injected successfully");
+            contentEl.prepend(header);
+            this.logger.debug("Document metadata header injected");
         }
-    }
-
-    /**
-     * Find the document container element for the current view.
-     */
-    private findDocumentContainer(el: HTMLElement): Element | null {
-        return (
-            el.closest(".markdown-preview-sizer") ||
-            el.closest(".markdown-preview-view") ||
-            el.closest(".cm-content")
-        );
     }
 
     /**

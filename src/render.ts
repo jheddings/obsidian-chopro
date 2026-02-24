@@ -21,46 +21,57 @@ import {
 } from "./parser";
 
 /**
+ * Optional callback for rendering markdown content into DOM elements.
+ * Injected by the plugin to avoid coupling the renderer to Obsidian's API.
+ */
+export type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>;
+
+/**
  * Renderer for converting our AST into Obsidian DOM elements
  */
 export class ContentRenderer {
     private logger = Logger.getLogger("ContentRenderer");
     private settings: RenderSettings;
+    private renderMarkdownFn?: MarkdownRenderFn;
 
-    constructor(settings: RenderSettings) {
+    constructor(settings: RenderSettings, renderMarkdownFn?: MarkdownRenderFn) {
         this.settings = settings;
+        this.renderMarkdownFn = renderMarkdownFn;
     }
 
     /**
      * Render a complete ChordPro file.
      */
-    render(file: ChoproFile, container: HTMLElement): void {
-        // TODO render Frontmatter as metadata container if defined
-
-        file.blocks.forEach((block) => this.renderBlock(block, container));
+    async render(file: ChoproFile, container: HTMLElement): Promise<void> {
+        for (const block of file.blocks) {
+            await this.renderBlock(block, container);
+        }
     }
 
     /**
      * Render a content block
      */
-    renderBlock(block: ContentBlock, container: HTMLElement): void {
+    async renderBlock(block: ContentBlock, container: HTMLElement): Promise<void> {
         if (block instanceof MarkdownBlock) {
-            this.renderMarkdownBlock(block, container);
+            await this.renderMarkdownBlock(block, container);
         } else if (block instanceof ChoproBlock) {
             this.renderChoproBlock(block, container);
         }
     }
 
     /**
-     * Render a markdown block into DOM elements
+     * Render a markdown block into DOM elements.
+     * Uses the injected render callback if available, otherwise falls back to plain text.
      */
-    renderMarkdownBlock(block: MarkdownBlock, container: HTMLElement): void {
+    async renderMarkdownBlock(block: MarkdownBlock, container: HTMLElement): Promise<void> {
         const content = block.content;
         const markdown = container.createDiv({ cls: "markdown" });
-        markdown.setText(content);
 
-        // TODO render markdown ad DOM elements
-        //await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+        if (this.renderMarkdownFn) {
+            await this.renderMarkdownFn(content, markdown);
+        } else {
+            markdown.setText(content);
+        }
     }
 
     /**
