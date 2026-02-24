@@ -42,6 +42,6 @@ export class ChoproStyleManager {
         if (typeof size !== "number" || isNaN(size)) {
             return 1.0;
         }
-        return Math.max(0.5, Math.min(3.0, size));
+        return Math.max(0.5, Math.min(2.0, size));
     }
 }
