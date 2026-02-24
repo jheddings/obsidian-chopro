@@ -28,7 +28,8 @@
 }
 
 .chopro-line:has(.chopro-pair) {
-    padding-top: 1.5em;
+    padding-top: calc(var(--chopro-chord-size, 1) * 1.5em);
+    min-height: calc(1.5em + var(--chopro-chord-size, 1) * 1em);
     align-items: baseline;
 }
 
@@ -44,6 +45,8 @@
 /* ===== Chord and Annotation Styles ===== */
 .chopro-chord,
 .chopro-annotation {
+    color: var(--chopro-chord-color, #2563eb);
+    font-size: calc(var(--chopro-chord-size, 1) * 1em);
     font-weight: bold;
     white-space: nowrap;
     font-family: var(--font-monospace);
@@ -62,6 +65,15 @@
 
 .chopro-chord-modifier {
     padding-left: 0.1em;
+}
+
+.chopro-italic-annotations .chopro-annotation {
+    font-style: italic;
+}
+
+.chopro-superscript-mods .chopro-chord-modifier {
+    vertical-align: top;
+    font-size: 0.75em;
 }
 
 /* ===== Lyrics Styles ===== */

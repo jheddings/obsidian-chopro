@@ -108,8 +108,6 @@ export default class ChoproPlugin extends Plugin {
     }
 
     onunload(): void {
-        ChoproStyleManager.removeStyles();
-
         this.logger.info("Plugin unloaded");
     }
 
@@ -139,7 +137,7 @@ export default class ChoproPlugin extends Plugin {
             this.settings.rendering
         );
 
-        ChoproStyleManager.applyStyles(this.settings.rendering);
+        ChoproStyleManager.updateAllContainers(this.settings.rendering);
     }
 
     private async transposeActiveView(activeView: MarkdownView): Promise<void> {
@@ -207,6 +205,7 @@ export default class ChoproPlugin extends Plugin {
         el.empty();
 
         const container = el.createDiv({ cls: "chopro-container" });
+        ChoproStyleManager.applyToContainer(container, this.settings.rendering);
 
         try {
             const block = ChoproBlock.parseRaw(source);

@@ -3,84 +3,42 @@
 import { RenderSettings } from "./config";
 
 export class ChoproStyleManager {
-    private static readonly STYLE_ID = "chopro-plugin-user-overrides";
+    /**
+     * Apply style settings to a container element using CSS custom properties.
+     * Sets CSS variables and toggles classes for boolean settings.
+     */
+    static applyToContainer(el: HTMLElement, settings: RenderSettings): void {
+        const color = this.sanitizeColorValue(settings.chordColor);
+        const size = this.sanitizeSizeValue(settings.chordSize);
 
-    static removeStyles(): void {
-        try {
-            const existingStyle = document.getElementById(this.STYLE_ID);
-            if (existingStyle) {
-                existingStyle.remove();
-            }
-        } catch (error) {
-            console.warn("Failed to remove ChoPro styles:", error);
-        }
+        el.style.setProperty("--chopro-chord-color", color);
+        el.style.setProperty("--chopro-chord-size", String(size));
+
+        el.classList.toggle("chopro-italic-annotations", settings.italicAnnotations);
+        el.classList.toggle("chopro-superscript-mods", settings.superscriptChordMods);
     }
 
-    static applyStyles(settings: RenderSettings): void {
-        try {
-            this.removeStyles();
-
-            // Only apply user setting overrides
-            const style = document.createElement("style");
-            style.id = this.STYLE_ID;
-
-            let overrides = "";
-
-            // Validate and sanitize color value
-            const colorValue = this.sanitizeColorValue(settings.chordColor);
-            const sizeValue = this.sanitizeSizeValue(settings.chordSize);
-
-            // Chord and annotation color and size overrides
-            overrides += `
-                .chopro-chord,
-                .chopro-annotation {
-                    color: ${colorValue};
-                    font-size: ${sizeValue}em;
-                }
-                .chopro-line:has(.chopro-pair) {
-                    min-height: ${1.5 + sizeValue}em;
-                }
-            `;
-
-            // Italic annotations override
-            if (settings.italicAnnotations) {
-                overrides += `
-                .chopro-annotation {
-                    font-style: italic;
-                }
-                `;
-            }
-
-            // Superscript chord modifiers override
-            if (settings.superscriptChordMods) {
-                overrides += `
-                .chopro-chord-modifier {
-                    vertical-align: top;
-                    font-size: 0.75em;
-                }
-                `;
-            }
-
-            style.textContent = overrides;
-            document.head.appendChild(style);
-        } catch (error) {
-            console.error("Failed to apply ChoPro styles:", error);
-        }
+    /**
+     * Update all existing .chopro-container elements with current settings.
+     * Called when settings change so existing rendered views update immediately.
+     */
+    static updateAllContainers(settings: RenderSettings): void {
+        const containers = document.querySelectorAll<HTMLElement>(".chopro-container");
+        containers.forEach((container) => {
+            this.applyToContainer(container, settings);
+        });
     }
 
     private static sanitizeColorValue(color: string): string {
-        // Basic CSS color validation
         if (!color || typeof color !== "string") {
-            return "#2563eb"; // Default blue
+            return "#2563eb";
         }
 
-        // Allow hex colors, CSS named colors, rgb(), hsl(), etc.
         const colorPattern = /^(#([0-9a-fA-F]{3}){1,2}|rgb\(.*\)|hsl\(.*\)|[a-zA-Z]+)$/;
         return colorPattern.test(color.trim()) ? color.trim() : "#2563eb";
     }
 
     private static sanitizeSizeValue(size: number): number {
-        // Ensure size is within reasonable bounds
         if (typeof size !== "number" || isNaN(size)) {
             return 1.0;
         }
