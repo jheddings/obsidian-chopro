@@ -72,13 +72,14 @@ to ensure backwards compatibility with existing user data.
 - **yaml** (production) - YAML parsing for frontmatter and callout features.
 - **obsidian** (dev/external) - Obsidian API, externalized from the bundle.
 
-## Build & Tooling
+## Tooling & Scripts
 
-| Command         | Purpose                                  |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Watch mode with inline sourcemaps        |
-| `npm run build` | Type-check (`tsc -noEmit`) + prod bundle |
-| `npx jest`      | Run test suite                           |
+| Command          | Purpose                                |
+| ---------------- | -------------------------------------- |
+| `just build`     | Type-check & build `main.js` bundle    |
+| `just tidy`      | Format all supported files             |
+| `just check`     | Run all static checks                  |
+| `just preflight` | Full preflight checks before commiting |
 
 - **Bundler**: esbuild targeting ES6, CommonJS output to `main.js`
 - **Externals**: obsidian, electron, @codemirror/\*, @lezer/\*, builtin-modules
