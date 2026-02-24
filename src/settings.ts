@@ -348,7 +348,7 @@ class DisplaySettings extends SettingsTabPage {
         `;
 
         // update preview content based on current settings
-        const updatePreview = () => {
+        const updatePreview = async () => {
             preview.empty();
             this.plugin.saveSettings();
 
@@ -356,7 +356,7 @@ class DisplaySettings extends SettingsTabPage {
 
             const sample = choproPreview.replace(/^\s+/m, "");
             const block = ChoproBlock.parseRaw(sample);
-            this.plugin.renderer.renderChoproBlock(block, preview);
+            await this.plugin.renderer.renderBlock(block, preview);
         };
 
         // initial preview
