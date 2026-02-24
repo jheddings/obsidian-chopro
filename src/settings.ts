@@ -11,6 +11,7 @@ import {
 } from "obskit";
 
 import { ChoproBlock } from "./parser";
+import { ChoproStyleManager } from "./styles";
 import ChoproPlugin from "./main";
 
 /**
@@ -339,7 +340,7 @@ class DisplaySettings extends SettingsTabPage {
         const previewContent = previewDiv.createDiv({
             cls: "setting-item-control",
         });
-        const preview = previewContent.createDiv();
+        const preview = previewContent.createDiv({ cls: "chopro-container" });
 
         const choproPreview = `
             [F]Amazing [F7]grace, how [Bb]sweet the [F]sound, that [Dm]saved a [FMAJ7]wretch like [C]me
@@ -350,6 +351,8 @@ class DisplaySettings extends SettingsTabPage {
         const updatePreview = () => {
             preview.empty();
             this.plugin.saveSettings();
+
+            ChoproStyleManager.applyToContainer(preview, this.plugin.settings.rendering);
 
             const sample = choproPreview.replace(/^\s+/m, "");
             const block = ChoproBlock.parseRaw(sample);
