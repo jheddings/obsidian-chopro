@@ -891,15 +891,6 @@ export class ChoproFile {
     }
 
     /**
-     * Load a ChordPro file from a given filename.
-     */
-    static load(path: string): ChoproFile {
-        const fs = require("fs");
-        const fileContent = fs.readFileSync(path, "utf-8");
-        return ChoproFile.parse(fileContent);
-    }
-
-    /**
      * Parse content blocks from the given content.
      */
     private static parseContentBlocks(content: string): ContentBlock[] {

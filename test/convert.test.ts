@@ -1,8 +1,8 @@
 // convert.test.ts - unit tests for converter.ts
 
 import { ChordLineConverter } from "../src/convert";
-import { ChoproFile } from "../src/parser";
 import { TextLine, ChordLyricsLine, InstrumentalLine, ChordLine } from "../src/parser";
+import { loadChoproFile } from "./helpers";
 
 describe("ChordLineConverter", () => {
     describe("combine", () => {
@@ -94,7 +94,7 @@ describe("ChordLineConverter", () => {
         test("should convert convert.md file to bracketed chord patterns", () => {
             const testFilePath = path.join(__dirname, "convert.md");
 
-            const choproFile = ChoproFile.load(testFilePath);
+            const choproFile = loadChoproFile(testFilePath);
             expect(choproFile).toBeDefined();
             expect(choproFile.blocks.length).toBeGreaterThan(0);
 
