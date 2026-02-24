@@ -22,14 +22,15 @@ test:
 	npx jest test/*.test.ts
 
 # full preflight: build + check + test
-preflight: build
-	npx prettier --check .
-	npx eslint .
-	npx jest test/*.test.ts
+preflight: build check test
 
 # build the plugin
-build:
+build: setup
 	npm run build
+
+# run the development server
+run: setup
+	npm run dev
 
 # verify no uncommitted changes to tracked files
 repo-guard:
