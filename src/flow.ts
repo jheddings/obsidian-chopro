@@ -23,6 +23,11 @@ abstract class FlowItem {
     }
 
     abstract resolve(): Promise<string>;
+
+    /**
+     * Display label for the flow item (used in arrangement rendering)
+     */
+    abstract get label(): string;
 }
 
 /**
@@ -39,6 +44,10 @@ class TextFlowItem extends FlowItem {
 
     static parse(item: string): TextFlowItem {
         return new TextFlowItem(item);
+    }
+
+    get label(): string {
+        return this.content;
     }
 
     async resolve(): Promise<string> {
@@ -66,6 +75,14 @@ abstract class EmbedFlowItem extends FlowItem {
         this.sectionName = section;
 
         this.logger = Logger.getLogger("EmbedFlowItem");
+    }
+
+    get label(): string {
+        if (this.sectionName) {
+            return this.sectionName;
+        }
+
+        return this.targetFile.basename;
     }
 
     get link(): string {
@@ -426,6 +443,19 @@ export class FlowManager {
      */
     hasFlowDefinition(file: TFile): boolean {
         return this.parser.parseFlow(file) !== null;
+    }
+
+    /**
+     * Get display labels for the flow arrangement items
+     */
+    getFlowLabels(file: TFile): string[] | null {
+        const flowDef = this.parser.parseFlow(file);
+
+        if (!flowDef) {
+            return null;
+        }
+
+        return flowDef.items.map((item) => item.label);
     }
 
     /**

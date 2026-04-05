@@ -140,6 +140,31 @@ export class ContentRenderer {
     }
 
     /**
+     * Render a flow arrangement display showing the section order.
+     * Renders as an inline flow of labeled items separated by arrows.
+     */
+    renderFlowArrangement(labels: string[], container: HTMLElement): void {
+        if (labels.length === 0) {
+            return;
+        }
+
+        const arrangement = container.createDiv({ cls: "chopro-flow-arrangement" });
+        const labelEl = arrangement.createSpan({ cls: "chopro-flow-label", text: "Flow" });
+        labelEl.setAttribute("aria-label", "Song arrangement");
+
+        const itemsEl = arrangement.createDiv({ cls: "chopro-flow-items" });
+
+        labels.forEach((label, index) => {
+            if (index > 0) {
+                itemsEl.createSpan({ cls: "chopro-flow-separator", text: "\u203A" });
+            }
+            itemsEl.createSpan({ cls: "chopro-flow-item", text: label });
+        });
+
+        this.logger.debug("Flow arrangement rendered");
+    }
+
+    /**
      * Render a single line based on its type
      */
     private renderLine(container: HTMLElement, line: ChoproLine): void {

@@ -8,6 +8,7 @@ import {
     Editor,
     MarkdownPostProcessorContext,
     MarkdownRenderer,
+    TFile,
 } from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
@@ -230,8 +231,9 @@ export default class ChoproPlugin extends Plugin {
 
         const contentEl = view.contentEl;
 
-        // Remove any existing header first
+        // Remove any existing header and flow arrangement first
         contentEl.querySelector(":scope > .chopro-header")?.remove();
+        contentEl.querySelector(":scope > .chopro-flow-arrangement")?.remove();
 
         if (!this.settings.rendering.showMetadataHeader) {
             return;
@@ -261,7 +263,15 @@ export default class ChoproPlugin extends Plugin {
         }
 
         const metadata = new Frontmatter(frontmatter as Record<string, any>);
+
+        // Collect elements to prepend (in reverse order since we use prepend)
+        const flowArrangement = this.createFlowArrangement(file);
         const header = this.createMetadataHeader(metadata);
+
+        if (flowArrangement) {
+            contentEl.prepend(flowArrangement);
+            this.logger.debug("Flow arrangement injected");
+        }
 
         if (header) {
             contentEl.prepend(header);
@@ -276,6 +286,22 @@ export default class ChoproPlugin extends Plugin {
     private createMetadataHeader(frontmatter: Frontmatter): Element | null {
         const tempContainer = createDiv();
         this.renderer.renderMetadataHeader(frontmatter, tempContainer);
+        return tempContainer.firstElementChild;
+    }
+
+    /**
+     * Create a flow arrangement element from the file's flow definition.
+     * Returns null if no flow definition exists.
+     */
+    private createFlowArrangement(file: TFile): Element | null {
+        const labels = this.flowManager.getFlowLabels(file);
+
+        if (!labels || labels.length === 0) {
+            return null;
+        }
+
+        const tempContainer = createDiv();
+        this.renderer.renderFlowArrangement(labels, tempContainer);
         return tempContainer.firstElementChild;
     }
 
