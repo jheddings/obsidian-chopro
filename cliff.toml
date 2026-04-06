@@ -1,0 +1,71 @@
+# git-cliff configuration
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = ""
+body = """
+{%- for group, commits in commits | group_by(attribute="group") %}
+{%- if group == "<!-- 4 -->Dependencies" %}
+## Dependencies
+{% for commit in commits | reverse | unique(attribute="scope") | sort(attribute="scope") -%}
+{%- set ver = commit.message | split(pat=" to ") | last -%}
+- {{ commit.scope }} → {{ ver }}
+{% endfor %}
+{%- else %}
+## {{ group | striptags | trim }}
+{% for commit in commits | filter(attribute="scope") | sort(attribute="scope") -%}
+- **({{ commit.scope }})** {{ commit.message | split(pat="\n") | first }}
+{% endfor -%}
+{% for commit in commits -%}
+{% if not commit.scope -%}
+- {{ commit.message | split(pat="\n") | first }}
+{% endif -%}
+{% endfor -%}
+{%- endif %}
+{%- endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "[0-9]+.[0-9]+.*"
+topo_order = false
+sort_commits = "oldest"
+
+commit_preprocessors = [
+  # strip PR/issue references for cleaner output
+  { pattern = ' ?\([#\d, ]+\)', replace = '' },
+]
+
+commit_parsers = [
+  # skip version bumps, lockfile maintenance, and merge commits
+  { message = "^bump version", skip = true },
+  { message = "^chore\\(deps\\): lock file maintenance", skip = true },
+  { message = "^[Mm]erge", skip = true },
+
+  # skip docs (design specs, implementation plans)
+  { message = "^docs", skip = true },
+
+  # dependency updates — capture package name as scope
+  { message = "^fix\\(deps\\): update dependency (.+?) to", group = "<!-- 4 -->Dependencies", scope = "${1}" },
+  { message = "^chore\\(deps\\): update dependency (.+?) to", group = "<!-- 4 -->Dependencies", scope = "${1}" },
+  { message = "^fix\\(deps\\): update (.+?) monorepo to", group = "<!-- 4 -->Dependencies", scope = "${1}" },
+  { message = "^chore\\(deps\\): update (.+?) monorepo to", group = "<!-- 4 -->Dependencies", scope = "${1}" },
+
+  # standard type mapping
+  { message = "^feat", group = "<!-- 1 -->Features" },
+  { message = "^fix", group = "<!-- 2 -->Fixes" },
+  { message = "^chore", group = "<!-- 3 -->Maintenance" },
+  { message = "^refactor", group = "<!-- 3 -->Maintenance" },
+  { message = "^test", group = "<!-- 3 -->Maintenance" },
+  { message = "^style", group = "<!-- 3 -->Maintenance" },
+  { message = "^perf", group = "<!-- 3 -->Maintenance" },
+
+  # catch-all for unconventional commits
+  { message = ".*", skip = true },
+]

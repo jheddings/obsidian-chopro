@@ -32,6 +32,10 @@ build: setup
 run: setup
 	npm run dev
 
+# preview release notes since the last tag (or for a given range)
+notes tag="--unreleased":
+	npx git-cliff@latest {{tag}}
+
 # verify no uncommitted changes to tracked files
 repo-guard:
 	test -z "$(git status --porcelain -uno)" || (echo "ERROR: working tree is dirty"; exit 1)

@@ -13,6 +13,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
 
             - name: Setup Node.js
               uses: actions/setup-node@v6.3.0
@@ -30,11 +32,14 @@ jobs:
               id: version
               run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
 
+            - name: Generate release notes
+              run: npx git-cliff@latest --latest --strip header -o RELEASE_NOTES.md
+
             - name: Create release
               run: |
                   gh release create ${{ github.ref_name }} \
                     --title "obsidian-chopro-${{ github.ref_name }}" \
-                    --generate-notes --draft \
+                    --notes-file RELEASE_NOTES.md --draft \
                     ./main.js ./manifest.json ./styles.css
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
