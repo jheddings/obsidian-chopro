@@ -48,6 +48,7 @@ export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ContentRenderer;
     flowManager: FlowManager;
+    private flowRenderInProgress = false;
     calloutProcessor: CalloutProcessor;
 
     private logger: Logger = Logger.getLogger("main");
@@ -226,15 +227,22 @@ export default class ChoproPlugin extends Plugin {
      * default preview with fully resolved flow markdown.
      */
     private async updateFlowReadingView(): Promise<void> {
+        if (this.flowRenderInProgress) {
+            return;
+        }
+
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (!view) {
             return;
         }
 
         const contentEl = view.contentEl;
+        const readingViewEl = contentEl.querySelector(".markdown-reading-view");
 
-        // Remove any existing flow overlay
-        contentEl.querySelector(":scope > .chopro-flow-content")?.remove();
+        // Remove any existing flow overlays
+        readingViewEl
+            ?.querySelectorAll(":scope > .chopro-flow-content")
+            .forEach((el) => el.remove());
 
         // Un-hide the original preview if it was hidden
         const previewEl = contentEl.querySelector(".markdown-preview-view");
@@ -250,7 +258,7 @@ export default class ChoproPlugin extends Plugin {
         }
 
         const file = view.file;
-        if (!file) {
+        if (!file || !readingViewEl) {
             return;
         }
 
@@ -258,22 +266,23 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
+        this.flowRenderInProgress = true;
+
         try {
             const resolvedContent = await this.flowManager.getResolvedFlowContent(file);
 
             // Hide the original preview
             previewEl?.addClass("chopro-flow-hidden");
 
-            // Create flow overlay as a sibling
-            const flowContainer = contentEl.createDiv({ cls: "chopro-flow-content" });
+            // Create flow overlay with Obsidian reading view classes for consistent styling
+            const flowContainer = readingViewEl.createDiv({
+                cls: "chopro-flow-content markdown-preview-view markdown-rendered",
+            });
+            const flowSizer = flowContainer.createDiv({
+                cls: "markdown-preview-sizer markdown-preview-section",
+            });
 
-            await MarkdownRenderer.render(
-                this.app,
-                resolvedContent,
-                flowContainer,
-                file.path,
-                this
-            );
+            await MarkdownRenderer.render(this.app, resolvedContent, flowSizer, file.path, this);
 
             this.logger.debug("Flow reading view rendered");
         } catch (error) {
@@ -281,10 +290,16 @@ export default class ChoproPlugin extends Plugin {
 
             // Clean up on error
             previewEl?.removeClass("chopro-flow-hidden");
-            contentEl.querySelector(":scope > .chopro-flow-content")?.remove();
+            readingViewEl
+                ?.querySelectorAll(":scope > .chopro-flow-content")
+                .forEach((el) => el.remove());
 
-            const errorDiv = contentEl.createDiv({ cls: "chopro-flow-content chopro-flow-error" });
-            errorDiv.setText("Error resolving flow content");
+            const errorDiv = readingViewEl?.createDiv({
+                cls: "chopro-flow-content chopro-flow-error",
+            });
+            errorDiv?.setText("Error resolving flow content");
+        } finally {
+            this.flowRenderInProgress = false;
         }
     }
 
@@ -318,7 +333,7 @@ export default class ChoproPlugin extends Plugin {
         }
 
         // Skip when flow overlay is active
-        if (contentEl.querySelector(":scope > .chopro-flow-content")) {
+        if (contentEl.querySelector(".chopro-flow-content")) {
             return;
         }
 
