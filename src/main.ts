@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     flow: {
         filesFolder: "",
         extraLine: true,
+        resolveFlowInReadingView: true,
     },
     logLevel: LogLevel.ERROR,
 };
@@ -68,12 +69,14 @@ export default class ChoproPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("active-leaf-change", () => {
+                this.updateFlowReadingView();
                 this.updateMetadataHeader();
             })
         );
 
         this.registerEvent(
             this.app.workspace.on("layout-change", () => {
+                this.updateFlowReadingView();
                 this.updateMetadataHeader();
             })
         );
@@ -219,6 +222,73 @@ export default class ChoproPlugin extends Plugin {
     }
 
     /**
+     * Resolve flow content and render it in reading view, replacing the
+     * default preview with fully resolved flow markdown.
+     */
+    private async updateFlowReadingView(): Promise<void> {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view) {
+            return;
+        }
+
+        const contentEl = view.contentEl;
+
+        // Remove any existing flow overlay
+        contentEl.querySelector(":scope > .chopro-flow-content")?.remove();
+
+        // Un-hide the original preview if it was hidden
+        const previewEl = contentEl.querySelector(".markdown-preview-view");
+        previewEl?.removeClass("chopro-flow-hidden");
+
+        if (!this.settings.flow.resolveFlowInReadingView) {
+            return;
+        }
+
+        // Only show in reading view
+        if (view.getMode() !== "preview") {
+            return;
+        }
+
+        const file = view.file;
+        if (!file) {
+            return;
+        }
+
+        if (!this.flowManager.hasFlowDefinition(file)) {
+            return;
+        }
+
+        try {
+            const resolvedContent = await this.flowManager.getResolvedFlowContent(file);
+
+            // Hide the original preview
+            previewEl?.addClass("chopro-flow-hidden");
+
+            // Create flow overlay as a sibling
+            const flowContainer = contentEl.createDiv({ cls: "chopro-flow-content" });
+
+            await MarkdownRenderer.render(
+                this.app,
+                resolvedContent,
+                flowContainer,
+                file.path,
+                this
+            );
+
+            this.logger.debug("Flow reading view rendered");
+        } catch (error) {
+            this.logger.error("Failed to render flow reading view:", error);
+
+            // Clean up on error
+            previewEl?.removeClass("chopro-flow-hidden");
+            contentEl.querySelector(":scope > .chopro-flow-content")?.remove();
+
+            const errorDiv = contentEl.createDiv({ cls: "chopro-flow-content chopro-flow-error" });
+            errorDiv.setText("Error resolving flow content");
+        }
+    }
+
+    /**
      * Update the document-level metadata header.
      * Removes any existing header and re-injects if appropriate.
      */
@@ -244,6 +314,11 @@ export default class ChoproPlugin extends Plugin {
 
         const file = view.file;
         if (!file) {
+            return;
+        }
+
+        // Skip when flow overlay is active
+        if (contentEl.querySelector(":scope > .chopro-flow-content")) {
             return;
         }
 

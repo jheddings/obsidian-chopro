@@ -182,3 +182,17 @@
 .callout[data-callout="chopro"] .chopro-header {
     padding: 1rem 0;
 }
+
+/* ===== Flow Reading View Styles ===== */
+.chopro-flow-hidden {
+    display: none;
+}
+
+.chopro-flow-content {
+    padding: var(--file-margins);
+}
+
+.chopro-flow-error {
+    color: var(--text-error);
+    font-style: italic;
+}

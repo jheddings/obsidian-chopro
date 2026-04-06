@@ -230,6 +230,31 @@ class SongFolder extends TextInputSetting {
 }
 
 /**
+ * User setting for resolving flow in reading view.
+ */
+class ResolveFlowInReadingView extends ToggleSetting {
+    constructor(private plugin: ChoproPlugin) {
+        super({
+            name: "Resolve flow in reading view",
+            description:
+                "Render resolved flow content directly in reading view without requiring a callout block",
+        });
+    }
+
+    get value(): boolean {
+        return this.plugin.settings.flow.resolveFlowInReadingView;
+    }
+
+    set value(value: boolean) {
+        this.plugin.settings.flow.resolveFlowInReadingView = value;
+    }
+
+    get default(): boolean {
+        return true;
+    }
+}
+
+/**
  * User setting for blank lines in flow.
  */
 class BlankLinesInFlow extends ToggleSetting {
@@ -372,6 +397,7 @@ class FlowSettings extends SettingsTabPage {
     display(containerEl: HTMLElement): void {
         new SongFolder(this.plugin).display(containerEl);
         new BlankLinesInFlow(this.plugin).display(containerEl);
+        new ResolveFlowInReadingView(this.plugin).display(containerEl);
     }
 }
 
