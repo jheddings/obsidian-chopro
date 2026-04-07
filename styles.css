@@ -184,27 +184,6 @@
 }
 
 /* ===== Flow Reading View Styles ===== */
-.chopro-flow-hidden {
-    display: none;
-}
-
-.view-content:has(.chopro-flow-content) {
-    display: flex;
-    flex-direction: column;
-}
-
-.view-content:has(.chopro-flow-content) > .markdown-reading-view {
-    flex: 1;
-    min-height: 0;
-    position: relative;
-}
-
-.chopro-flow-content.markdown-preview-view {
-    position: absolute;
-    inset: 0;
-    overflow: auto;
-}
-
 .chopro-flow-error {
     color: var(--text-error);
     font-style: italic;

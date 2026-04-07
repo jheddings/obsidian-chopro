@@ -1,12 +1,9 @@
 // callout - ChoPro callout processor for Obsidian
 
 import { Logger } from "obskit";
-import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
+import { TFile, MarkdownPostProcessorContext, MarkdownRenderer, parseYaml } from "obsidian";
 
-import { FlowManager } from "./flow";
-import { ContentRenderer } from "./render";
-import { ChoproFile } from "./parser";
-import { RenderSettings } from "./config";
+import type ChoproPlugin from "./main";
 
 const TRUTHY_VALUES = ["on", "true", "yes", "y"];
 
@@ -37,21 +34,10 @@ export interface CalloutFeatures {
 export class CalloutProcessor {
     private logger = Logger.getLogger("CalloutProcessor");
 
-    private plugin: Plugin;
-    private flowManager: FlowManager;
-    private renderer: ContentRenderer;
-    private renderSettings: RenderSettings;
+    private plugin: ChoproPlugin;
 
-    constructor(
-        plugin: Plugin,
-        flowManager: FlowManager,
-        renderer: ContentRenderer,
-        renderSettings: RenderSettings
-    ) {
+    constructor(plugin: ChoproPlugin) {
         this.plugin = plugin;
-        this.flowManager = flowManager;
-        this.renderer = renderer;
-        this.renderSettings = renderSettings;
     }
 
     /**
@@ -165,26 +151,20 @@ export class CalloutProcessor {
     ): Promise<void> {
         callout.empty();
 
-        let content: string;
-
-        if (features.flow && this.flowManager.hasFlowDefinition(file)) {
-            this.logger.debug("Rendering flow content");
-            content = await this.flowManager.getResolvedFlowContent(file);
-        } else {
-            this.logger.debug("Rendering markdown content");
-            content = await this.plugin.app.vault.read(file);
-        }
-
         const container = callout.createEl("blockquote");
+        container.addClass("chopro-flow-rendered");
 
-        // Render per-song metadata header from the target file's frontmatter
-        if (this.renderSettings.showMetadataHeader) {
-            const parsed = ChoproFile.parse(content);
-            if (parsed.frontmatter) {
-                this.renderer.renderMetadataHeader(parsed.frontmatter, container);
-            }
+        if (features.flow) {
+            await this.plugin.renderChoproFile(file, container, file.path);
+        } else {
+            const content = await this.plugin.app.vault.read(file);
+            await MarkdownRenderer.render(
+                this.plugin.app,
+                content,
+                container,
+                file.path,
+                this.plugin
+            );
         }
-
-        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
     }
 }

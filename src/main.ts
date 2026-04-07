@@ -8,6 +8,7 @@ import {
     Editor,
     MarkdownPostProcessorContext,
     MarkdownRenderer,
+    TFile,
 } from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
@@ -48,8 +49,8 @@ export default class ChoproPlugin extends Plugin {
     settings: ChoproPluginSettings;
     renderer: ContentRenderer;
     flowManager: FlowManager;
-    private flowRenderInProgress = false;
     calloutProcessor: CalloutProcessor;
+    private flowProcessedDocs = new Set<string>();
 
     private logger: Logger = Logger.getLogger("main");
 
@@ -64,20 +65,19 @@ export default class ChoproPlugin extends Plugin {
 
         this.registerMarkdownPostProcessor(
             async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+                await this.processFlowFile(el, ctx);
                 await this.calloutProcessor.processCallouts(el, ctx);
             }
         );
 
         this.registerEvent(
             this.app.workspace.on("active-leaf-change", () => {
-                this.updateFlowReadingView();
                 this.updateMetadataHeader();
             })
         );
 
         this.registerEvent(
             this.app.workspace.on("layout-change", () => {
-                this.updateFlowReadingView();
                 this.updateMetadataHeader();
             })
         );
@@ -134,12 +134,7 @@ export default class ChoproPlugin extends Plugin {
             MarkdownRenderer.render(this.app, content, container, "", this)
         );
         this.flowManager = new FlowManager(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(
-            this,
-            this.flowManager,
-            this.renderer,
-            this.settings.rendering
-        );
+        this.calloutProcessor = new CalloutProcessor(this);
 
         ChoproStyleManager.updateAllContainers(this.settings.rendering);
     }
@@ -223,42 +218,25 @@ export default class ChoproPlugin extends Plugin {
     }
 
     /**
-     * Resolve flow content and render it in reading view, replacing the
-     * default preview with fully resolved flow markdown.
+     * Markdown post-processor that detects flow files and replaces their
+     * rendered content with the resolved flow arrangement. Runs in both
+     * reading view and PDF export since both use the same pipeline.
      */
-    private async updateFlowReadingView(): Promise<void> {
-        if (this.flowRenderInProgress) {
-            return;
-        }
-
-        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) {
-            return;
-        }
-
-        const contentEl = view.contentEl;
-        const readingViewEl = contentEl.querySelector(".markdown-reading-view");
-
-        // Remove any existing flow overlays
-        readingViewEl
-            ?.querySelectorAll(":scope > .chopro-flow-content")
-            .forEach((el) => el.remove());
-
-        // Un-hide the original preview if it was hidden
-        const previewEl = contentEl.querySelector(".markdown-preview-view");
-        previewEl?.removeClass("chopro-flow-hidden");
-
+    private async processFlowFile(
+        el: HTMLElement,
+        ctx: MarkdownPostProcessorContext
+    ): Promise<void> {
         if (!this.settings.flow.resolveFlowInReadingView) {
             return;
         }
 
-        // Only show in reading view
-        if (view.getMode() !== "preview") {
+        // Recursion guard: skip if we're already inside a flow-rendered block
+        if (el.closest(".chopro-flow-rendered")) {
             return;
         }
 
-        const file = view.file;
-        if (!file || !readingViewEl) {
+        const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
+        if (!(file instanceof TFile)) {
             return;
         }
 
@@ -266,41 +244,55 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
-        this.flowRenderInProgress = true;
+        // Use docId to track first-seen section per render pass.
+        // Subsequent sections of the same render pass get emptied so the
+        // resolved flow content (rendered into the first section) is the
+        // only visible content.
+        const renderKey = `${ctx.docId}:${ctx.sourcePath}`;
+
+        if (this.flowProcessedDocs.has(renderKey)) {
+            el.empty();
+            return;
+        }
+
+        this.flowProcessedDocs.add(renderKey);
+        // Schedule cleanup so the entry doesn't leak after the render pass
+        setTimeout(() => this.flowProcessedDocs.delete(renderKey), 5000);
+
+        el.empty();
+        el.addClass("chopro-flow-rendered");
 
         try {
-            const resolvedContent = await this.flowManager.getResolvedFlowContent(file);
-
-            // Hide the original preview
-            previewEl?.addClass("chopro-flow-hidden");
-
-            // Create flow overlay with Obsidian reading view classes for consistent styling
-            const flowContainer = readingViewEl.createDiv({
-                cls: "chopro-flow-content markdown-preview-view markdown-rendered",
-            });
-            const flowSizer = flowContainer.createDiv({
-                cls: "markdown-preview-sizer markdown-preview-section",
-            });
-
-            await MarkdownRenderer.render(this.app, resolvedContent, flowSizer, file.path, this);
-
-            this.logger.debug("Flow reading view rendered");
+            await this.renderChoproFile(file, el, ctx.sourcePath);
+            this.logger.debug(`Flow rendered for ${file.path}`);
         } catch (error) {
-            this.logger.error("Failed to render flow reading view:", error);
-
-            // Clean up on error
-            previewEl?.removeClass("chopro-flow-hidden");
-            readingViewEl
-                ?.querySelectorAll(":scope > .chopro-flow-content")
-                .forEach((el) => el.remove());
-
-            const errorDiv = readingViewEl?.createDiv({
-                cls: "chopro-flow-content chopro-flow-error",
-            });
-            errorDiv?.setText("Error resolving flow content");
-        } finally {
-            this.flowRenderInProgress = false;
+            this.logger.error("Failed to render flow content:", error);
+            el.createDiv({ cls: "chopro-flow-error", text: "Error resolving flow content" });
         }
+    }
+
+    /**
+     * Render a chopro file into a container, resolving flow content if the
+     * file has a flow definition. Used by both the file-level flow processor
+     * and the callout processor.
+     */
+    async renderChoproFile(file: TFile, container: HTMLElement, sourcePath: string): Promise<void> {
+        let content: string;
+
+        if (this.flowManager.hasFlowDefinition(file)) {
+            content = await this.flowManager.getResolvedFlowContent(file);
+        } else {
+            content = await this.app.vault.read(file);
+        }
+
+        if (this.settings.rendering.showMetadataHeader) {
+            const parsed = ChoproFile.parse(content);
+            if (parsed.frontmatter) {
+                this.renderer.renderMetadataHeader(parsed.frontmatter, container);
+            }
+        }
+
+        await MarkdownRenderer.render(this.app, content, container, sourcePath, this);
     }
 
     /**
@@ -329,11 +321,6 @@ export default class ChoproPlugin extends Plugin {
 
         const file = view.file;
         if (!file) {
-            return;
-        }
-
-        // Skip when flow overlay is active
-        if (contentEl.querySelector(".chopro-flow-content")) {
             return;
         }
 
