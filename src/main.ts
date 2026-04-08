@@ -50,7 +50,6 @@ export default class ChoproPlugin extends Plugin {
     renderer: ContentRenderer;
     flowManager: FlowManager;
     calloutProcessor: CalloutProcessor;
-    private flowProcessedDocs = new Set<string>();
 
     private logger: Logger = Logger.getLogger("main");
 
@@ -244,21 +243,24 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
-        // Use docId to track first-seen section per render pass.
-        // Subsequent sections of the same render pass get emptied so the
-        // resolved flow content (rendered into the first section) is the
-        // only visible content.
-        const renderKey = `${ctx.docId}:${ctx.sourcePath}`;
-
-        if (this.flowProcessedDocs.has(renderKey)) {
-            el.empty();
-            return;
+        // Defer until el is attached to its parent so we can inspect siblings
+        if (!el.parentElement) {
+            await new Promise<void>((resolve) => queueMicrotask(resolve));
         }
 
-        this.flowProcessedDocs.add(renderKey);
-        // Schedule cleanup so the entry doesn't leak after the render pass
-        setTimeout(() => this.flowProcessedDocs.delete(renderKey), 5000);
+        // If a previous sibling has already been rendered as flow content,
+        // this section is a follow-up of the same render pass — empty it.
+        let sibling = el.previousElementSibling;
+        while (sibling) {
+            if (sibling.classList.contains("chopro-flow-rendered")) {
+                el.empty();
+                return;
+            }
+            sibling = sibling.previousElementSibling;
+        }
 
+        // Synchronously mark this element so subsequent siblings detect it
+        // even before our async render completes.
         el.empty();
         el.addClass("chopro-flow-rendered");
 
@@ -283,13 +285,6 @@ export default class ChoproPlugin extends Plugin {
             content = await this.flowManager.getResolvedFlowContent(file);
         } else {
             content = await this.app.vault.read(file);
-        }
-
-        if (this.settings.rendering.showMetadataHeader) {
-            const parsed = ChoproFile.parse(content);
-            if (parsed.frontmatter) {
-                this.renderer.renderMetadataHeader(parsed.frontmatter, container);
-            }
         }
 
         await MarkdownRenderer.render(this.app, content, container, sourcePath, this);
