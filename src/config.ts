@@ -15,6 +15,7 @@ export type RenderSettings = {
 export type FlowSettings = {
     filesFolder: string;
     extraLine: boolean;
+    resolveFlowInReadingView: boolean;
 };
 
 export type ChoproPluginSettings = {

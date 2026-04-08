@@ -8,6 +8,7 @@ import {
     Editor,
     MarkdownPostProcessorContext,
     MarkdownRenderer,
+    TFile,
 } from "obsidian";
 
 import { ChoproFile, Frontmatter } from "./parser";
@@ -35,6 +36,7 @@ const DEFAULT_SETTINGS: ChoproPluginSettings = {
     flow: {
         filesFolder: "",
         extraLine: true,
+        resolveFlowInReadingView: true,
     },
     logLevel: LogLevel.ERROR,
 };
@@ -62,6 +64,7 @@ export default class ChoproPlugin extends Plugin {
 
         this.registerMarkdownPostProcessor(
             async (el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+                await this.processFlowFile(el, ctx);
                 await this.calloutProcessor.processCallouts(el, ctx);
             }
         );
@@ -130,12 +133,7 @@ export default class ChoproPlugin extends Plugin {
             MarkdownRenderer.render(this.app, content, container, "", this)
         );
         this.flowManager = new FlowManager(this, this.settings.flow);
-        this.calloutProcessor = new CalloutProcessor(
-            this,
-            this.flowManager,
-            this.renderer,
-            this.settings.rendering
-        );
+        this.calloutProcessor = new CalloutProcessor(this);
 
         ChoproStyleManager.updateAllContainers(this.settings.rendering);
     }
@@ -216,6 +214,80 @@ export default class ChoproPlugin extends Plugin {
             el.empty();
             el.createDiv({ cls: "chopro-error", text: "Error parsing ChoPro content" });
         }
+    }
+
+    /**
+     * Markdown post-processor that detects flow files and replaces their
+     * rendered content with the resolved flow arrangement. Runs in both
+     * reading view and PDF export since both use the same pipeline.
+     */
+    private async processFlowFile(
+        el: HTMLElement,
+        ctx: MarkdownPostProcessorContext
+    ): Promise<void> {
+        if (!this.settings.flow.resolveFlowInReadingView) {
+            return;
+        }
+
+        // Recursion guard: skip if we're already inside a flow-rendered block
+        if (el.closest(".chopro-flow-rendered")) {
+            return;
+        }
+
+        const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
+        if (!(file instanceof TFile)) {
+            return;
+        }
+
+        if (!this.flowManager.hasFlowDefinition(file)) {
+            return;
+        }
+
+        // Defer until el is attached to its parent so we can inspect siblings
+        if (!el.parentElement) {
+            await new Promise<void>((resolve) => queueMicrotask(resolve));
+        }
+
+        // If a previous sibling has already been rendered as flow content,
+        // this section is a follow-up of the same render pass — empty it.
+        let sibling = el.previousElementSibling;
+        while (sibling) {
+            if (sibling.classList.contains("chopro-flow-rendered")) {
+                el.empty();
+                return;
+            }
+            sibling = sibling.previousElementSibling;
+        }
+
+        // Synchronously mark this element so subsequent siblings detect it
+        // even before our async render completes.
+        el.empty();
+        el.addClass("chopro-flow-rendered");
+
+        try {
+            await this.renderChoproFile(file, el, ctx.sourcePath);
+            this.logger.debug(`Flow rendered for ${file.path}`);
+        } catch (error) {
+            this.logger.error("Failed to render flow content:", error);
+            el.createDiv({ cls: "chopro-flow-error", text: "Error resolving flow content" });
+        }
+    }
+
+    /**
+     * Render a chopro file into a container, resolving flow content if the
+     * file has a flow definition. Used by both the file-level flow processor
+     * and the callout processor.
+     */
+    async renderChoproFile(file: TFile, container: HTMLElement, sourcePath: string): Promise<void> {
+        let content: string;
+
+        if (this.flowManager.hasFlowDefinition(file)) {
+            content = await this.flowManager.getResolvedFlowContent(file);
+        } else {
+            content = await this.app.vault.read(file);
+        }
+
+        await MarkdownRenderer.render(this.app, content, container, sourcePath, this);
     }
 
     /**
