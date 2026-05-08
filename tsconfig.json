@@ -1,18 +1,24 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "rootDir": ".",
+        "ignoreDeprecations": "6.0",
         "inlineSourceMap": true,
         "inlineSources": true,
         "module": "ESNext",
         "target": "ES6",
         "allowJs": true,
         "noImplicitAny": false,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": false,
+        "useUnknownInCatchVariables": false,
         "moduleResolution": "node",
         "importHelpers": true,
         "isolatedModules": true,
         "strictNullChecks": true,
         "esModuleInterop": true,
-        "lib": ["DOM", "ES6"]
+        "lib": ["DOM", "ES6"],
+        "types": ["jest", "node"]
     },
     "include": ["**/*.ts"]
 }
