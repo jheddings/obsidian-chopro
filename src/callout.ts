@@ -13,9 +13,9 @@ const TRUTHY_VALUES = ["on", "true", "yes", "y"];
 /**
  * Returns true if the value is a common boolean.
  */
-function isTruthy(value: any): boolean {
+function isTruthy(value: unknown): boolean {
     if (typeof value === "boolean") {
-        return value as boolean;
+        return value;
     }
 
     if (typeof value === "string") {
@@ -134,7 +134,7 @@ export class CalloutProcessor {
 
             if (yamlData && typeof yamlData === "object") {
                 this.logger.debug("Parsed YAML data:", yamlData);
-                this.mergeFeatures(features, yamlData);
+                this.mergeFeatures(features, yamlData as Record<string, unknown>);
             } else {
                 this.logger.warn("Unable to parse features");
             }
@@ -148,7 +148,7 @@ export class CalloutProcessor {
     /**
      * Merge features from YAML into the features object.
      */
-    private mergeFeatures(features: CalloutFeatures, yaml: any): void {
+    private mergeFeatures(features: CalloutFeatures, yaml: Record<string, unknown>): void {
         if ("flow" in yaml) {
             this.logger.debug(`flow :: ${yaml.flow}`);
             features.flow = isTruthy(yaml.flow);

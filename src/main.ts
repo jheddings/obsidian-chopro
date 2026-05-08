@@ -260,7 +260,7 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
-        const metadata = new Frontmatter(frontmatter as Record<string, any>);
+        const metadata = new Frontmatter(frontmatter as Record<string, unknown>);
         const header = this.createMetadataHeader(metadata);
 
         if (header) {

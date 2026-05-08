@@ -644,7 +644,7 @@ export abstract class ContentBlock {
 export class Frontmatter extends ContentBlock {
     public static readonly BLOCK_PATTERN = /^---\n(([\s\S]*)\n)?---$/;
 
-    constructor(public properties: Record<string, any> = {}) {
+    constructor(public properties: Record<string, unknown> = {}) {
         super();
     }
 
@@ -671,7 +671,7 @@ export class Frontmatter extends ContentBlock {
     /**
      * Extract the frontmatter records from a string.
      */
-    private static extract(content: string): Record<string, any> | undefined {
+    private static extract(content: string): Record<string, unknown> | undefined {
         const match = content.match(Frontmatter.BLOCK_PATTERN);
 
         if (!match) {
@@ -679,7 +679,7 @@ export class Frontmatter extends ContentBlock {
         }
 
         try {
-            return parseYaml(match[1]) as Record<string, any>;
+            return parseYaml(match[1]) as Record<string, unknown>;
         } catch (error) {
             console.warn("Failed to parse frontmatter:", error);
         }
@@ -690,14 +690,14 @@ export class Frontmatter extends ContentBlock {
     /**
      * Get a property value by key.
      */
-    get(key: string): any {
+    get(key: string): unknown {
         return this.properties[key];
     }
 
     /**
      * Set a property value.
      */
-    set(key: string, value: any): void {
+    set(key: string, value: unknown): void {
         this.properties[key] = value;
     }
 
@@ -858,7 +858,8 @@ export class ChoproFile {
      * Get the key from the file properties, or undefined if none exists.
      */
     get key(): string | undefined {
-        return this.frontmatter?.get("key");
+        const value = this.frontmatter?.get("key");
+        return value != null ? String(value) : undefined;
     }
 
     /**
