@@ -1,7 +1,16 @@
 // modals - Modal classes for the ChoPro Obsidian Plugin
 
 import { Logger } from "obskit";
-import { App, Modal, Setting, ButtonComponent, Notice, TFile, FuzzySuggestModal } from "obsidian";
+import {
+    App,
+    Modal,
+    Setting,
+    ButtonComponent,
+    DropdownComponent,
+    Notice,
+    TFile,
+    FuzzySuggestModal,
+} from "obsidian";
 
 import { TransposeOptions, TransposeUtils } from "./transpose";
 
@@ -67,7 +76,7 @@ export class TransposeModal extends Modal {
                     })
             );
 
-        let targetKeyDropdown: any;
+        let targetKeyDropdown!: DropdownComponent;
         const targetKeySetting = new Setting(contentEl)
             .setName("Target Key")
             .setDesc("Choose the key to transpose to")

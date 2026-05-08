@@ -96,6 +96,12 @@ export class ContentRenderer {
         const tempo = frontmatter.get("tempo");
         const time = frontmatter.get("time");
 
+        const titleText = title != null ? String(title) : undefined;
+        const artistText = artist != null ? String(artist) : undefined;
+        const keyText = key != null ? String(key) : undefined;
+        const tempoText = tempo != null ? String(tempo) : undefined;
+        const timeText = time != null ? String(time) : undefined;
+
         // Only render if we have at least title or artist
         if (!title && !artist) {
             this.logger.debug("No title or artist found, skipping metadata header");
@@ -107,30 +113,30 @@ export class ContentRenderer {
         // Left column: title and artist
         const leftCol = header.createDiv({ cls: "chopro-header-left" });
 
-        if (title) {
-            leftCol.createDiv({ cls: "chopro-header-title", text: title });
+        if (titleText) {
+            leftCol.createDiv({ cls: "chopro-header-title", text: titleText });
         }
-        if (artist) {
-            leftCol.createDiv({ cls: "chopro-header-artist", text: artist });
+        if (artistText) {
+            leftCol.createDiv({ cls: "chopro-header-artist", text: artistText });
         }
 
         // Right column: key and tempo/time info
         const rightCol = header.createDiv({ cls: "chopro-header-right" });
 
-        if (key) {
-            rightCol.createDiv({ cls: "chopro-header-info", text: `Key of ${key}` });
+        if (keyText) {
+            rightCol.createDiv({ cls: "chopro-header-info", text: `Key of ${keyText}` });
         }
 
         // Build tempo/time line (e.g., "85 BPM in 4/4")
         const tempoTimeParts: string[] = [];
-        if (tempo) {
-            tempoTimeParts.push(`${tempo} BPM`);
+        if (tempoText) {
+            tempoTimeParts.push(`${tempoText} BPM`);
         }
-        if (tempo && time) {
+        if (tempoText && timeText) {
             tempoTimeParts.push("in");
         }
-        if (time) {
-            tempoTimeParts.push(time);
+        if (timeText) {
+            tempoTimeParts.push(timeText);
         }
         if (tempoTimeParts.length > 0) {
             rightCol.createDiv({ cls: "chopro-header-info", text: tempoTimeParts.join(" ") });
