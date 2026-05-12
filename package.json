@@ -8,7 +8,8 @@
     "scripts": {
         "prepare": "husky",
         "dev": "node esbuild.config.mjs",
-        "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+        "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "test": "vitest run"
     },
     "keywords": [
         "obsidian",
@@ -18,7 +19,6 @@
         "music"
     ],
     "devDependencies": {
-        "@types/jest": "^30.0.0",
         "@types/node": "^24.12.4",
         "@typescript-eslint/eslint-plugin": "^8.59.3",
         "@typescript-eslint/parser": "^8.59.3",
@@ -28,13 +28,12 @@
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.5",
         "husky": "^9.1.7",
-        "jest": "^30.4.2",
         "lint-staged": "^17.0.4",
         "obsidian": "latest",
         "prettier": "^3.8.3",
-        "ts-jest": "^29.4.9",
         "tslib": "2.8.1",
-        "typescript": "6.0.3"
+        "typescript": "6.0.3",
+        "vitest": "^4.0.0"
     },
     "dependencies": {
         "obskit": "^1.5.0",

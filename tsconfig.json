@@ -18,7 +18,7 @@
         "strictNullChecks": true,
         "esModuleInterop": true,
         "lib": ["DOM", "ES6"],
-        "types": ["jest", "node"]
+        "types": ["node", "vitest/globals"]
     },
     "include": ["**/*.ts"]
 }
