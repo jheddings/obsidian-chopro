@@ -84,7 +84,7 @@ to ensure backwards compatibility with existing user data.
 - **Bundler**: esbuild targeting ES6, CommonJS output to `main.js`
 - **Externals**: obsidian, electron, @codemirror/\*, @lezer/\*, builtin-modules
 - **Pre-commit hooks**: husky + lint-staged runs prettier --check and eslint
-- **Test framework**: Jest with ts-jest; tests live in `test/`
+- **Test framework**: Vitest; tests live in `test/`
 
 ## Code Conventions
 
@@ -96,9 +96,11 @@ to ensure backwards compatibility with existing user data.
 
 ## Testing
 
-Tests live in `test/` and use Jest with `ts-jest`. The `test/__mocks__/`
-directory contains mocks for external dependencies (obskit). Tests use
-`test.each()` for property-based patterns.
+Tests live in `test/` and use Vitest. The `test/__mocks__/` directory contains
+mocks for external dependencies (obskit), wired via the `alias` option in
+`vitest.config.ts`. Tests use `test.each()` for property-based patterns and
+rely on Vitest's `globals: true` setting so `describe`/`test`/`expect` need
+not be imported.
 
 When adding new parsing or transposition logic, add corresponding test cases.
 The parser and music theory modules have the most comprehensive coverage.
@@ -111,8 +113,8 @@ The parser and music theory modules have the most comprehensive coverage.
   for isolating new work from `main`; feature branches are already isolated.
 - **Run `npm run build` before committing** to catch type errors. The build
   includes `tsc -noEmit` for type checking.
-- **Run tests (`npx jest`) before marking work complete**. Ensure existing tests
-  pass and new logic has test coverage where applicable.
+- **Run tests (`npx vitest run`) before marking work complete**. Ensure existing
+  tests pass and new logic has test coverage where applicable.
 - **Pre-commit hooks enforce formatting and linting**. If a commit is rejected,
   fix the issues rather than bypassing hooks.
 - **Do not commit `main.js` or `data.json`**. The bundle is a build artifact

@@ -19,7 +19,7 @@ check:
 
 # run tests
 test:
-	npx jest test/*.test.ts
+	npx vitest run
 
 # full preflight: build + check + test
 preflight: build check test
