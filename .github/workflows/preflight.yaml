@@ -37,4 +37,4 @@ jobs:
               run: npm run build
 
             - name: Run tests
-              run: npx jest test/*.test.ts
+              run: npx vitest run
