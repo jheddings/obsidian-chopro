@@ -22,12 +22,12 @@ export class TransposeModal extends Modal {
     private toKey: string = "C";
     private chordType: string = "alpha";
     private logger: Logger = Logger.getLogger("TransposeModal");
-    private onConfirm: (options: TransposeOptions) => void;
+    private onConfirm: (options: TransposeOptions) => void | Promise<void>;
 
     constructor(
         app: App,
         currentKey: string | null,
-        onConfirm: (options: TransposeOptions) => void
+        onConfirm: (options: TransposeOptions) => void | Promise<void>
     ) {
         super(app);
         this.fromKey = currentKey;
@@ -39,13 +39,15 @@ export class TransposeModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl("h2", { text: "Transpose ChoPro" });
+        contentEl.createEl("h2", { text: "Transpose chords" });
 
         new Setting(contentEl)
-            .setName("Current Key")
+            .setName("Current key")
             .setDesc("Select the current key of the song")
             .addDropdown((dropdown) => {
-                TransposeUtils.getAllKeys().forEach((key) => dropdown.addOption(key, key));
+                TransposeUtils.getAllKeys().forEach((key) => {
+                    dropdown.addOption(key, key);
+                });
                 if (this.fromKey && TransposeUtils.isValidKey(this.fromKey)) {
                     dropdown.setValue(this.fromKey);
                 }
@@ -55,11 +57,13 @@ export class TransposeModal extends Modal {
             });
 
         new Setting(contentEl)
-            .setName("Chord Type")
+            .setName("Chord type")
             .setDesc("Choose output format for chords")
             .addDropdown((dropdown) =>
                 dropdown
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
                     .addOption("alpha", "Alpha (C, G, Am, etc.)")
+                    // eslint-disable-next-line obsidianmd/ui/sentence-case
                     .addOption("nashville", "Nashville Numbers (1, 5, 6m, etc.)")
                     .setValue(this.chordType)
                     .onChange((value) => {
@@ -78,11 +82,13 @@ export class TransposeModal extends Modal {
 
         let targetKeyDropdown!: DropdownComponent;
         const targetKeySetting = new Setting(contentEl)
-            .setName("Target Key")
+            .setName("Target key")
             .setDesc("Choose the key to transpose to")
             .addDropdown((dropdown) => {
                 targetKeyDropdown = dropdown;
-                TransposeUtils.getAllKeys().forEach((key) => dropdown.addOption(key, key));
+                TransposeUtils.getAllKeys().forEach((key) => {
+                    dropdown.addOption(key, key);
+                });
                 dropdown.setValue(this.toKey);
                 dropdown.onChange((value) => {
                     this.toKey = value;
@@ -115,7 +121,7 @@ export class TransposeModal extends Modal {
                         toKey: TransposeUtils.parseKey(this.toKey),
                     };
 
-                    this.onConfirm(options);
+                    void this.onConfirm(options);
                     this.close();
                 } catch (error) {
                     this.logger.error("Transpose validation error:", error);
@@ -162,7 +168,7 @@ export class FlowFileSelector extends FuzzySuggestModal<TFile> {
 
     onChooseItem(item: TFile, _evt: MouseEvent | KeyboardEvent): void {
         this.close();
-        this.onSelect(item);
+        void this.onSelect(item);
     }
 
     getItemText(item: TFile): string {

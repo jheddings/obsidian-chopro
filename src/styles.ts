@@ -23,7 +23,9 @@ export class ChoproStyleManager {
      * Called when settings change so existing rendered views update immediately.
      */
     static updateAllContainers(settings: RenderSettings): void {
-        const containers = Array.from(document.querySelectorAll<HTMLElement>(".chopro-container"));
+        const containers = Array.from(
+            activeDocument.querySelectorAll<HTMLElement>(".chopro-container")
+        );
         for (const container of containers) {
             this.applyToContainer(container, settings);
         }

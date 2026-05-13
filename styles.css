@@ -91,6 +91,10 @@
     min-width: 1ch;
 }
 
+.chopro-pair .chopro-lyrics-empty {
+    min-width: 1ch;
+}
+
 /* ===== Modal Styles ===== */
 .chopro-modal-button-container {
     display: flex;
