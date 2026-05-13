@@ -61,10 +61,8 @@ export class TransposeModal extends Modal {
             .setDesc("Choose output format for chords")
             .addDropdown((dropdown) =>
                 dropdown
-                    // eslint-disable-next-line obsidianmd/ui/sentence-case
-                    .addOption("alpha", "Alpha (C, G, Am, etc.)")
-                    // eslint-disable-next-line obsidianmd/ui/sentence-case
-                    .addOption("nashville", "Nashville Numbers (1, 5, 6m, etc.)")
+                    .addOption("alpha", "Alphabetic")
+                    .addOption("nashville", "Nashville numbers")
                     .setValue(this.chordType)
                     .onChange((value) => {
                         this.chordType = value;
