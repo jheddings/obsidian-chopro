@@ -1,7 +1,7 @@
 {
     "id": "chopro-viewer",
     "name": "ChordPro Viewer",
-    "version": "0.9.3",
+    "version": "0.9.4",
     "minAppVersion": "1.4.0",
     "description": "Render ChordPro format code blocks in Obsidian.",
     "author": "Jason Heddings",
