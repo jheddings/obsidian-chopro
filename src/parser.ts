@@ -6,6 +6,7 @@ import { AbstractNote, MusicNote, NashvilleNumber } from "./music";
 
 export abstract class LineSegment {
     constructor() {}
+    abstract toString(): string;
 }
 
 export class TextSegment extends LineSegment {
@@ -22,7 +23,7 @@ export class TextSegment extends LineSegment {
 }
 
 export class Annotation extends LineSegment {
-    public static readonly PATTERN = /^\[\*([^\*]+)\]$/;
+    public static readonly PATTERN = /^\[\*([^*]+)\]$/;
 
     constructor(public content: string) {
         super();
@@ -142,7 +143,7 @@ export abstract class ChordSegment extends LineSegment {
  * Represents a chord notation using alphabetic note names (A-G).
  */
 export class LetterNotation extends ChordSegment {
-    public static readonly PATTERN = /^([A-G](?:♮|#|♯|b|♭|[ei]s)?)([^\/\]]+)?(?:\/(.+))?$/;
+    public static readonly PATTERN = /^([A-G](?:♮|#|♯|b|♭|[ei]s)?)([^/\]]+)?(?:\/(.+))?$/;
 
     constructor(
         public note: MusicNote,
@@ -178,7 +179,7 @@ export class LetterNotation extends ChordSegment {
  * Represents a chord notation using Nashville number system (1-7).
  */
 export class NashvilleNotation extends ChordSegment {
-    public static readonly PATTERN = /^((#|♯|b|♭)?[1-7])([^\/\]]+)?(?:\/(.+))?$/;
+    public static readonly PATTERN = /^((#|♯|b|♭)?[1-7])([^/\]]+)?(?:\/(.+))?$/;
 
     constructor(
         public note: NashvilleNumber,
@@ -430,14 +431,18 @@ export abstract class SegmentedLine extends ChoproLine {
      * Get all chord notation segments from this line.
      */
     get chords(): BracketChord[] {
-        return this.segments.filter((segment) => segment instanceof BracketChord) as BracketChord[];
+        return this.segments.filter(
+            (segment): segment is BracketChord => segment instanceof BracketChord
+        );
     }
 
     /**
      * Get all text segments from this line.
      */
     get lyrics(): TextSegment[] {
-        return this.segments.filter((segment) => segment instanceof TextSegment) as TextSegment[];
+        return this.segments.filter(
+            (segment): segment is TextSegment => segment instanceof TextSegment
+        );
     }
 
     static test(line: string): boolean {
@@ -859,7 +864,10 @@ export class ChoproFile {
      */
     get key(): string | undefined {
         const value = this.frontmatter?.get("key");
-        return value != null ? String(value) : undefined;
+        if (value == null) {
+            return undefined;
+        }
+        return typeof value === "string" ? value : JSON.stringify(value);
     }
 
     /**

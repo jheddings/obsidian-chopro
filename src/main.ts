@@ -7,6 +7,7 @@ import {
     MarkdownView,
     Editor,
     MarkdownPostProcessorContext,
+    MarkdownRenderChild,
     MarkdownRenderer,
 } from "obsidian";
 
@@ -56,8 +57,8 @@ export default class ChoproPlugin extends Plugin {
 
         await this.loadSettings();
 
-        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el) => {
-            await this.processChoproBlock(source, el);
+        this.registerMarkdownCodeBlockProcessor("chopro", async (source, el, ctx) => {
+            await this.processChoproBlock(source, el, ctx);
         });
 
         this.registerMarkdownPostProcessor(
@@ -82,7 +83,7 @@ export default class ChoproPlugin extends Plugin {
             id: "chopro-transpose",
             name: "Transpose chords in current file",
             editorCallback: (_editor: Editor, view: MarkdownView) => {
-                this.transposeActiveView(view);
+                void this.transposeActiveView(view);
             },
         });
 
@@ -90,7 +91,7 @@ export default class ChoproPlugin extends Plugin {
             id: "chopro-insert-flow",
             name: "Insert flow content from file",
             editorCallback: (editor: Editor, _view: MarkdownView) => {
-                this.insertFlowContent(editor);
+                void this.insertFlowContent(editor);
             },
         });
 
@@ -98,7 +99,7 @@ export default class ChoproPlugin extends Plugin {
             id: "chopro-convert-chord-over-lyrics",
             name: "Convert chord-over-lyrics to bracketed chords",
             editorCallback: (_editor: Editor, view: MarkdownView) => {
-                this.convertChordOverLyrics(view);
+                void this.convertChordOverLyrics(view);
             },
         });
 
@@ -126,8 +127,10 @@ export default class ChoproPlugin extends Plugin {
     private applySettings(): void {
         Logger.setGlobalLogLevel(this.settings.logLevel);
 
-        this.renderer = new ContentRenderer(this.settings.rendering, (content, container) =>
-            MarkdownRenderer.render(this.app, content, container, "", this)
+        this.renderer = new ContentRenderer(
+            this.settings.rendering,
+            (content, container, component) =>
+                MarkdownRenderer.render(this.app, content, container, "", component)
         );
         this.flowManager = new FlowManager(this, this.settings.flow);
         this.calloutProcessor = new CalloutProcessor(
@@ -156,7 +159,7 @@ export default class ChoproPlugin extends Plugin {
 
         const modal = new TransposeModal(this.app, currentKey, async (options) => {
             this.logger.info(
-                `Transposing ${file.basename} from ${options.fromKey} to ${options.toKey}`
+                `Transposing ${file.basename} from ${options.fromKey?.toString() ?? "?"} to ${options.toKey?.toString() ?? "?"}`
             );
 
             const transposer = new ChoproTransposer({
@@ -191,7 +194,9 @@ export default class ChoproPlugin extends Plugin {
                     new Notice("Processed flow content");
                 } catch (error) {
                     console.error("Error processing flow file:", error);
-                    new Notice(error.message || "Error processing flow file");
+                    const message =
+                        error instanceof Error ? error.message : "Error processing flow file";
+                    new Notice(message);
                 }
             }
         );
@@ -199,7 +204,11 @@ export default class ChoproPlugin extends Plugin {
         modal.open();
     }
 
-    async processChoproBlock(source: string, el: HTMLElement): Promise<void> {
+    async processChoproBlock(
+        source: string,
+        el: HTMLElement,
+        ctx: MarkdownPostProcessorContext
+    ): Promise<void> {
         this.logger.debug(`Processing ChoPro block with ${source.length} characters`);
 
         el.empty();
@@ -209,7 +218,9 @@ export default class ChoproPlugin extends Plugin {
 
         try {
             const block = ChoproBlock.parseRaw(source);
-            await this.renderer.renderBlock(block, container);
+            const child = new MarkdownRenderChild(container);
+            ctx.addChild(child);
+            await this.renderer.renderBlock(block, container, child);
             this.logger.debug("ChoPro block rendered successfully");
         } catch (error) {
             this.logger.error("Failed to process ChoPro block: ", error);
@@ -260,7 +271,7 @@ export default class ChoproPlugin extends Plugin {
             return;
         }
 
-        const metadata = new Frontmatter(frontmatter as Record<string, unknown>);
+        const metadata = new Frontmatter(frontmatter);
         const header = this.createMetadataHeader(metadata);
 
         if (header) {

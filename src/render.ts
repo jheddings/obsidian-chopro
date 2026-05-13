@@ -1,6 +1,7 @@
 // chopro - Chord Pro Processor for Obsidian
 
 import { Logger } from "obskit";
+import { Component } from "obsidian";
 import { RenderSettings } from "./config";
 import {
     BracketChord,
@@ -24,7 +25,18 @@ import {
  * Optional callback for rendering markdown content into DOM elements.
  * Injected by the plugin to avoid coupling the renderer to Obsidian's API.
  */
-export type MarkdownRenderFn = (content: string, container: HTMLElement) => Promise<void>;
+function toDisplayString(value: unknown): string | undefined {
+    if (value == null) {
+        return undefined;
+    }
+    return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+export type MarkdownRenderFn = (
+    content: string,
+    container: HTMLElement,
+    component: Component
+) => Promise<void>;
 
 /**
  * Renderer for converting our AST into Obsidian DOM elements
@@ -42,18 +54,22 @@ export class ContentRenderer {
     /**
      * Render a complete ChordPro file.
      */
-    async render(file: ChoproFile, container: HTMLElement): Promise<void> {
+    async render(file: ChoproFile, container: HTMLElement, component?: Component): Promise<void> {
         for (const block of file.blocks) {
-            await this.renderBlock(block, container);
+            await this.renderBlock(block, container, component);
         }
     }
 
     /**
      * Render a content block
      */
-    async renderBlock(block: ContentBlock, container: HTMLElement): Promise<void> {
+    async renderBlock(
+        block: ContentBlock,
+        container: HTMLElement,
+        component?: Component
+    ): Promise<void> {
         if (block instanceof MarkdownBlock) {
-            await this.renderMarkdownBlock(block, container);
+            await this.renderMarkdownBlock(block, container, component);
         } else if (block instanceof ChoproBlock) {
             this.renderChoproBlock(block, container);
         }
@@ -63,12 +79,16 @@ export class ContentRenderer {
      * Render a markdown block into DOM elements.
      * Uses the injected render callback if available, otherwise falls back to plain text.
      */
-    async renderMarkdownBlock(block: MarkdownBlock, container: HTMLElement): Promise<void> {
+    async renderMarkdownBlock(
+        block: MarkdownBlock,
+        container: HTMLElement,
+        component?: Component
+    ): Promise<void> {
         const content = block.content;
         const markdown = container.createDiv({ cls: "markdown" });
 
-        if (this.renderMarkdownFn) {
-            await this.renderMarkdownFn(content, markdown);
+        if (this.renderMarkdownFn && component) {
+            await this.renderMarkdownFn(content, markdown, component);
         } else {
             markdown.setText(content);
         }
@@ -96,11 +116,11 @@ export class ContentRenderer {
         const tempo = frontmatter.get("tempo");
         const time = frontmatter.get("time");
 
-        const titleText = title != null ? String(title) : undefined;
-        const artistText = artist != null ? String(artist) : undefined;
-        const keyText = key != null ? String(key) : undefined;
-        const tempoText = tempo != null ? String(tempo) : undefined;
-        const timeText = time != null ? String(time) : undefined;
+        const titleText = toDisplayString(title);
+        const artistText = toDisplayString(artist);
+        const keyText = toDisplayString(key);
+        const tempoText = toDisplayString(tempo);
+        const timeText = toDisplayString(time);
 
         // Only render if we have at least title or artist
         if (!title && !artist) {
@@ -254,15 +274,13 @@ export class ContentRenderer {
             textConsumed = true;
         }
 
-        const textSpan = pairSpan.createSpan({
+        pairSpan.createSpan({
             text: textContent || "\u00A0",
-            cls: "chopro-lyrics",
+            cls:
+                !textContent || textContent.trim() === ""
+                    ? "chopro-lyrics chopro-lyrics-empty"
+                    : "chopro-lyrics",
         });
-
-        // ensure minimum width for positioning
-        if (!textContent || textContent.trim() === "") {
-            textSpan.style.minWidth = "1ch";
-        }
 
         return textConsumed;
     }

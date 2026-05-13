@@ -315,14 +315,14 @@ class FlowParser {
      */
     parseFlow(file: TFile): FlowDefinition | null {
         const fileCache = this.app.metadataCache.getFileCache(file);
-        const flowData = fileCache?.frontmatter?.flow;
+        const flowData: unknown = fileCache?.frontmatter?.flow;
 
         if (!flowData || !Array.isArray(flowData)) {
             return null;
         }
 
-        const items: FlowItem[] = flowData.map((item) => {
-            return FlowItem.parse(item, file, this.app);
+        const items: FlowItem[] = (flowData as unknown[]).map((item) => {
+            return FlowItem.parse(String(item), file, this.app);
         });
 
         return { items, sourceFile: file };

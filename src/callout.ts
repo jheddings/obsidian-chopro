@@ -1,7 +1,14 @@
 // callout - ChoPro callout processor for Obsidian
 
 import { Logger } from "obskit";
-import { TFile, MarkdownPostProcessorContext, Plugin, MarkdownRenderer, parseYaml } from "obsidian";
+import {
+    TFile,
+    MarkdownPostProcessorContext,
+    MarkdownRenderChild,
+    Plugin,
+    MarkdownRenderer,
+    parseYaml,
+} from "obsidian";
 
 import { FlowManager } from "./flow";
 import { ContentRenderer } from "./render";
@@ -62,9 +69,9 @@ export class CalloutProcessor {
 
         this.logger.debug(`Processing ${callouts.length} chopro callouts`);
 
-        callouts.forEach(async (callout) => {
+        for (const callout of Array.from(callouts)) {
             await this.processCallout(callout as HTMLElement, ctx);
-        });
+        }
     }
 
     /**
@@ -86,7 +93,7 @@ export class CalloutProcessor {
         }
 
         const features = this.extractFeatures(callout);
-        await this.render(callout, targetFile, features);
+        await this.render(callout, targetFile, features, ctx);
     }
 
     /**
@@ -130,7 +137,7 @@ export class CalloutProcessor {
         }
 
         try {
-            const yamlData = parseYaml(content);
+            const yamlData: unknown = parseYaml(content);
 
             if (yamlData && typeof yamlData === "object") {
                 this.logger.debug("Parsed YAML data:", yamlData);
@@ -139,7 +146,8 @@ export class CalloutProcessor {
                 this.logger.warn("Unable to parse features");
             }
         } catch (error) {
-            this.logger.warn(`Failed to parse features: ${error.message}`);
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Failed to parse features: ${message}`);
         }
 
         return features;
@@ -150,7 +158,7 @@ export class CalloutProcessor {
      */
     private mergeFeatures(features: CalloutFeatures, yaml: Record<string, unknown>): void {
         if ("flow" in yaml) {
-            this.logger.debug(`flow :: ${yaml.flow}`);
+            this.logger.debug(`flow :: ${String(yaml.flow)}`);
             features.flow = isTruthy(yaml.flow);
         }
     }
@@ -161,7 +169,8 @@ export class CalloutProcessor {
     private async render(
         callout: HTMLElement,
         file: TFile,
-        features: CalloutFeatures
+        features: CalloutFeatures,
+        ctx: MarkdownPostProcessorContext
     ): Promise<void> {
         callout.empty();
 
@@ -185,6 +194,8 @@ export class CalloutProcessor {
             }
         }
 
-        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, this.plugin);
+        const child = new MarkdownRenderChild(container);
+        ctx.addChild(child);
+        await MarkdownRenderer.render(this.plugin.app, content, container, file.path, child);
     }
 }

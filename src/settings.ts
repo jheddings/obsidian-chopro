@@ -270,7 +270,7 @@ class LogLevelSetting extends DropdownSetting<LogLevel> {
 
     set value(val: LogLevel) {
         this.plugin.settings.logLevel = val;
-        this.plugin.saveSettings();
+        void this.plugin.saveSettings();
     }
 
     get default(): LogLevel {
@@ -296,37 +296,37 @@ class DisplaySettings extends SettingsTabPage {
     display(containerEl: HTMLElement): void {
         new ChordColor(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
         new ChordSize(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
         new SuperscriptChordMods(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
         new ChordDecorations(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
         new NormalizedChordDisplay(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
         new ItalicAnnotations(this.plugin)
             .onChange((_value) => {
-                updatePreview();
+                void updatePreview();
             })
             .display(containerEl);
 
@@ -350,7 +350,7 @@ class DisplaySettings extends SettingsTabPage {
         // update preview content based on current settings
         const updatePreview = async () => {
             preview.empty();
-            this.plugin.saveSettings();
+            void this.plugin.saveSettings();
 
             ChoproStyleManager.applyToContainer(preview, this.plugin.settings.rendering);
 
@@ -360,7 +360,7 @@ class DisplaySettings extends SettingsTabPage {
         };
 
         // initial preview
-        updatePreview();
+        void updatePreview();
     }
 }
 
