@@ -44,6 +44,7 @@ commit_preprocessors = [
 
 commit_parsers = [
   # skip version bumps, lockfile maintenance, and merge commits
+  { message = "^chore\\(release\\):", skip = true },
   { message = "^bump version", skip = true },
   { message = "^chore\\(deps\\): lock file maintenance", skip = true },
   { message = "^[Mm]erge", skip = true },

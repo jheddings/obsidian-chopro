@@ -50,7 +50,7 @@ release bump="patch": preflight repo-guard
 	jq --arg v "$VERSION" --arg m "$MIN_APP" '. + {($v): $m}' versions.json > tmp.$$.json && mv tmp.$$.json versions.json
 	npx prettier --write package.json package-lock.json manifest.json versions.json
 	git add package.json package-lock.json manifest.json versions.json
-	git commit -m "obsidian-chopro-$VERSION"
+	git commit -m "chore(release): $VERSION"
 	git tag -a "$VERSION" -m "$VERSION"
 	git push && git push --tags
 
