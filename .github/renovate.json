@@ -2,5 +2,5 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "enabled": true,
     "dependencyDashboard": false,
-    "extends": ["config:base"]
+    "extends": ["config:recommended", "github>jheddings/regula:typescript"]
 }
