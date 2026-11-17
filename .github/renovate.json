@@ -2,9 +2,17 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "enabled": true,
     "dependencyDashboard": false,
+    "addLabels": ["boiler:inspect"],
     "extends": [
         "github>jheddings/regula",
         "config:recommended",
         "github>jheddings/regula:typescript"
+    ],
+    "packageRules": [
+        {
+            "description": "The Boiler merges this repository's dependency updates: each one is inspected, and a low-risk verdict is merged once its checks pass. Renovate opens and rebases the pull requests and merges none of them, so nothing lands without a verdict. This rule is in the repository's own packageRules, which apply after extended presets, so it overrides every automerge rule in regula.",
+            "matchUpdateTypes": ["major", "minor", "patch", "pin", "pinDigest", "digest", "lockFileMaintenance", "rollback", "bump", "replacement"],
+            "automerge": false
+        }
     ]
 }
