@@ -9,6 +9,9 @@ export abstract class LineSegment {
     abstract toString(): string;
 }
 
+/**
+ * A run of plain text within a line.
+ */
 export class TextSegment extends LineSegment {
     constructor(public content: string) {
         super();
