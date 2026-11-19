@@ -1,0 +1,25 @@
+# What the Boiler needs to work on this repository: the tools its Station is
+# hydrated with, and the commands a hand may run. It is mise configuration,
+# read by the factory from the default branch only. A task is one command,
+# run with no shell.
+#
+# After changing [tools], refresh the lock and commit it beside this file:
+#
+#   MISE_OVERRIDE_CONFIG_FILENAMES=.boiler/station.toml mise lock
+
+[tools]
+node = "22"
+just = "1.59.0"
+
+# Run by the factory to ready a line; not offered to a hand.
+[tasks.setup]
+run = "npm ci"
+
+[tasks.build]
+run = "npm run build"
+
+[tasks.check]
+run = "just check"
+
+[tasks.test]
+run = "just test"
