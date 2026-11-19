@@ -100,8 +100,11 @@ export abstract class ChordSegment extends LineSegment {
         // Delta (Δ) to maj
         normalized = normalized.replace(/Δ/g, "maj");
 
-        // Full-diminished (o) to dim
-        normalized = normalized.replace(/(?<!ø)o(?!f)/g, "dim");
+        // Full-diminished (o) to dim, skipping "o" after "ø" (avoids a lookbehind,
+        // which is unsupported on iOS < 16.4)
+        normalized = normalized.replace(/o(?!f)/g, (match, offset: number, str: string) =>
+            str[offset - 1] === "ø" ? match : "dim"
+        );
 
         // Half-diminished (ø) to m7b5
         normalized = normalized.replace(/ø7?/g, "m7b5");
