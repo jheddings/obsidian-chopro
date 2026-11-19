@@ -68,6 +68,9 @@ describe("ChordSegment", () => {
             { input: "F#o7", expectedQuality: "dim7" },
             { input: "Bbø", expectedQuality: "m7♭5" },
             { input: "D+add9", expectedQuality: "augadd9" },
+            // "o" directly after "ø" is not a diminished marker
+            { input: "Cøo", expectedQuality: "m7♭5o" },
+            { input: "Coo", expectedQuality: "dimdim" },
         ];
 
         test.each(qualityTests)(
