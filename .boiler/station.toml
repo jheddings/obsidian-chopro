@@ -11,9 +11,10 @@
 node = "22"
 just = "1.59.0"
 
-# A task tagged "check" is a check: the factory runs it on every change, and
-# only a failing check counts as a fault. Any other task but setup is a
-# command, offered to the hands that change the work.
+# A task tagged "check" is one the factory runs itself on every change and
+# holds the work to. This repository's CI already runs these on every pull
+# request, so none is tagged: each is a command, which a hand runs when it
+# chooses, and a Fitter may show a fault with any of them.
 
 # Run by the factory to ready a line; not offered to a hand.
 [tasks.setup]
@@ -22,14 +23,11 @@ run = "npm ci"
 [tasks.build]
 description = "Build the plugin"
 run = "npm run build"
-tags = ["check"]
 
 [tasks.check]
 description = "prettier and eslint, changing nothing"
 run = "just check"
-tags = ["check"]
 
 [tasks.test]
 description = "The vitest suite"
 run = "just test"
-tags = ["check"]
